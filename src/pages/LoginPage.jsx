@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Smartphone, ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
+import logo from '../assets/logo-play11.png';
 
 const LoginPage = () => {
   const [mobile, setMobile] = useState('');
@@ -53,16 +54,16 @@ const LoginPage = () => {
       <div className="container" style={{ maxWidth: '480px', padding: 'var(--page-padding)' }}>
         {/* Header Branding */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }} className="animate-elite">
-          <div style={{ 
-            width: 'clamp(60px, 10vw, 80px)', 
-            height: 'clamp(60px, 10vw, 80px)', 
-            background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))',
-            borderRadius: '2rem',
-            margin: '0 auto 1.5rem',
-            boxShadow: '0 20px 40px hsl(var(--primary) / 0.2)'
-          }} className="flex-center">
-            <Smartphone size={32} color="white" />
-          </div>
+          <img 
+            src={logo} 
+            alt="Play11 Logo" 
+            style={{ 
+              width: '180px', 
+              height: 'auto', 
+              objectFit: 'contain',
+              marginBottom: '1rem'
+            }} 
+          />
           <h1 style={{ fontSize: 'clamp(2rem, 5vw, 2.75rem)', fontWeight: 900, fontFamily: 'Lexend', marginBottom: '0.75rem', color: 'hsl(var(--foreground))' }}>Play11 Elite</h1>
           <p style={{ color: 'hsl(var(--muted-foreground))', fontWeight: 600, fontSize: '0.95rem' }}>The Arena of Champions</p>
         </div>

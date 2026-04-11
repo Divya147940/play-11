@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, RefreshCw } from 'lucide-react';
+import logo from '../assets/logo-play11.png';
 
 const OtpPage = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -93,7 +94,18 @@ const OtpPage = () => {
         </button>
 
         {/* Header content */}
-        <div style={{ marginBottom: '3rem' }} className="animate-elite">
+        <div style={{ marginBottom: '3rem', textAlign: 'center' }} className="animate-elite">
+          <img 
+            src={logo} 
+            alt="Play11 Logo" 
+            style={{ 
+              width: '180px', 
+              height: 'auto', 
+              objectFit: 'contain',
+              marginBottom: '1rem',
+              display: 'inline-block'
+            }} 
+          />
           <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 900, fontFamily: 'Lexend', marginBottom: '0.75rem', color: 'hsl(var(--foreground))' }}>Secure Entry</h2>
           <p style={{ color: 'hsl(var(--muted-foreground))', fontWeight: 600, fontSize: '0.95rem' }}>
             Verification code sent to <span style={{ color: 'hsl(var(--primary))', fontWeight: 800 }}>+91 {mobile}</span>
