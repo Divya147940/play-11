@@ -118,26 +118,13 @@ const SplashPage = () => {
         zIndex: 10
       }}>
         <button 
-          className="btn-elite" 
+          className="btn-elite btn-elite-primary" 
           onClick={handleStart}
           style={{ 
             width: '100%', 
             height: '64px', 
-            fontSize: '1.25rem',
-            background: 'linear-gradient(135deg, #007AFF 0%, #0056D2 100%)',
-            color: 'white',
-            borderRadius: '1.25rem',
-            boxShadow: '0 10px 25px -5px rgba(0, 122, 255, 0.4)',
-            border: 'none',
-            fontWeight: 800,
-            cursor: 'pointer',
-            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            fontFamily: "'Lexend', sans-serif"
+            fontSize: '1.25rem'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.96)'}
-          onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
           Get Started
         </button>
