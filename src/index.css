@@ -248,3 +248,36 @@ h1, h2, h3, h4 {
 .animate-elite {
   animation: elite-bounce-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
+
+/* Responsive Auth Layout */
+.auth-split {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .auth-split {
+    flex-direction: row;
+    max-width: 1100px;
+    align-items: center;
+    gap: 6rem;
+  }
+  
+  .auth-brand {
+    flex: 1.2;
+    text-align: left !important;
+    align-items: flex-start !important;
+  }
+  
+  .auth-brand img {
+    margin-left: 0 !important;
+  }
+
+  .auth-card-container {
+    flex: 1;
+    min-width: 420px;
+  }
+}
