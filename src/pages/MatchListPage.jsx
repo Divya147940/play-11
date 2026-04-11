@@ -10,7 +10,7 @@ const MatchListPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3000/matches')
+    fetch('/api/matches')
       .then(res => res.json())
       .then(data => {
         if (data.success) {

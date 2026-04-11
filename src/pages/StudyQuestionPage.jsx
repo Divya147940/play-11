@@ -46,7 +46,7 @@ const StudyQuestionPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:3000/quizzes/${id}/questions`)
+    fetch(`/api/quizzes/${id}/questions`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.questions.length > 0) {
@@ -74,7 +74,7 @@ const StudyQuestionPage = () => {
   const handleSubmit = useCallback(async () => {
     try {
        const userMobile = localStorage.getItem('user_mobile') || '0000000000';
-       const response = await fetch(`http://localhost:3000/quizzes/${id}/submit`, {
+       const response = await fetch(`/api/quizzes/${id}/submit`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({ answers, mobile: userMobile })

@@ -9,7 +9,7 @@ const GameQuizDetailPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:3000/matches/${id}`)
+    fetch(`/api/matches/${id}`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {

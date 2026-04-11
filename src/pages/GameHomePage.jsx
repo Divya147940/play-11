@@ -18,7 +18,7 @@ const GameHomePage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3000/categories/game')
+    fetch('/api/categories/game')
       .then(res => res.json())
       .then(data => {
         if (data.success) {

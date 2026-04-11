@@ -20,7 +20,7 @@ const StudyHomePage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('http://localhost:3000/categories/study')
+    fetch('/api/categories/study')
       .then(res => res.json())
       .then(data => {
         if (data.success) {

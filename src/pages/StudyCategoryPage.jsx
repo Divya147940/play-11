@@ -14,7 +14,7 @@ const StudyCategoryPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:3000/quizzes/category/${id}`)
+    fetch(`/api/quizzes/category/${id}`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {

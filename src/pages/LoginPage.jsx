@@ -26,7 +26,7 @@ const LoginPage = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3000/auth/send-otp', {
+      const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mobile })
