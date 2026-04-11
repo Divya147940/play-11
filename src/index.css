@@ -1,15 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Lexend:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  /* Play11 Official Logo Theme (Blue & Orange) */
-  --primary: 215 90% 45%;      /* Play Blue */
-  --primary-glow: 215 90% 45% / 0.15;
+  /* Option B: Luxury Light (Dynamic 3D Edition) */
+  --primary: 255 85% 55%;      /* Vibrant Violet */
+  --primary-glow: 255 85% 55% / 0.15;
   
-  --secondary: 30 100% 55%;    /* 11 Orange */
-  --secondary-glow: 30 100% 55% / 0.15;
+  --secondary: 330 95% 60%;    /* Hot Pink */
+  --secondary-glow: 330 95% 60% / 0.15;
   
-  --accent: 200 95% 60%;       /* Bright Blue */
-  --accent-glow: 200 95% 60% / 0.15;
+  --accent: 35 100% 55%;       /* Mango Orange */
+  --accent-glow: 35 100% 55% / 0.15;
   
   --background: 0 0% 100%;     /* Pure White */
   --foreground: 230 40% 15%;   /* Deep Navy Black */
