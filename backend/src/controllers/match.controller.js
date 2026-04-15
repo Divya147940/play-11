@@ -1,32 +1,40 @@
 const { db } = require('../config/db');
 
-const getAllMatches = (req, res) => {
+const getAllMatches = async (req, res) => {
   try {
-    const matches = db.prepare("SELECT * FROM matches ORDER BY start_time ASC").all();
-    res.json({ success: true, matches });
+    const { rows } = await db.query("SELECT * FROM matches ORDER BY start_time ASC");
+    res.json({ success: true, matches: rows });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-const getMatchQuizzes = (req, res) => {
+const getMatchQuizzes = async (req, res) => {
   const { id } = req.params;
-  // Let's assume matches map to quizzes via title or via a bridge table, 
-  // but for mock purposes we'll return all game zone quizzes.
   try {
-    const quizzes = db.prepare("SELECT * FROM quizzes WHERE zone_id = 'game-zone' AND status = 'active'").all();
-    res.json({ success: true, quizzes });
+    // In our schema, quizzes might be linked to matches or categories.
+    // For now, let's assume we find a quiz where category_id related to the match or find one with match-specific title.
+    // Ideally, quizzes table should have match_id.
+    // Since it doesn't, let's look for match-1 -> quiz-g1 logic or dynamic search.
+    const { rows } = await db.query("SELECT * FROM quizzes WHERE zone_id = 'game-zone' AND (title ILIKE $1 OR id = $2)", [`%${id}%`, `quiz-${id}`]);
+    const quiz = rows[0];
+    if (!quiz) return res.status(404).json({ error: 'Quiz not found for this match' });
+    
+    const { rows: questions } = await db.query("SELECT * FROM questions WHERE quiz_id = $1 ORDER BY sort_order ASC", [quiz.id]);
+    
+    res.json({ success: true, quiz, questions });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-const getMatchById = (req, res) => {
+const getMatchById = async (req, res) => {
   const { id } = req.params;
   try {
-    const match = db.prepare("SELECT * FROM matches WHERE id = ?").get(id);
+    const { rows } = await db.query("SELECT * FROM matches WHERE id = $1", [id]);
+    const match = rows[0];
     if (!match) return res.status(404).json({ error: 'Match not found' });
     res.json({ success: true, match });
   } catch (error) {

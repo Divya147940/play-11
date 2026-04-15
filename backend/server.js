@@ -16,7 +16,11 @@ app.use(cors());
 app.use(express.json());
 
 // Initialize Database
-initDB();
+initDB().then(() => {
+  console.log('Database initialization complete.');
+}).catch(err => {
+  console.error('Database initialization failed:', err);
+});
 
 // Routes
 app.use('/auth', authRoutes);
@@ -31,6 +35,10 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

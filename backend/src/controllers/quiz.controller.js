@@ -1,20 +1,22 @@
 const { db } = require('../config/db');
+const { v4: uuidv4 } = require('uuid');
 
-const getQuizzesByCategory = (req, res) => {
+const getQuizzesByCategory = async (req, res) => {
   const { categoryId } = req.params;
   try {
-    const quizzes = db.prepare("SELECT * FROM quizzes WHERE category_id = ? AND status = 'active'").all(categoryId);
-    res.json({ success: true, quizzes });
+    const { rows } = await db.query("SELECT * FROM quizzes WHERE category_id = $1 AND status = 'active'", [categoryId]);
+    res.json({ success: true, quizzes: rows });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-const getQuizById = (req, res) => {
+const getQuizById = async (req, res) => {
   const { id } = req.params;
   try {
-    const quiz = db.prepare("SELECT * FROM quizzes WHERE id = ?").get(id);
+    const { rows } = await db.query("SELECT * FROM quizzes WHERE id = $1", [id]);
+    const quiz = rows[0];
     if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
     res.json({ success: true, quiz });
   } catch (error) {
@@ -23,55 +25,66 @@ const getQuizById = (req, res) => {
   }
 };
 
-const { v4: uuidv4 } = require('uuid');
-
-const getQuizQuestions = (req, res) => {
+const getQuizQuestions = async (req, res) => {
   const { id } = req.params;
   try {
-    const questions = db.prepare("SELECT id, quiz_id, type, question_text, sort_order FROM questions WHERE quiz_id = ? ORDER BY sort_order ASC").all(id);
-    res.json({ success: true, questions });
+    const { rows } = await db.query("SELECT id, quiz_id, type, question_text, sort_order FROM questions WHERE quiz_id = $1 ORDER BY sort_order ASC", [id]);
+    res.json({ success: true, questions: rows });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-const submitQuiz = (req, res) => {
+const submitQuiz = async (req, res) => {
   const { id } = req.params;
   const { answers, mobile } = req.body; 
 
   try {
     // 1. Fetch the user
-    const user = db.prepare('SELECT id FROM users WHERE mobile = ?').get(mobile);
-    const userId = user ? user.id : 'anonymous';
+    const { rows: userRows } = await db.query('SELECT id FROM users WHERE mobile = $1', [mobile]);
+    const userId = userRows.length > 0 ? userRows[0].id : 'anonymous';
 
-    // 2. Fetch the questions to calculate score
-    const questions = db.prepare("SELECT * FROM questions WHERE quiz_id = ?").all(id);
+    // 2. Fetch the questions and their correct answers
+    const { rows: questions } = await db.query(`
+      SELECT q.*, ca.answer_value 
+      FROM questions q
+      LEFT JOIN correct_answers ca ON q.id = ca.question_id
+      WHERE q.quiz_id = $1
+    `, [id]);
     
+    // 3. Fetch Quiz details for marks
+    const { rows: quizRows } = await db.query('SELECT marks_per_q FROM quizzes WHERE id = $1', [id]);
+    const marksPerQ = quizRows[0]?.marks_per_q || 2;
+    const negativeMarks = 0.5;
+
     let totalQuestions = questions.length;
     let correctCount = 0;
+    let wrongCount = 0;
+    let attemptedCount = 0;
     
-    // For mock evaluation: Let's assume all answers matching '0' or 'A' (index 0) are correct for simplicity, since we didn't add the `correct_answers` table yet.
-    // In a real environment, we would join with the correct options.
     const subId = uuidv4();
     
     for (const q of questions) {
-      // answers from frontend might be keyed by question index or ID. 
-      // Our frontend mapped it by currentIdx (array index 0,1,2). 
-      // We will blindly assign a score for demonstration.
-      // Mock logic: randomly assign correct or wrong
-      const isCorrect = Math.random() > 0.4 ? 1 : 0; 
-      if (isCorrect) correctCount++;
-      
-      db.prepare('INSERT INTO submission_answers (id, submission_id, question_id, selected_value, is_correct) VALUES (?, ?, ?, ?, ?)')
-        .run(uuidv4(), subId, q.id, 'mock-val', isCorrect);
+      const selectedValue = answers[q.id];
+      if (selectedValue !== undefined && selectedValue !== null) {
+        attemptedCount++;
+        const isCorrect = String(selectedValue) === String(q.answer_value);
+        if (isCorrect) {
+          correctCount++;
+        } else {
+          wrongCount++;
+        }
+        
+        await db.query('INSERT INTO submission_answers (id, submission_id, question_id, selected_value, is_correct) VALUES ($1, $2, $3, $4, $5)',
+          [uuidv4(), subId, q.id, String(selectedValue), isCorrect ? 1 : 0]);
+      }
     }
 
-    const wrongCount = totalQuestions - correctCount;
-    const score = correctCount * 2 - (wrongCount * 0.5); // +2 for right, -0.5 for wrong
+    const score = (correctCount * marksPerQ) - (wrongCount * negativeMarks);
     
-    db.prepare('INSERT INTO submissions (id, user_id, quiz_id, status, total_score) VALUES (?, ?, ?, ?, ?)')
-      .run(subId, userId, id, 'completed', score);
+    await db.query('INSERT INTO submissions (id, user_id, quiz_id, status, total_score, correct_count, wrong_count, submitted_at) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)',
+      [subId, userId, id, 'completed', score, correctCount, wrongCount]);
 
     res.json({ 
       success: true, 
@@ -89,9 +102,38 @@ const submitQuiz = (req, res) => {
   }
 };
 
+const getResults = async (req, res) => {
+  const { quizId } = req.params;
+  const { userId } = req.query;
+  try {
+    const { rows } = await db.query("SELECT * FROM submissions WHERE quiz_id = $1 AND user_id = $2 ORDER BY started_at DESC LIMIT 1", [quizId, userId]);
+    res.json({ success: true, result: rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getLeaderboard = async (req, res) => {
+  const { quizId } = req.params;
+  try {
+    const { rows } = await db.query(`
+      SELECT s.total_score, u.name, u.mobile 
+      FROM submissions s 
+      JOIN users u ON s.user_id = u.id 
+      WHERE s.quiz_id = $1 
+      ORDER BY s.total_score DESC LIMIT 10
+    `, [quizId]);
+    res.json({ success: true, leaderboard: rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getQuizzesByCategory,
   getQuizById,
   getQuizQuestions,
-  submitQuiz
+  submitQuiz,
+  getResults,
+  getLeaderboard
 };
