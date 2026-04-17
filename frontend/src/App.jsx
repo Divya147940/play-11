@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import SplashPage from './pages/SplashPage';
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import OtpPage from './pages/OtpPage';
 import RegisterPage from './pages/RegisterPage';
@@ -35,7 +36,7 @@ const App = () => {
         
         <Routes>
           {/* Auth & Splash - No global nav */}
-          <Route path="/" element={<Layout hideNav><SplashPage /></Layout>} />
+          <Route path="/" element={<Layout hideNav><LandingPage /></Layout>} />
           <Route path="/login" element={<Layout hideNav><LoginPage /></Layout>} />
           <Route path="/otp" element={<Layout hideNav><OtpPage /></Layout>} />
           <Route path="/register" element={<Layout hideNav><RegisterPage /></Layout>} />
@@ -49,6 +50,7 @@ const App = () => {
           <Route path="/study-review" element={<Layout><StudyReviewPage /></Layout>} />
           <Route path="/study-result/:id" element={<Layout><StudyResultPage /></Layout>} />
           
+          {/* Game Pages */}
           <Route path="/game-home" element={<Layout><GameHomePage /></Layout>} />
           <Route path="/match-list" element={<Layout><MatchListPage /></Layout>} />
           <Route path="/game-quiz-detail/:id" element={<Layout><GameQuizDetailPage /></Layout>} />

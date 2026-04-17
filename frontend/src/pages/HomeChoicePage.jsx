@@ -1,167 +1,143 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Trophy, ChevronRight, Zap, Target, Star, ArrowRight } from 'lucide-react';
+import { BookOpen, Trophy, ArrowRight, Zap, Target, Star, Brain, Cpu, ShieldCheck } from 'lucide-react';
 
 const HomeChoicePage = () => {
   const navigate = useNavigate();
-  const userName = localStorage.getItem('user_name') || '';
-  const mobileNumber = localStorage.getItem('user_mobile') || 'User';
-  const displayName = userName || `+91 ${mobileNumber}`;
+  const userName = localStorage.getItem('user_name') || 'Scholar';
+  const mobileNumber = localStorage.getItem('user_mobile') || '';
 
   const zones = [
     {
       id: 'study',
       title: 'Study Zone',
-      subtitle: 'Competitive Exam Mastery',
-      desc: 'Crack SSC, UPSC, Banking & Railway with elite mocks.',
-      icon: <BookOpen size={42} />,
-      color: 'hsl(var(--primary))',
+      subtitle: 'Academic Supremacy',
+      desc: 'Master competitive exams with high-precision mock tests and real-time analytics.',
+      icon: <Brain size={38} />,
+      color: '#38bdf8',
       path: '/study-home',
-      tag: 'Academic'
+      tag: 'Academic',
+      stats: '1.2K+ active'
     },
     {
       id: 'game',
       title: 'Game Zone',
-      subtitle: 'Sports Prediction Arena',
-      desc: 'IPL Special & Match prediction challenges.',
-      icon: <Trophy size={42} />,
-      color: 'hsl(var(--secondary))',
+      subtitle: 'Strategic Arena',
+      desc: 'Prove your expertise in sports prediction and climb the global elite leaderboards.',
+      icon: <Cpu size={38} />,
+      color: '#818cf8',
       path: '/game-home',
-      tag: 'Sports'
+      tag: 'Sports',
+      stats: '840+ live'
     }
   ];
 
   return (
-    <div style={{ paddingBottom: '6rem' }}>
-      <div className="container">
+    <div className="luminescent-theme min-h-screen">
+      {/* Dynamic Cyber Grid Background */}
+      <div className="cyber-grid"></div>
+      
+      <div className="container relative z-10 mx-auto px-4 py-12 md:px-8">
         
-        {/* Simplified Website Header Section (Local) */}
-        <section className="animate-slide-up" style={{ marginTop: '6.5rem', marginBottom: '4rem' }}>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1.25rem' }}>
-              <div style={{ width: '10px', height: '10px', background: 'hsl(var(--primary))', borderRadius: '50%', boxShadow: '0 0 15px hsla(var(--primary), 0.6)' }}></div>
-              <p style={{ fontSize: '0.8rem', fontWeight: 900, color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.18em', opacity: 0.8 }}>Accessing Command Center</p>
-           </div>
-           <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', color: 'hsl(var(--foreground))', marginBottom: '1.25rem', lineHeight: '1.05', fontWeight: 950, letterSpacing: '-0.05em' }}>
-             Ready to <span className="text-gradient">Empire?</span>
-           </h1>
-           <p style={{ color: 'hsl(var(--muted-foreground))', fontWeight: 600, fontSize: 'clamp(1rem, 3vw, 1.25rem)', maxWidth: '650px', lineHeight: '1.5', opacity: 0.9 }}>
-             Select your specialized arena to begin dominance. Authenticated session at <strong>{mobileNumber}</strong> is active.
-           </p>
+        {/* Elite Status Bar */}
+        <div className="mb-12 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20">
+              <ShieldCheck size={28} />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-400/60">QUZO Academy ID</div>
+              <div className="font-mono text-sm font-bold text-white/90">QA-{mobileNumber.slice(-4) || '7744'}</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <div className="hidden text-right md:block">
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Identity Status</div>
+              <div className="text-sm font-bold text-emerald-400">Authenticated</div>
+            </div>
+            {/* Standard Profile Icon - Replaces User Photo */}
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-sky-400 ring-1 ring-white/10">
+              <Target size={24} />
+            </div>
+          </div>
+        </div>
+
+        {/* Hero Intelligence Section */}
+        <section className="mb-16">
+          <div className="inline-flex items-center gap-3 rounded-full bg-sky-500/5 px-4 py-2 ring-1 ring-sky-500/10">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-sky-400 shadow-[0_0_10px_#38bdf8]"></div>
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-sky-400/80">Command Hub Active</span>
+          </div>
+          
+          <h1 className="mt-6 text-5xl font-black leading-[1.1] tracking-tighter text-white md:text-7xl">
+            Welcome back, <br />
+            <span className="glow-text text-sky-400">{userName}.</span>
+          </h1>
+          <p className="mt-6 max-w-xl text-lg font-medium leading-relaxed text-white/50">
+            Initialize your objective. Your current standing is in the <span className="text-white">Top 5%</span> of the Academy. Systems are primed for the next challenge.
+          </p>
         </section>
 
-        {/* Premium Bento Selection */}
-        <div className="bento-grid" style={{ marginBottom: '5rem' }}>
-          {zones.map((zone, idx) => (
+        {/* Selection Matrix */}
+        <div className="mb-16 grid gap-6 md:grid-cols-2 lg:gap-8">
+          {zones.map((zone) => (
             <div 
               key={zone.id}
-              className={`glass-premium span-6 animate-slide-up stagger-${idx + 1}`}
+              className="elite-card group relative p-8 cursor-pointer"
               onClick={() => navigate(zone.path)}
-              style={{
-                padding: 'clamp(2rem, 6vw, 3.5rem)',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2rem',
-                minHeight: 'clamp(320px, 45vh, 400px)',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
             >
-              <div style={{ position: 'relative', zIndex: 2 }}>
-                <div style={{ 
-                  width: 'min(72px, 15vw)', 
-                  height: 'min(72px, 15vw)', 
-                  background: 'white', 
-                  borderRadius: '1.75rem', 
-                  color: zone.color,
-                  marginBottom: '2rem',
-                  boxShadow: `0 12px 24px -6px ${zone.color}33`
-                }} className="flex-center">
-                  {React.cloneElement(zone.icon, { size: 36, strokeWidth: 2 })}
+              <div className="relative z-10">
+                <div 
+                  className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl ring-1 ring-white/10"
+                  style={{ background: `linear-gradient(135deg, ${zone.color}22, transparent)`, color: zone.color }}
+                >
+                  {zone.icon}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1.25rem' }}>
-                   <span style={{ fontSize: '0.7rem', fontWeight: 900, background: 'rgba(0,0,0,0.06)', padding: '6px 14px', borderRadius: '1rem', color: 'hsl(var(--muted-foreground))', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{zone.tag}</span>
-                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: zone.color, boxShadow: `0 0 10px ${zone.color}` }}></div>
+                
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="rounded-lg bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 ring-1 ring-white/10">
+                    {zone.tag}
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-400">{zone.stats}</span>
                 </div>
-                <h2 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', fontWeight: 950, marginBottom: '0.75rem', fontFamily: 'Lexend', letterSpacing: '-0.04em' }}>{zone.title}</h2>
-                <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '1rem', lineHeight: '1.6', fontWeight: 600, opacity: 0.9 }}>{zone.desc}</p>
+
+                <h2 className="mb-2 text-3xl font-black tracking-tight text-white">{zone.title}</h2>
+                <div className="mb-4 text-xs font-bold uppercase tracking-wider text-white/40">{zone.subtitle}</div>
+                <p className="mb-8 leading-relaxed text-white/50">{zone.desc}</p>
+                
+                <div className="flex items-center gap-3 font-black uppercase tracking-[0.2em] text-sky-400 transition-all group-hover:gap-5">
+                  <span className="text-xs">Enter Arena</span>
+                  <ArrowRight size={18} strokeWidth={3} />
+                </div>
               </div>
 
-              <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.8rem', color: zone.color, fontWeight: 900, textTransform: 'uppercase', fontSize: '0.9rem', letterSpacing: '0.1em', zIndex: 2 }}>
-                Enter Arena <ArrowRight size={20} strokeWidth={3} />
-              </div>
+              {/* Decorative side accent */}
+              <div 
+                className="absolute right-0 top-1/4 h-1/2 w-1 rounded-l-full opacity-0 transition-opacity group-hover:opacity-100"
+                style={{ backgroundColor: zone.color, boxShadow: `0 0 20px ${zone.color}` }}
+              ></div>
             </div>
           ))}
         </div>
 
-        {/* Live Action Banner - Full Width Glass */}
-        <div className="glass-premium animate-slide-up stagger-3 live-action-banner" style={{ 
-          padding: '1.5rem clamp(1rem, 5vw, 3.5rem)',
-          background: 'linear-gradient(135deg, hsla(var(--primary), 0.1) 0%, hsla(var(--secondary), 0.1) 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'clamp(1rem, 5vw, 2rem)',
-          overflow: 'hidden',
-          flexWrap: 'wrap',
-          border: '2px solid hsla(var(--accent), 0.2)',
-          marginBottom: '3.5rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flex: 1, minWidth: 'min(300px, 100%)' }}>
-            <div className="flex-center" style={{ 
-              width: '64px', height: '64px', 
-              background: 'white', 
-              borderRadius: '1.5rem', 
-              color: '#f59e0b', 
-              boxShadow: '0 8px 16px rgba(245, 158, 11, 0.2)', 
-              flexShrink: 0 
-            }}>
-              <Zap size={32} fill="currentColor" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(245, 158, 11, 0.1)', color: '#b45309', padding: '4px 12px', borderRadius: '1rem', marginBottom: '0.5rem' }}>
-                 <div style={{ width: '6px', height: '6px', background: '#f59e0b', borderRadius: '50%' }}></div>
-                 <span style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Mega Challenge Active</span>
+        {/* Global Academy Status */}
+        <div className="grid gap-6 md:grid-cols-3">
+          {[
+            { label: 'Platform Load', value: 'Nominal', icon: <Zap size={20} />, color: 'text-amber-400' },
+            { label: 'Active Learners', value: '1,240+', icon: <Star size={20} />, color: 'text-sky-400' },
+            { label: 'Next Match', value: '14m 20s', icon: <Zap size={20} />, color: 'text-rose-400' }
+          ].map((stat, i) => (
+            <div key={i} className="elite-card flex items-center justify-between px-8 py-6">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{stat.label}</div>
+                <div className="mt-1 text-xl font-black text-white">{stat.value}</div>
               </div>
-              <h3 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.6rem)', fontWeight: 950, lineHeight: '1.2', letterSpacing: '-0.03em' }}>Elite Match Prediction: MI vs CSK Today</h3>
+              <div className={`${stat.color} opacity-50`}>{stat.icon}</div>
             </div>
-          </div>
-            <button 
-              className="shimmer-btn"
-              style={{ 
-                padding: '1.25rem 2.5rem', 
-                fontSize: '1.05rem', 
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                background: 'linear-gradient(135deg, #f59e0b, #ea580c)',
-                boxShadow: '0 15px 30px -5px rgba(245, 158, 11, 0.4)'
-              }}
-              onClick={() => navigate('/match-list')}
-            >
-              Start Prediction
-            </button>
-          </div>
-
-        {/* Global Stats/Status Section */}
-        <div className="animate-slide-up stagger-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-          <div className="glass-premium" style={{ padding: '2.5rem', display: 'flex', alignItems: 'center', gap: '2rem' }}>
-            <div className="flex-center" style={{ width: '64px', height: '64px', background: 'rgba(0,0,0,0.02)', borderRadius: '1.5rem', color: 'hsl(var(--primary))', border: '1px solid rgba(0,0,0,0.03)' }}>
-              <Target size={32} />
-            </div>
-            <div>
-              <p style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.02em', color: 'hsl(var(--foreground))' }}>1,240+</p>
-              <p style={{ fontSize: '0.8rem', fontWeight: 900, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Global Engagements</p>
-            </div>
-          </div>
-          <div className="glass-premium" style={{ padding: '2.5rem', display: 'flex', alignItems: 'center', gap: '2rem' }}>
-            <div className="flex-center" style={{ width: '64px', height: '64px', background: 'rgba(0,0,0,0.02)', borderRadius: '1.5rem', color: 'hsl(var(--secondary))', border: '1px solid rgba(0,0,0,0.03)' }}>
-              <Star size={32} fill="currentColor" />
-            </div>
-            <div>
-              <p style={{ fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-0.02em', color: 'hsl(var(--foreground))' }}>Elite Rank</p>
-              <p style={{ fontSize: '0.8rem', fontWeight: 900, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Member Since 2024</p>
-            </div>
-          </div>
+          ))}
         </div>
+
       </div>
     </div>
   );

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Smartphone, ArrowRight, ShieldCheck, Lock } from 'lucide-react';
-import logo from '../assets/logo-play11.png';
 import { auth } from '../config/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 
@@ -22,12 +20,14 @@ const LoginPage = () => {
   const isInvalid = mobile.length !== 10;
 
   useEffect(() => {
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      'size': 'invisible',
-      'callback': (response) => {
-        // reCAPTCHA solved, allow signInWithPhoneNumber.
-      }
-    });
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response) => {
+          // reCAPTCHA solved
+        }
+      });
+    }
   }, []);
 
   const handleSendOTP = async () => {
@@ -41,18 +41,15 @@ const LoginPage = () => {
       const appVerifier = window.recaptchaVerifier;
       const confirmationResult = await signInWithPhoneNumber(auth, fullPhoneNumber, appVerifier);
       
-      // Store confirmationResult globally (for OtpPage to use)
       window.confirmationResult = confirmationResult;
-      
       localStorage.setItem('temp_mobile', mobile);
       navigate('/otp');
     } catch (err) {
       console.error('Firebase Auth Error:', err);
       setError(err.message || 'Failed to send OTP. Please try again.');
-      // Reset reCAPTCHA on error
       if (window.recaptchaVerifier) {
         window.recaptchaVerifier.render().then(widgetId => {
-          grecaptcha.reset(widgetId);
+          if (window.grecaptcha) window.grecaptcha.reset(widgetId);
         });
       }
     } finally {
@@ -61,139 +58,301 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="auth-immersive-container">
-      {/* Dynamic Mesh Background */}
-      <div className="auth-mesh-bg">
-        <div className="auth-blob auth-blob-1"></div>
-        <div className="auth-blob auth-blob-2"></div>
-      </div>
-
-      <div className="container" style={{ position: 'relative', zIndex: 10, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="auth-card-hub animate-slide-up" style={{ width: '100%', maxWidth: '480px' }}>
-          <div className="premium-auth-card" style={{ 
-            padding: 'clamp(1rem, 5vw, 2rem)',
-            margin: '0 auto',
-            width: '100%'
-          }}>
-            <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-              <div style={{ marginBottom: '2.5rem' }}>
-                <img src={logo} alt="Play11" style={{ height: '64px', width: 'auto', margin: '0 auto' }} />
-              </div>
-              
-              <h2 style={{ fontSize: 'clamp(1.75rem, 6vw, 2.5rem)', fontWeight: 950, marginBottom: '0.75rem', fontFamily: 'Lexend', letterSpacing: '-0.04em', lineHeight: '1.1' }}>
-                Login with <span className="text-gradient">Mobile Number</span>
-              </h2>
-              <p style={{ color: 'hsl(var(--muted-foreground))', fontWeight: 600, fontSize: 'clamp(0.9rem, 2.5vw, 1rem)', opacity: 0.8 }}>
-                Verify your mobile identity to proceed
-              </p>
-            </div>
-
-            <form onSubmit={(e) => { e.preventDefault(); handleSendOTP(); }}>
-              <div style={{ marginBottom: '2.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                  <label style={{ fontSize: '0.7rem', fontWeight: 900, color: 'hsl(var(--foreground))', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Mobile Number</label>
-                  <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'hsl(var(--muted-foreground))' }}>+91 Territory</span>
-                </div>
-                <div className={`input-vessel-premium ${mobile.length === 10 ? 'verified' : ''}`}>
-                  <div className="input-glass-icon">
-                    <Smartphone size={22} />
-                  </div>
-                  <div className="vessel-divider" style={{ margin: '0 0.75rem' }}></div>
-                  <input 
-                    type="tel"
-                    placeholder="00000 00000"
-                    value={mobile}
-                    onChange={handleMobileChange}
-                    disabled={isLoading}
-                    autoFocus
-                    className="premium-input-field"
-                  />
-                </div>
-                {error && (
-                  <div className="auth-error-glass">
-                    <div className="error-dot"></div>
-                    <span>{error}</span>
-                  </div>
-                )}
-              </div>
-
-              <button 
-                type="submit"
-                className="shimmer-btn premium-cta-btn" 
-                disabled={isInvalid || isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex-center" style={{ gap: '1rem' }}>
-                    <div className="auth-spinner"></div>
-                    <span>Accessing Hub...</span>
-                  </div>
-                ) : (
-                  <>
-                    <span>Send OTP</span>
-                    <ArrowRight size={22} strokeWidth={3} />
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div id="recaptcha-container"></div>
-
-            <div style={{ marginTop: '3.5rem', textAlign: 'center' }}>
-              <p style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', lineHeight: '1.6', fontWeight: 600 }}>
-                By continuing, you agree to Play11's <br/>
-                <span style={{ color: 'hsl(var(--primary))', cursor: 'pointer', fontWeight: 800 }}>Terms of Service</span> and <span style={{ color: 'hsl(var(--primary))', cursor: 'pointer', fontWeight: 800 }}>Privacy Policy</span>
-              </p>
-            </div>
+    <div className="leadnius-auth-wrapper">
+      {/* Top Header - Restored God-tier Logo Blocks */}
+      <header className="auth-topbar">
+        <div className="topbar-inner">
+          <div className="logo-boxes">
+            <div className="logo-box">Q</div>
+            <div className="logo-box">U</div>
+            <div className="logo-box">Z</div>
+            <div className="logo-box">O</div>
           </div>
+          <nav className="nav-links">
+            <a href="/#home" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Home</a>
+            <a href="/#how" onClick={(e) => { e.preventDefault(); navigate('/'); }}>How it works</a>
+            <a href="/#contests" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Contests</a>
+            <a href="/#faq" onClick={(e) => { e.preventDefault(); navigate('/'); }}>FAQ</a>
+          </nav>
+          <div className="header-spacer"></div>
         </div>
-      </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="auth-main-content">
+        <div className="join-card">
+          <button className="close-btn" onClick={() => navigate('/')}>×</button>
+          
+          <div className="card-top-logo">
+            <div className="mini-box">Q</div>
+            <div className="mini-box">U</div>
+            <div className="mini-box">Z</div>
+            <div className="mini-box">O</div>
+          </div>
+
+          <h1 className="card-title">Your Quzo Journey Starts Here</h1>
+          <p className="card-subtitle">
+            Get early access to live quizzes and join 50,000+ serious aspirants.
+          </p>
+
+          <form onSubmit={(e) => { e.preventDefault(); handleSendOTP(); }} className="auth-form">
+            <div className={`input-group ${mobile.length === 10 ? 'active' : ''}`}>
+              <input 
+                type="tel"
+                placeholder="Enter mobile number"
+                value={mobile}
+                onChange={handleMobileChange}
+                disabled={isLoading}
+                autoFocus
+              />
+            </div>
+
+            {error && <div className="error-text">{error}</div>}
+
+            <button 
+              type="submit" 
+              className="join-btn"
+              disabled={isInvalid || isLoading}
+            >
+              {isLoading ? 'Sending...' : 'Join Now →'}
+            </button>
+          </form>
+
+          <div id="recaptcha-container"></div>
+
+          <p className="footer-link">
+            Already a member? <span className="link-text" onClick={() => navigate('/register')}>Sign In</span>
+          </p>
+        </div>
+      </main>
 
       <style>{`
-        .auth-immersive-container {
+        .leadnius-auth-wrapper {
           min-height: 100vh;
-          background: transparent;
-          overflow: hidden;
-          position: relative;
-        }
-        .auth-mesh-bg {
-          position: absolute;
-          top: 0; left: 0; width: 100%; height: 100%;
-          z-index: 1;
-        }
-        .auth-blob {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(140px);
-          opacity: 0.15;
-          animation: morph-blob 20s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
-        }
-        .auth-blob-1 {
-          width: 60vw; height: 60vw;
-          background: hsl(var(--primary));
-          top: -20%; left: -20%;
-        }
-        .auth-blob-2 {
-          width: 50vw; height: 50vw;
-          background: hsl(var(--secondary));
-          bottom: -15%; right: -15%;
-          animation-delay: -5s;
-        }
-        @keyframes morph-blob {
-          0% { transform: scale(1) translate(0, 0) rotate(0); }
-          33% { transform: scale(1.1) translate(10%, 5%) rotate(5deg); }
-          66% { transform: scale(0.9) translate(-5%, 10%) rotate(-5deg); }
-          100% { transform: scale(1) translate(0, 0) rotate(0); }
+          background: #1a1b1e;
+          display: flex;
+          flex-direction: column;
+          font-family: 'Lexend', sans-serif;
         }
 
-        .auth-card-hub {
+        .auth-topbar {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          background: rgba(13, 31, 60, 0.96);
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+          width: 100%;
+        }
+
+        .topbar-inner {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 14px 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .logo-boxes { display: flex; gap: 8px; }
+        
+        .logo-box {
+          width: 38px;
+          height: 38px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 12px;
+          background: #0c4a6e;
+          border: 1px solid rgba(56, 189, 248, 0.4);
+          color: #fff;
+          font-weight: 800;
+          font-size: 14px;
+        }
+
+        .nav-links {
+          display: flex;
+          gap: 24px;
+          color: #cbd5e1;
+          font-size: 14px;
+        }
+
+        .nav-links a { 
+          color: inherit; 
+          text-decoration: none; 
+          font-weight: 600;
+        }
+        
+        .nav-links a:hover { color: #fff; }
+
+        .header-spacer {
+          width: 100px; /* To balance the logo side since button is hidden */
+          display: none;
+        }
+
+        @media (max-width: 960px) {
+          .nav-links { display: none; }
+        }
+
+        .auth-main-content {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+
+        .join-card {
+          background: white;
           width: 100%;
           max-width: 480px;
-          margin: 0 auto;
+          border-radius: 32px;
+          padding: 60px 40px 48px;
+          position: relative;
+          text-align: center;
+          box-shadow: 0 24px 48px rgba(0,0,0,0.2);
         }
-        .premium-auth-card {
-          border: none !important;
-          background: transparent !important;
-          box-shadow: none !important;
+
+        .close-btn {
+          position: absolute;
+          top: 24px;
+          right: 24px;
+          background: transparent;
+          border: none;
+          font-size: 24px;
+          color: #94a3b8;
+          cursor: pointer;
+        }
+
+        .card-top-logo {
+          display: flex;
+          gap: 6px;
+          justify-content: center;
+          margin-bottom: 32px;
+        }
+
+        .mini-box {
+          width: 38px;
+          height: 38px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          background: #0c4a6e;
+          border: 1px solid rgba(56, 189, 248, 0.4);
+          color: #fff;
+          font-weight: 900;
+          font-size: 14px;
+        }
+
+        .card-title {
+          color: #0f172a;
+          font-size: 38px;
+          font-weight: 850;
+          line-height: 1.1;
+          margin-bottom: 20px;
+          letter-spacing: -1px;
+        }
+
+        .card-subtitle {
+          color: #64748b;
+          font-size: 17px;
+          line-height: 1.5;
+          margin-bottom: 40px;
+          padding: 0 10px;
+        }
+
+        .auth-form {
+          width: 100%;
+        }
+
+        .input-group {
+          width: 100%;
+          border: 2px solid #e2e8f0;
+          border-radius: 16px;
+          margin-bottom: 16px;
+          transition: all 0.2s;
+          overflow: hidden;
+        }
+
+        .input-group.active {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .input-group input {
+          width: 100%;
+          padding: 18px 24px;
+          border: none;
+          outline: none;
+          font-size: 16px;
+          color: #0f172a;
+          font-weight: 500;
+        }
+
+        .input-group input::placeholder {
+          color: #94a3b8;
+        }
+
+        .join-btn {
+          width: 100%;
+          background: #404eed;
+          color: white;
+          border: none;
+          padding: 18px;
+          border-radius: 16px;
+          font-size: 18px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: transform 0.2s, background 0.2s;
+          box-shadow: 0 4px 14px rgba(64, 78, 237, 0.3);
+        }
+
+        .join-btn:hover {
+          background: #3641c8;
+          transform: translateY(-1px);
+        }
+
+        .join-btn:disabled {
+          background: #94a3b8;
+          cursor: not-allowed;
+          box-shadow: none;
+          transform: none;
+        }
+
+        .error-text {
+          color: #ef4444;
+          font-size: 13px;
+          font-weight: 600;
+          margin-bottom: 16px;
+          text-align: left;
+          padding-left: 4px;
+        }
+
+        .footer-link {
+          margin-top: 32px;
+          color: #64748b;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .link-text {
+          color: #1a56db;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        @media (max-width: 640px) {
+          .auth-header-ribbon {
+            padding: 0 20px;
+            height: 70px;
+          }
+          .card-title {
+            font-size: 32px;
+          }
+          .join-card {
+            padding: 48px 24px 32px;
+          }
         }
       `}</style>
     </div>
