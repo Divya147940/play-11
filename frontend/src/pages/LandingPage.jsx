@@ -160,7 +160,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="section" id="how">
+      <section className="section white" id="how">
         <div className="section-inner">
           <div className="center-head">
             <div className="eyebrow">How it works</div>

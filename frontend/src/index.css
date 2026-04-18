@@ -337,6 +337,12 @@ body {
 .section-inner { width: 100%; padding: 0 40px; margin: 0 auto; }
 
 .center-head { text-align: center; }
+.section.white { background: #fff; }
+.section.white h2 { color: #020617; }
+.section.white .subtext { color: #475569; }
+.section.white .panel { background: #fff; border-color: #e2e8f0; box-shadow: 0 10px 25px rgba(15,23,42,0.06); }
+.section.white .panel h3 { color: #020617; }
+.section.white .panel p { color: #475569; }
 
 .eyebrow {
     color: #0284c7;
