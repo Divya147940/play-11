@@ -20,23 +20,14 @@ const LoginPage = () => {
   const isInvalid = mobile.length !== 10;
 
   useEffect(() => {
-    // Initialize verifier
-    const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      'size': 'invisible',
-      'callback': (response) => {
-        // reCAPTCHA solved
-      }
-    });
-    
-    window.recaptchaVerifier = verifier;
-
-    // Cleanup on unmount
-    return () => {
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = null;
-      }
-    };
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response) => {
+          // reCAPTCHA solved
+        }
+      });
+    }
   }, []);
 
   const handleSendOTP = async () => {
