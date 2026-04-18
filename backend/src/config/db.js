@@ -12,7 +12,11 @@ const db = {
 };
 
 const initDB = async () => {
+  // Use a flag to prevent multiple initializations in the same session
+  if (global.dbInitialized) return;
+  
   try {
+    // Run essential table creations in a single batch
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -21,15 +25,6 @@ const initDB = async () => {
         status TEXT DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS admin_users (
-        id TEXT PRIMARY KEY,
-        name TEXT,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        role TEXT DEFAULT 'admin',
-        status TEXT DEFAULT 'active'
       );
 
       CREATE TABLE IF NOT EXISTS otp_requests (
@@ -58,106 +53,46 @@ const initDB = async () => {
         description TEXT,
         total_questions INTEGER DEFAULT 0,
         timer_minutes INTEGER DEFAULT 5,
+        status TEXT DEFAULT 'active',
+        reward_text TEXT,
+        entry_type TEXT DEFAULT 'free',
         open_at TIMESTAMP,
         close_at TIMESTAMP,
         result_at TIMESTAMP,
-        status TEXT DEFAULT 'active',
-        reward_text TEXT,
-        entry_type TEXT DEFAULT 'free'
+        marks_per_q INTEGER DEFAULT 2
       );
-
-      CREATE TABLE IF NOT EXISTS questions (
-        id TEXT PRIMARY KEY,
-        quiz_id TEXT,
-        type TEXT DEFAULT 'mcq',
-        question_text TEXT NOT NULL,
-        selection_limit INTEGER DEFAULT 1,
-        marks INTEGER DEFAULT 1,
-        negative_marks INTEGER DEFAULT 0,
-        sort_order INTEGER DEFAULT 0
-      );
-
-      CREATE TABLE IF NOT EXISTS question_options (
-        id TEXT PRIMARY KEY,
-        question_id TEXT,
-        option_text TEXT NOT NULL,
-        option_value TEXT NOT NULL,
-        image_url TEXT
-      );
-
-      CREATE TABLE IF NOT EXISTS correct_answers (
-        id TEXT PRIMARY KEY,
-        question_id TEXT UNIQUE,
-        answer_value TEXT NOT NULL,
-        published_by TEXT,
-        published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS submissions (
-        id TEXT PRIMARY KEY,
-        user_id TEXT,
-        quiz_id TEXT,
-        status TEXT DEFAULT 'pending',
-        total_score INTEGER DEFAULT 0,
-        correct_count INTEGER DEFAULT 0,
-        wrong_count INTEGER DEFAULT 0,
-        rank INTEGER,
-        started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        submitted_at TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS submission_answers (
-        id TEXT PRIMARY KEY,
-        submission_id TEXT,
-        question_id TEXT,
-        selected_value TEXT,
-        is_correct INTEGER DEFAULT 0,
-        score_awarded INTEGER DEFAULT 0
-      );
-
-      CREATE TABLE IF NOT EXISTS matches (
-        id TEXT PRIMARY KEY,
-        sport_type TEXT,
-        team_a TEXT NOT NULL,
-        team_b TEXT NOT NULL,
-        team_a_logo TEXT,
-        team_b_logo TEXT,
-        start_time TIMESTAMP,
-        venue TEXT,
-        status TEXT DEFAULT 'upcoming'
-      );
-
-      CREATE TABLE IF NOT EXISTS rewards (
-        id TEXT PRIMARY KEY,
-        quiz_id TEXT,
-        rank_position INTEGER,
-        reward_amount INTEGER,
-        reward_text TEXT
-      );
-
-      -- Ensure columns exist for existing tables
-      ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS open_at TIMESTAMP;
-      ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS close_at TIMESTAMP;
-      ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS result_at TIMESTAMP;
-      ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS marks_per_q INTEGER DEFAULT 2;
-      ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS entry_type TEXT DEFAULT 'free';
-
-      ALTER TABLE questions ADD COLUMN IF NOT EXISTS selection_limit INTEGER DEFAULT 1;
-      ALTER TABLE questions ADD COLUMN IF NOT EXISTS marks INTEGER DEFAULT 1;
-      ALTER TABLE questions ADD COLUMN IF NOT EXISTS negative_marks INTEGER DEFAULT 0;
-
-      ALTER TABLE submissions ADD COLUMN IF NOT EXISTS correct_count INTEGER DEFAULT 0;
-      ALTER TABLE submissions ADD COLUMN IF NOT EXISTS wrong_count INTEGER DEFAULT 0;
-      ALTER TABLE submissions ADD COLUMN IF NOT EXISTS rank INTEGER;
-      ALTER TABLE submissions ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP;
-
-      ALTER TABLE submission_answers ADD COLUMN IF NOT EXISTS score_awarded INTEGER DEFAULT 0;
     `);
     
-    await seedData();
-    console.log('PostgreSQL (Neon) tables initialized.');
+    // Asynchronously handle migrations and seeding without blocking
+    seedAndMigrate().catch(err => console.error('Background DB Error:', err));
+    
+    global.dbInitialized = true;
+    console.log('PostgreSQL (Neon) base tables confirmed.');
   } catch (error) {
-    console.error('Error initializing database:', error);
+    console.error('CRITICAL: Error initializing essential database tables:', error);
+  }
+};
+
+const seedAndMigrate = async () => {
+  try {
+    // Migrations for existing tables
+    await pool.query(`
+       ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS marks_per_q INTEGER DEFAULT 2;
+       ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS entry_type TEXT DEFAULT 'free';
+    `);
+
+    const { rows } = await pool.query('SELECT COUNT(*) as count FROM categories');
+    if (parseInt(rows[0].count) === 0) {
+      await pool.query(`
+        INSERT INTO categories (id, zone_id, name, sort_order) VALUES 
+        ('cat-1', 'study-zone', 'SSC', 1),
+        ('cat-2', 'study-zone', 'UPSC', 2),
+        ('cat-g1', 'game-zone', 'IPL Quiz', 1);
+      `);
+      console.log('Database seeded with initial data.');
+    }
+  } catch (err) {
+    console.warn('Seed/Migrate warning (non-fatal):', err.message);
   }
 };
 
