@@ -337,12 +337,73 @@ body {
 .section-inner { width: 100%; padding: 0 40px; margin: 0 auto; }
 
 .center-head { text-align: center; }
-.section.white { background: #fff; }
+.section.white { background: #ffffff; }
 .section.white h2 { color: #020617; }
 .section.white .subtext { color: #475569; }
-.section.white .panel { background: #fff; border-color: #e2e8f0; box-shadow: 0 10px 25px rgba(15,23,42,0.06); }
-.section.white .panel h3 { color: #020617; }
-.section.white .panel p { color: #475569; }
+.section.white .panel,
+.section.white .contest-card,
+.section.white .feature-card,
+.section.white .faq-item,
+.section.white .dash-box,
+.section.white .nav-preview {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+.section.white .panel h3,
+.section.white .contest-card h3,
+.section.white .feature-card h3,
+.section.white .faq-item summary,
+.section.white .quiz-item h4 {
+    color: #020617;
+}
+.section.white .panel p,
+.section.white .contest-card p,
+.section.white .feature-card p,
+.section.white .faq-item p,
+.section.white .quiz-item p,
+.section.white .metric small,
+.section.white .info-block small {
+    color: #475569;
+}
+.section.white .step-num {
+    background: #0d1f3c;
+    color: #ffffff;
+}
+.section.white .metric,
+.section.white .info-block,
+.section.white .dash-stat,
+.section.white .quiz-item,
+.section.white .info-3,
+.section.white .unlock-box,
+.section.white .bottom-nav {
+    background: #f8fafc;
+    border-color: #f1f5f9;
+}
+.section.white .tab {
+    background: #f1f5f9;
+    color: #64748b;
+}
+.section.white .tab.active {
+    background: #020617;
+    color: #ffffff;
+}
+.section.white .card-btn {
+    background: #ffffff;
+    color: #020617;
+    border-color: #e2e8f0;
+}
+.section.white .dash-stat strong,
+.section.white .metric strong,
+.section.white .info-block strong,
+.section.white .unlock-box strong,
+.section.white .info-3 strong {
+    color: #020617;
+}
+.section.white .pill.exam {
+    background: #f1f5f9;
+    color: #475569;
+}
 
 .eyebrow {
     color: #0284c7;

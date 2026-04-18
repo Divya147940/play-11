@@ -215,7 +215,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="section" id="contests">
+      <section className="section white" id="contests">
         <div className="section-inner">
           <div className="section-head-row">
             <div>
@@ -380,7 +380,7 @@ export default function LandingPage() {
         </section>
       )}
 
-      <section className="section">
+      <section className="section white">
         <div className="section-inner">
           <div className="section-head-row">
             <div>
@@ -548,7 +548,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="section alt">
+      <section className="section white">
         <div className="section-inner">
           <div className="center-head">
             <div className="eyebrow">Why QUZO</div>
@@ -579,7 +579,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="section" id="faq">
+      <section className="section white" id="faq">
         <div className="section-inner" style={{ maxWidth: "900px" }}>
           <div className="center-head">
             <div className="eyebrow">FAQ</div>
