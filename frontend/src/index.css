@@ -36,13 +36,10 @@ body {
 }
 
 .page {
-    max-width: 1300px;
-    margin: 3px auto; /* Exactly 3px top/bottom as requested, auto for horizontal centering */
+    width: 100%;
+    margin: 0;
     background: #0d1f3c;
-    border-radius: 32px;
     overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255,255,255,0.06);
     transition: transform 0.3s ease;
 }
 
@@ -55,9 +52,9 @@ body {
 }
 
 .topbar-inner {
-    max-width: 1200px;
+    width: 100%;
     margin: 0 auto;
-    padding: 14px 18px;
+    padding: 14px 40px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -114,8 +111,9 @@ body {
 }
 
 .hero-grid {
-    max-width: 1200px;
+    width: 100%;
     margin: 0 auto;
+    padding: 0 40px;
     display: grid;
     grid-template-columns: 1.1fr 0.9fr;
     gap: 32px;
@@ -336,7 +334,7 @@ body {
 
 .section.alt { background: #10284f; }
 
-.section-inner { max-width: 1200px; margin: 0 auto; }
+.section-inner { width: 100%; padding: 0 40px; margin: 0 auto; }
 
 .center-head { text-align: center; }
 
