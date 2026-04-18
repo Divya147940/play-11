@@ -28,20 +28,22 @@
 
 body {
     font-family: 'Outfit', 'Arial', sans-serif;
-    background: #0d1f3c; /* Exact matches for your dark screenshot */
+    background: #0d1f3c;
     color: #f8fafc;
     line-height: 1.4;
     min-height: 100vh;
+    transition: background-color 0.4s ease;
 }
 
 .page {
     max-width: 1300px;
-    margin: 3px 8px; /* Fixed 3px margin on top/bottom as requested */
+    margin: 3px auto; /* Exactly 3px top/bottom as requested, auto for horizontal centering */
     background: #0d1f3c;
     border-radius: 32px;
     overflow: hidden;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: transform 0.3s ease;
 }
 
 .topbar {
@@ -92,7 +94,7 @@ body {
     border: none;
     cursor: pointer;
     font-weight: 800;
-    transition: 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .login-btn {
@@ -145,8 +147,9 @@ body {
     margin-top: 16px;
     max-width: 560px;
     font-size: 16px;
-    color: #cbd5e1;
+    color: #cbd5e1; /* Higher visibility for subtext */
     line-height: 1.7;
+    opacity: 0.9;
 }
 
 .hero-actions {
@@ -357,7 +360,7 @@ h2 {
     max-width: 760px;
     margin: 14px auto 0;
     font-size: 15px;
-    color: #64748b;
+    color: #cbd5e1; /* Increased visibility */
     line-height: 1.7;
 }
 
@@ -374,8 +377,14 @@ h2 {
 .panel, .contest-card, .feature-card, .faq-item, .dash-box, .board-box, .nav-preview {
     background: #112240;
     border-radius: 26px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.panel:hover, .contest-card:hover, .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
 }
 
 .panel, .contest-card, .feature-card, .faq-item, .contest-card { padding: 22px; }
@@ -399,7 +408,12 @@ h2 {
     color: #fff;
 }
 
-.panel p, .contest-card p, .feature-card p { margin-top: 8px; color: #64748b; font-size: 14px; line-height: 1.7; }
+.panel p, .contest-card p, .feature-card p { 
+    margin-top: 8px; 
+    color: #cbd5e1; /* Higher visibility */
+    font-size: 14px; 
+    line-height: 1.7; 
+}
 
 .tags {
     margin-top: 26px;
