@@ -194,7 +194,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="section alt">
+      <section className="section white">
         <div className="section-inner">
           <div className="center-head">
             <div className="eyebrow">Categories</div>
