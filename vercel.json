@@ -21,7 +21,7 @@
     },
     {
       "source": "/((?!api|assets|static|.*\\..*).*)",
-      "destination": "frontend/index.html"
+      "destination": "/index.html"
     }
   ]
 }
