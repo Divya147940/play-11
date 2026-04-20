@@ -84,7 +84,7 @@ export default function LandingPage() {
 
       <section className="hero" id="home">
         <div className="hero-grid">
-          <div>
+          <div className="hero-content">
             <div className="badge">India’s Smartest Quiz Arena 🧠</div>
             <h1>
               Earn from <br />
@@ -113,70 +113,6 @@ export default function LandingPage() {
               <div className="stat-card">
                 <strong>4.8★</strong>
                 <span>User Rating</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="hero-phone">
-            <div className="hero-phone-inner">
-              <div className="row-between">
-                <div>
-                  <div className="subtle">Live Quiz</div>
-                  <div className="white-title">UPSC • General Studies</div>
-                </div>
-                <div className="live-pill">Live Now</div>
-              </div>
-
-              <div className="deadline-box">
-                <div className="row-between">
-                  <div>
-                    <div className="subtle" style={{ color: "#94a3b8" }}>
-                      Quiz deadline
-                    </div>
-                    <div className="white-title">Closes in 00h 20m</div>
-                  </div>
-                  <div className="timer-badge">00:20:12</div>
-                </div>
-              </div>
-
-              <div className="mini-grid">
-                <div className="mini-item">
-                  <div className="label">Unlock</div>
-                  <div className="value">₹5</div>
-                </div>
-                <div className="mini-item">
-                  <div className="label">Reward Pool</div>
-                  <div className="value">₹500</div>
-                </div>
-                <div className="mini-item">
-                  <div className="label">Joined</div>
-                  <div className="value">78</div>
-                </div>
-              </div>
-
-              <div className="question-box">
-                <div className="question-header">
-                  <div className="subtle">Question 1 of 11</div>
-                  <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: "700" }}>Live leaderboard active</div>
-                </div>
-                <div className="question">Who is widely known as the architect of the Indian Constitution?</div>
-                <button className="option">
-                  <span className="alpha">A</span>Mahatma Gandhi
-                </button>
-                <button className="option correct">
-                  <span className="alpha">B</span>Dr. B.R. Ambedkar
-                </button>
-                <button className="option">
-                  <span className="alpha">C</span>Jawaharlal Nehru
-                </button>
-                <button className="option">
-                  <span className="alpha">D</span>Sardar Vallabhbhai Patel
-                </button>
-              </div>
-
-              <div className="notice">
-                Rankings depend on accuracy, time efficiency, and final submission order. Rewards are performance-based
-                and not guaranteed.
               </div>
             </div>
           </div>
@@ -344,47 +280,6 @@ export default function LandingPage() {
             <span className="tag">& more</span>
           </div>
 
-          <div className="hero-phone" style={{ marginTop: "40px", maxWidth: "480px" }}>
-            <div className="hero-phone-inner">
-              <div className="row-between">
-                <div className="subtle" style={{ background: "rgba(56, 189, 248, 0.1)", padding: "4px 10px", borderRadius: "8px" }}>SSC CGL — GK</div>
-                <div className="subtle">0:20</div>
-              </div>
-
-              <div className="mini-grid" style={{ margin: "16px 0" }}>
-                <div className="mini-item">
-                  <div className="label">Prize Pool</div>
-                  <div className="value">₹500</div>
-                </div>
-                <div className="mini-item">
-                  <div className="label">Entry</div>
-                  <div className="value">₹11</div>
-                </div>
-                <div className="mini-item">
-                  <div className="label">Players</div>
-                  <div className="value">46</div>
-                </div>
-              </div>
-
-              <div className="question-box">
-                <div className="white-title" style={{ marginBottom: "14px", fontSize: "16px" }}>Who is the Father of Indian Constitution?</div>
-                <div style={{ display: "grid", gap: "10px" }}>
-                  <div className="option" style={{ padding: "12px", fontSize: "14px" }}>
-                    <span className="alpha">A</span> Mahatma Gandhi
-                  </div>
-                  <div className="option correct" style={{ padding: "12px", fontSize: "14px" }}>
-                    <span className="alpha">B</span> Dr. B.R. Ambedkar ✓
-                  </div>
-                  <div className="option" style={{ padding: "12px", fontSize: "14px" }}>
-                    <span className="alpha">C</span> Jawaharlal Nehru
-                  </div>
-                  <div className="option" style={{ padding: "12px", fontSize: "14px" }}>
-                    <span className="alpha">D</span> Sardar Patel
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -706,16 +601,6 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="nav-preview" style={{ marginTop: "16px" }}>
-                <div className="eyebrow">Bottom navigation</div>
-                <div className="bottom-nav">
-                  <div className="active">Home</div>
-                  <div>Live</div>
-                  <div>Rewards</div>
-                  <div>Leaderboard</div>
-                  <div>Profile</div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
