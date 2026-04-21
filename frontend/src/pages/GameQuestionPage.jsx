@@ -34,13 +34,15 @@ const GameQuestionPage = () => {
   const [questions, setQuestions] = useState(mockGameQuestions);
   const [loading, setLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(18); // 0:18 as per image
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
+    if (isSubmitted) return;
     const timer = setInterval(() => {
       setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isSubmitted]);
 
   const handleOptionSelect = (idx) => {
     setSelections({ ...selections, [currentIdx]: idx });
@@ -52,7 +54,7 @@ const GameQuestionPage = () => {
     if (currentIdx < questions.length - 1) {
       setCurrentIdx(currentIdx + 1);
     } else {
-      navigate(`/game-result/${id}`);
+      setIsSubmitted(true);
     }
   };
 
@@ -64,6 +66,46 @@ const GameQuestionPage = () => {
 
   const currentQ = questions[currentIdx];
   const progress = ((currentIdx + 1) / questions.length) * 100;
+
+  if (isSubmitted) {
+    return (
+      <div className="quiz-arena" style={{ background: '#ffffff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ maxWidth: '400px', width: '100%', padding: '40px 20px', textAlign: 'center' }}>
+          <div style={{ width: '64px', height: '64px', background: '#f0fdf4', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+            <ShieldCheck size={32} color="#10b981" />
+          </div>
+          <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#0f172a', marginBottom: '12px' }}>Assessment Submitted!</h2>
+          <p style={{ fontSize: '16px', color: '#64748b', marginBottom: '32px', lineHeight: '1.5' }}>
+            Excellent work! Your answers have been recorded successfully.
+          </p>
+          <div style={{ marginBottom: '40px' }}>
+            <p style={{ fontSize: '18px', fontWeight: '700', color: '#1a1b1e' }}>
+              Next day result would be showed
+            </p>
+            <p style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px' }}>
+              Results will be declared tomorrow at 10:00 AM
+            </p>
+          </div>
+          <button 
+            onClick={() => navigate('/')}
+            style={{ 
+              width: '100%',
+              background: '#0f172a',
+              color: 'white',
+              border: 'none',
+              padding: '16px',
+              borderRadius: '12px',
+              fontSize: '16px',
+              fontWeight: '700',
+              cursor: 'pointer'
+            }}
+          >
+            Back to Arena Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="quiz-arena white-theme">

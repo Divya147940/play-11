@@ -12,7 +12,7 @@ export default function LandingPage() {
     const hasAccount = localStorage.getItem("play11_has_account") === "true";
 
     if (isLoggedIn) {
-      navigate("/contests");
+      navigate("/game-quiz-play/1");
     } else if (hasAccount) {
       navigate("/login");
     } else {

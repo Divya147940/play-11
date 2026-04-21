@@ -69,12 +69,31 @@ export default function ContestListPage() {
               </div>
             </div>
 
-            <button
-              className="btn-join-outline"
-              onClick={() => navigate(`/game-quiz-play/${contest.id}`)}
-            >
-              Join Contest
-            </button>
+            <div className="contest-card-actions" style={{ display: 'flex', gap: '12px' }}>
+              <button
+                className="btn-join-outline"
+                style={{ flex: 1 }}
+                onClick={() => navigate(`/game-quiz-play/${contest.id}`)}
+              >
+                Join Contest
+              </button>
+              <button
+                className="btn-leaderboard-secondary"
+                style={{ 
+                  flex: 1,
+                  background: 'rgba(56, 189, 248, 0.05)',
+                  border: '1px solid rgba(56, 189, 248, 0.1)',
+                  color: '#38bdf8',
+                  borderRadius: '12px',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  cursor: 'pointer'
+                }}
+                onClick={() => navigate(`/leaderboard/${contest.id}`)}
+              >
+                Leaderboard
+              </button>
+            </div>
           </div>
         ))}
       </div>

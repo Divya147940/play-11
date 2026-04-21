@@ -22,6 +22,7 @@ import GameReviewPage from './pages/GameReviewPage';
 import ProfilePage from './pages/ProfilePage';
 import HistoryPage from './pages/HistoryPage';
 import ContestListPage from './pages/ContestListPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 import AdminDashboard from './pages/AdminDashboard';
 import './index.css';
 
@@ -60,6 +61,7 @@ const App = () => {
           <Route path="/game-result/:id" element={<Layout><GameResultPage /></Layout>} />
           
           <Route path="/contests" element={<Layout><ContestListPage /></Layout>} />
+          <Route path="/leaderboard/:id" element={<Layout><LeaderboardPage /></Layout>} />
           
           <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
           <Route path="/history" element={<Layout><HistoryPage /></Layout>} />
