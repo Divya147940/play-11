@@ -64,16 +64,14 @@ export default function LandingPage() {
           </nav>
 
           <div className="header-actions">
-            {!isLoggedIn ? (
-              <>
-                <button className="secondary-btn desktop-only" style={{ padding: "10px 18px", borderRadius: "12px", fontSize: "14px" }} onClick={() => navigate("/register")}>
-                  Signup
-                </button>
-                <button className="login-btn desktop-only" onClick={handleOpenLogin}>
-                  Login
-                </button>
-              </>
-            ) : null}
+            <>
+              <button className="secondary-btn desktop-only" style={{ padding: "10px 18px", borderRadius: "12px", fontSize: "14px" }} onClick={() => navigate("/register")}>
+                Signup
+              </button>
+              <button className="login-btn desktop-only" onClick={handleOpenLogin}>
+                Login
+              </button>
+            </>
             
             <button className="menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -399,54 +397,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {isLoggedIn && (
-        <section className="dashboard-logged" style={{ display: "block" }} id="loggedSection">
-          <div className="wrap">
-            <div className="welcome-card">
-              <div className="eyebrow" style={{ color: "#7dd3fc" }}>
-                Welcome back
-              </div>
-              <h3>Aman Kumar</h3>
-              <p>Ready for today’s live quizzes. Join before deadline and improve your rank.</p>
-              <div className="welcome-stats">
-                <div className="welcome-mini">
-                  <strong>12</strong>
-                  <span>Joined</span>
-                </div>
-                <div className="welcome-mini">
-                  <strong>₹240</strong>
-                  <span>Rewards</span>
-                </div>
-                <div className="welcome-mini">
-                  <strong>#28</strong>
-                  <span>Rank</span>
-                </div>
-              </div>
-            </div>
-            <div className="my-dash">
-              <div className="eyebrow">My dashboard</div>
-              <div className="my-dash-list">
-                <div className="list-tile">
-                  <strong>My Live Quizzes</strong>
-                  <span>3 active</span>
-                </div>
-                <div className="list-tile">
-                  <strong>Upcoming Joins</strong>
-                  <span>5 scheduled</span>
-                </div>
-                <div className="list-tile">
-                  <strong>Reward Wallet</strong>
-                  <span>₹240 available</span>
-                </div>
-                <div className="list-tile">
-                  <strong>Leaderboard Rank</strong>
-                  <span>#28 this week</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Dashboard section removed */}
 
       <section className="section white">
         <div className="section-inner">

@@ -42,7 +42,6 @@ const Header = () => {
         <div className="logo-boxes" onClick={() => navigate('/home-choice')} style={{ cursor: 'pointer' }}>
           <div className="logo-box">Q</div>
           <div className="logo-box">U</div>
-          <div className="logo-box">E</div>
           <div className="logo-box">Z</div>
           <div className="logo-box">O</div>
         </div>
