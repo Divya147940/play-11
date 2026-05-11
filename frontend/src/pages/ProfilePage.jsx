@@ -47,15 +47,15 @@ const ProfilePage = () => {
   const menuItems = [
     { 
       icon: <Wallet size={20} />, 
-      title: 'My Balance', 
+      title: 'My Wallet', 
       subtext: 'View your coins, points and rewards', 
       onClick: () => navigate('/balance'),
       bgIcon: <Wallet size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
     },
     { 
       icon: <Trophy size={20} />, 
-      title: 'My Matches', 
-      subtext: 'Check your match history and stats', 
+      title: 'My Quizzes', 
+      subtext: 'Check your quiz history and stats', 
       onClick: () => navigate('/history'),
       bgIcon: <Trophy size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
     },
