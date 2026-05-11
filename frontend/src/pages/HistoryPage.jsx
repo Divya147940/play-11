@@ -90,6 +90,34 @@ const HistoryPage = () => {
            </div>
         </div>
 
+        {/* Stats Summary Bar */}
+        {!loading && history.length > 0 && (
+          <div className="glass-premium animate-slide-up stagger-1" style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+            gap: '2rem', 
+            marginBottom: '4rem', 
+            padding: '2.5rem', 
+            borderRadius: '2.5rem',
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))',
+            border: '1px solid rgba(255,255,255,0.4)',
+            boxShadow: '0 20px 40px -15px rgba(0,0,0,0.05)'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>Total Quizzes</p>
+              <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#0f172a' }}>{history.length}</h2>
+            </div>
+            <div style={{ textAlign: 'center', borderLeft: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>Highest Score</p>
+              <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#3b82f6' }}>{Math.max(...history.map(h => parseFloat(h.score) || 0), 0)}</h2>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>Total Winnings</p>
+              <h2 style={{ fontSize: '2.2rem', fontWeight: 950, color: '#10b981' }}>₹{history.reduce((sum, h) => sum + (parseFloat(h.won.replace('₹', '').replace(',', '')) || 0), 0).toLocaleString()}</h2>
+            </div>
+          </div>
+        )}
+
         {/* Date Filters & Type Tabs Row */}
         <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginBottom: '4rem', alignItems: 'center' }}>
           {/* Tabs */}
