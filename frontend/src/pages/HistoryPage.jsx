@@ -91,7 +91,7 @@ const HistoryPage = () => {
         </div>
 
         {/* Stats Summary Bar */}
-        {!loading && history.length > 0 && (
+        {!loading && (
           <div className="glass-premium animate-slide-up stagger-1" style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 

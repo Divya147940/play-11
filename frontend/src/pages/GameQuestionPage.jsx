@@ -367,10 +367,10 @@ const GameQuestionPage = () => {
                   let color = '#94a3b8';
                   
                   if (i === currentIdx) {
-                    bg = '#10b981'; // Green for current
+                    bg = '#f97316'; // Orange for current
                     color = '#ffffff';
                   } else if (answers[q.id] !== undefined) {
-                    bg = '#f97316'; // Orange for answered
+                    bg = '#10b981'; // Green for answered (solved)
                     color = '#ffffff';
                   }
 

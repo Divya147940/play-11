@@ -376,13 +376,13 @@ const MatchQuizRoom = () => {
                     let border = '1px solid #e2e8f0';
                     
                     if (i === currentIdx) {
-                      bg = '#10b981'; // Green for current
+                      bg = '#3b82f6'; // Blue for current
                       color = '#ffffff';
                       border = 'none';
                     } else if (answers[i] !== undefined) {
-                      bg = '#eff6ff'; // Light blue for answered
-                      color = '#3b82f6';
-                      border = '1px solid #dbeafe';
+                      bg = '#10b981'; // Green for answered
+                      color = '#ffffff';
+                      border = 'none';
                     }
 
                     return (
