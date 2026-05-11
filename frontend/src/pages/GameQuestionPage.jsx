@@ -302,12 +302,16 @@ const GameQuestionPage = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button 
-                onClick={() => currentIdx > 0 && setCurrentIdx(currentIdx - 1)}
-                disabled={currentIdx === 0}
+                onClick={() => {
+                  if (currentIdx > 0) {
+                    setCurrentIdx(currentIdx - 1);
+                  } else {
+                    navigate('/home-choice');
+                  }
+                }}
                 style={{
                   background: 'transparent', border: '1px solid #cbd5e1', color: '#0f172a',
-                  padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
-                  opacity: currentIdx === 0 ? 0.3 : 1
+                  padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer'
                 }}
               >
                 Previous
