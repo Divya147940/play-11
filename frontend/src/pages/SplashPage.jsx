@@ -45,7 +45,7 @@ const SplashPage = () => {
                textTransform: 'uppercase',
                opacity: 0.8
              }}>
-               Study Zone + Game Zone
+               The Ultimate Quiz Arena
              </p>
           </div>
         </div>
@@ -70,7 +70,7 @@ const SplashPage = () => {
           maxWidth: '540px',
           fontWeight: 600
         }}>
-          The ultimate platform for academic mastery and sports prediction. Test your skills, climb the elite leaderboards, and win premium rewards!
+          The ultimate platform for knowledge and skill-based battles. Test your intelligence, climb the elite leaderboards, and win premium rewards!
         </p>
 
         <div className="animate-slide-up stagger-3" style={{ width: '100%', maxWidth: '440px' }}>
