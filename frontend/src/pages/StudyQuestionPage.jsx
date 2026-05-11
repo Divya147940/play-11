@@ -238,6 +238,10 @@ const StudyQuestionPage = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div style={{ background: '#1e293b', padding: '0.75rem 1.25rem', borderRadius: '0.75rem', textAlign: 'center', border: '1px solid #334155' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>ZONE</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f8fafc' }}>STUDY</div>
+            </div>
             <div style={{ background: timeLeft < 60 ? '#450a0a' : '#1e293b', padding: '0.75rem 1.25rem', borderRadius: '0.75rem', textAlign: 'center', border: '1px solid ' + (timeLeft < 60 ? '#ef4444' : '#334155') }}>
               <div style={{ fontSize: '0.6rem', fontWeight: 800, color: timeLeft < 60 ? '#ef4444' : '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>TIME LEFT</div>
               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: timeLeft < 60 ? '#ef4444' : '#f8fafc' }}>{formatTime(timeLeft)}</div>

@@ -16,6 +16,30 @@ const HomeChoicePage = () => {
 
   const quizRooms = [
     {
+      id: 'study-zone',
+      title: 'Study Zone',
+      desc: 'SSC, GK, reasoning, news and exam-style questions for serious aspirants.',
+      icon: studyIcon,
+      prize: '₹500',
+      entry: '₹10',
+      players: '154',
+      time: '02:15:30',
+      path: '/quiz-arena/study-zone',
+      btnColor: 'primary'
+    },
+    {
+      id: 'sport-zone',
+      title: 'Sport Zone',
+      desc: 'Cricket, IPL, match awareness and sports knowledge battle.',
+      icon: sportsIcon,
+      prize: '₹500',
+      entry: '₹10',
+      players: '255',
+      time: '03:42:18',
+      path: '/quiz-arena/sport-zone',
+      btnColor: 'secondary'
+    },
+    {
       id: 'movie-zone',
       title: 'Movie Quiz',
       desc: 'Bollywood, Hollywood, actors, songs, dialogues and cinema trivia.',
