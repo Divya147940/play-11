@@ -149,10 +149,10 @@ const updateProfile = async (req, res) => {
 
 const getUserHistory = async (req, res) => {
   const userId = req.user.userId;
+  const { startDate, endDate } = req.query;
   
   try {
-    // Calculate rank for each submission using a correlated subquery
-    const { rows } = await db.query(`
+    let query = `
       SELECT s.*, q.title, q.zone_id,
       (
         SELECT COUNT(*) + 1
@@ -163,10 +163,67 @@ const getUserHistory = async (req, res) => {
       FROM submissions s 
       JOIN quizzes q ON s.quiz_id = q.id 
       WHERE s.user_id = $1 
-      ORDER BY s.submitted_at DESC
-    `, [userId]);
+    `;
+    const params = [userId];
+
+    if (startDate) {
+      params.push(startDate);
+      query += ` AND s.submitted_at >= $${params.length}`;
+    }
+    if (endDate) {
+      params.push(endDate + ' 23:59:59');
+      query += ` AND s.submitted_at <= $${params.length}`;
+    }
+
+    query += ` ORDER BY s.submitted_at DESC`;
     
+    const { rows } = await db.query(query, params);
     res.json({ success: true, history: rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const getSubmissionReview = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.userId;
+
+  try {
+    // 1. Get submission info and verify ownership
+    const { rows: subRows } = await db.query(
+      'SELECT s.*, q.title FROM submissions s JOIN quizzes q ON s.quiz_id = q.id WHERE s.id = $1 AND s.user_id = $2',
+      [id, userId]
+    );
+
+    if (subRows.length === 0) {
+      return res.status(404).json({ error: 'Submission not found or unauthorized' });
+    }
+
+    const submission = subRows[0];
+
+    // 2. Get detailed answers with question text and options
+    const { rows: reviewRows } = await db.query(`
+      SELECT 
+        sa.question_id, sa.selected_value, sa.is_correct,
+        q.question_text, q.hindi_question_text,
+        ca.answer_value as correct_value,
+        (
+          SELECT json_agg(json_build_object('text', qo.option_text, 'value', qo.option_value))
+          FROM question_options qo WHERE qo.question_id = q.id
+        ) as options
+      FROM submission_answers sa
+      JOIN questions q ON sa.question_id = q.id
+      JOIN correct_answers ca ON q.id = ca.question_id
+      WHERE sa.submission_id = $1
+      ORDER BY q.sort_order ASC, q.id ASC
+    `, [id]);
+
+    res.json({
+      success: true,
+      submission,
+      review: reviewRows
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -177,5 +234,6 @@ module.exports = {
   sendOtp,
   verifyOtp,
   updateProfile,
-  getUserHistory
+  getUserHistory,
+  getSubmissionReview
 };

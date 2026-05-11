@@ -14,12 +14,19 @@ const HistoryPage = () => {
   const [filter, setFilter] = useState('All');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
-  useEffect(() => {
+  const fetchHistory = () => {
     const token = localStorage.getItem('play11_session');
     if (!token) return setLoading(false);
     
-    fetch(`/api/auth/history`, {
+    setLoading(true);
+    let url = `/api/auth/history?`;
+    if (startDate) url += `startDate=${startDate}&`;
+    if (endDate) url += `endDate=${endDate}&`;
+
+    fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -41,7 +48,11 @@ const HistoryPage = () => {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, [startDate, endDate]);
 
   const filteredHistory = filter === 'All' ? history : history.filter(h => {
     if (filter === 'Knowledge') return h.type === 'Study';
@@ -58,11 +69,11 @@ const HistoryPage = () => {
           display: 'flex', 
           alignItems: 'center', 
           gap: 'clamp(1.5rem, 5vw, 2.5rem)', 
-          marginBottom: '5rem',
+          marginBottom: '3rem',
           flexWrap: 'wrap'
         }}>
            <button 
-             onClick={() => navigate('/home-choice')} 
+             onClick={() => navigate('/profile')} 
              className="flex-center glass-premium hover-lift" 
              style={{ width: '64px', height: '64px', borderRadius: '1.5rem', color: 'hsl(var(--foreground))', border: '1px solid rgba(0,0,0,0.03)', background: 'white', flexShrink: 0 }}
            >
@@ -79,30 +90,62 @@ const HistoryPage = () => {
            </div>
         </div>
 
-        {/* Website Style Filters */}
-        <div className="glass-premium animate-slide-up stagger-1" style={{ display: 'flex', gap: '0.75rem', marginBottom: '5rem', padding: '0.75rem', borderRadius: '2.25rem', maxWidth: '520px', background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(0,0,0,0.03)' }}>
-          {['All', 'Knowledge', 'Tournament'].map(f => (
-            <button 
-              key={f}
-              onClick={() => setFilter(f)}
-              style={{ 
-                flex: 1,
-                padding: '1.25rem', 
-                borderRadius: '1.75rem', 
-                background: filter === f ? 'hsl(var(--primary))' : 'transparent',
-                color: filter === f ? 'white' : 'hsl(var(--muted-foreground))',
-                border: 'none',
-                fontSize: '1rem',
-                fontWeight: 900,
-                transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-                boxShadow: filter === f ? '0 12px 24px -6px hsla(var(--primary), 0.5)' : 'none',
-                cursor: 'pointer',
-                letterSpacing: '0.05em'
-              }}
-            >
-              {f === 'Knowledge' ? 'Practice' : (f === 'Tournament' ? 'Match' : f)}
-            </button>
-          ))}
+        {/* Date Filters & Type Tabs Row */}
+        <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginBottom: '4rem', alignItems: 'center' }}>
+          {/* Tabs */}
+          <div className="glass-premium animate-slide-up stagger-1" style={{ display: 'flex', gap: '0.5rem', padding: '0.5rem', borderRadius: '1.5rem', background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(0,0,0,0.03)', flex: '1 1 400px' }}>
+            {['All', 'Knowledge', 'Tournament'].map(f => (
+              <button 
+                key={f}
+                onClick={() => setFilter(f)}
+                style={{ 
+                  flex: 1,
+                  padding: '1rem', 
+                  borderRadius: '1.25rem', 
+                  background: filter === f ? 'hsl(var(--primary))' : 'transparent',
+                  color: filter === f ? 'white' : 'hsl(var(--muted-foreground))',
+                  border: 'none',
+                  fontSize: '0.9rem',
+                  fontWeight: 900,
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}
+              >
+                {f === 'Knowledge' ? 'Practice' : (f === 'Tournament' ? 'Match' : f)}
+              </button>
+            ))}
+          </div>
+
+          {/* Date Picker Range */}
+          <div className="animate-slide-up stagger-2" style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'white', padding: '0.75rem 1.5rem', borderRadius: '1.5rem', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8' }}>FROM</span>
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{ border: 'none', outline: 'none', fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', cursor: 'pointer' }}
+              />
+            </div>
+            <div style={{ width: '1px', height: '20px', background: '#e2e8f0' }}></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8' }}>TO</span>
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{ border: 'none', outline: 'none', fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', cursor: 'pointer' }}
+              />
+            </div>
+            {(startDate || endDate) && (
+              <button 
+                onClick={() => { setStartDate(''); setEndDate(''); }}
+                style={{ background: '#fee2e2', color: '#ef4444', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 900, cursor: 'pointer' }}
+              >
+                CLEAR
+              </button>
+            )}
+          </div>
         </div>
 
         {/* History Grid - Premium Content */}
@@ -130,8 +173,8 @@ const HistoryPage = () => {
                     </div>
                     <h3 style={{ fontSize: '1.8rem', fontWeight: 950, color: 'hsl(var(--foreground))', letterSpacing: '-0.04em', lineHeight: '1.15' }}>{item.title}</h3>
                   </div>
-                  {item.won !== '-' && (
-                     <div style={{ textAlign: 'right' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-end' }}>
+                    {item.won !== '-' && (
                        <div className="shimmer-btn" style={{ 
                           display: 'inline-flex', 
                           alignItems: 'center', 
@@ -145,8 +188,20 @@ const HistoryPage = () => {
                         }}>
                          <Trophy size={20} fill="currentColor" /> {item.won}
                        </div>
-                     </div>
-                  )}
+                    )}
+                    <button 
+                      onClick={() => navigate(`/quiz-review/${item.id}`)}
+                      style={{ 
+                        background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b',
+                        padding: '10px 20px', borderRadius: '1rem', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer',
+                        transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', gap: '0.5rem'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#64748b'; }}
+                    >
+                      <CheckCircle2 size={16} /> Review Answers
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ 

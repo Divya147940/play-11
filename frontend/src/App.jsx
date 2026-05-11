@@ -31,6 +31,7 @@ import LegalPage from './pages/LegalPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import BalancePage from './pages/BalancePage';
 import VouchersPage from './pages/VouchersPage';
+import QuizReviewPage from './pages/QuizReviewPage';
 import AboutUsPage from './pages/AboutUsPage';
 import SupportPage from './pages/SupportPage';
 import './index.css';
@@ -95,6 +96,7 @@ const App = () => {
           <Route path="/history" element={<Layout><HistoryPage /></Layout>} />
           <Route path="/balance" element={<Layout><BalancePage /></Layout>} />
           <Route path="/vouchers" element={<Layout><VouchersPage /></Layout>} />
+          <Route path="/quiz-review/:id" element={<Layout><QuizReviewPage /></Layout>} />
           
           {/* Admin Panels */}
           <Route path="/admin/login" element={<Layout hideNav><AdminLoginPage /></Layout>} />

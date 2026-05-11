@@ -56,7 +56,7 @@ const ProfilePage = () => {
       icon: <Trophy size={20} />, 
       title: 'My Quizzes', 
       subtext: 'Check your quiz history and stats', 
-      onClick: () => navigate('/home-choice', { state: { tab: 'My Joined' } }),
+      onClick: () => navigate('/history'),
       bgIcon: <Trophy size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
     },
     { 
