@@ -43,7 +43,11 @@ const HistoryPage = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const filteredHistory = filter === 'All' ? history : history.filter(h => h.type === filter);
+  const filteredHistory = filter === 'All' ? history : history.filter(h => {
+    if (filter === 'Knowledge') return h.type === 'Study';
+    if (filter === 'Tournament') return h.type === 'Game';
+    return true;
+  });
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '7rem' }}>
@@ -67,17 +71,17 @@ const HistoryPage = () => {
            <div style={{ flex: 1, minWidth: '300px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.5rem' }}>
                  <HistoryIcon size={18} color="hsl(var(--primary))" strokeWidth={2.5} />
-                 <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'hsl(var(--primary))', letterSpacing: '0.15em', textTransform: 'uppercase', opacity: 0.9 }}>Engagement Archive</span>
+                 <span style={{ fontSize: '0.8rem', fontWeight: 900, color: 'hsl(var(--primary))', letterSpacing: '0.15em', textTransform: 'uppercase', opacity: 0.9 }}>Performance History</span>
               </div>
               <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 3.8rem)', fontWeight: 950, letterSpacing: '-0.05em', color: 'hsl(var(--foreground))', lineHeight: 1.1 }}>
-                Arena <span className="text-gradient">Archives.</span>
+                My <span className="text-gradient">Quizzes.</span>
               </h1>
            </div>
         </div>
 
         {/* Website Style Filters */}
         <div className="glass-premium animate-slide-up stagger-1" style={{ display: 'flex', gap: '0.75rem', marginBottom: '5rem', padding: '0.75rem', borderRadius: '2.25rem', maxWidth: '520px', background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(0,0,0,0.03)' }}>
-          {['All', 'Study', 'Game'].map(f => (
+          {['All', 'Knowledge', 'Tournament'].map(f => (
             <button 
               key={f}
               onClick={() => setFilter(f)}
@@ -96,7 +100,7 @@ const HistoryPage = () => {
                 letterSpacing: '0.05em'
               }}
             >
-              {f}
+              {f === 'Knowledge' ? 'Practice' : (f === 'Tournament' ? 'Match' : f)}
             </button>
           ))}
         </div>
@@ -120,7 +124,7 @@ const HistoryPage = () => {
                         letterSpacing: '0.12em',
                         border: `1px solid ${item.type === 'Study' ? 'hsla(var(--primary), 0.1)' : 'hsla(var(--secondary), 0.1)'}`
                       }}>
-                        {item.type} Sector
+                        {item.type === 'Study' ? 'Practice' : 'Tournament'} Mode
                       </span>
                       <span style={{ fontSize: '0.9rem', color: 'hsl(var(--muted-foreground))', fontWeight: 700, opacity: 0.7 }}>{item.date}</span>
                     </div>
