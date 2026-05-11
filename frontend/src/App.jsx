@@ -32,6 +32,7 @@ import HowItWorksPage from './pages/HowItWorksPage';
 import BalancePage from './pages/BalancePage';
 import VouchersPage from './pages/VouchersPage';
 import AboutUsPage from './pages/AboutUsPage';
+import SupportPage from './pages/SupportPage';
 import './index.css';
 
 const ProtectedAdminRoute = ({ children }) => {
@@ -102,7 +103,8 @@ const App = () => {
           {/* Legal & Static Pages */}
           <Route path="/legal" element={<Layout><LegalPage /></Layout>} />
           <Route path="/about" element={<Layout><AboutUsPage /></Layout>} />
-          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/support" element={<Layout><SupportPage /></Layout>} />
+          <Route path="/how-it-works" element={<Layout><HowItWorksPage /></Layout>} />
           
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

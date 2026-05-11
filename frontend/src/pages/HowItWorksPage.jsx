@@ -11,23 +11,37 @@ const HowItWorksPage = () => {
 
     return (
         <div className="page" style={{ background: '#ffffff', color: '#0f172a', minHeight: '100vh' }}>
-            <div className="topbar" style={{ background: 'rgba(255, 255, 255, 0.98)', borderBottom: '1px solid #f1f5f9' }}>
-                <div className="topbar-inner">
+            <div className="topbar" style={{ 
+                background: 'white', 
+                height: '70px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 1000
+            }}>
+                <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
                     <button 
                         onClick={() => navigate(-1)} 
-                        className="back-btn-premium"
-                        style={{ background: 'transparent', border: 'none', color: '#0f172a', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}
+                        style={{ 
+                            width: '45px', 
+                            height: '45px', 
+                            borderRadius: '12px', 
+                            background: 'white', 
+                            border: '1px solid #e2e8f0', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            cursor: 'pointer'
+                        }}
                     >
-                        <ArrowLeft size={20} />
-                        <span>Back</span>
+                        <ArrowLeft size={20} color="#1e1b4b" />
                     </button>
-                    <div className="logo-boxes" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-                        <div className="logo-box">Q</div>
-                        <div className="logo-box">U</div>
-                        <div className="logo-box">Z</div>
-                        <div className="logo-box">O</div>
-                    </div>
-                    <div style={{ width: '60px' }}></div>
+                    <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1e1b4b', margin: 0 }}>How it Works</h1>
+                    <div style={{ width: '45px' }}></div>
                 </div>
             </div>
 

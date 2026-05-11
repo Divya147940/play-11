@@ -77,7 +77,7 @@ const ProfilePage = () => {
       icon: <Headphones size={20} />, 
       title: '24x7 Help & Support', 
       subtext: "We're here to help you anytime", 
-      onClick: () => { window.location.href = 'mailto:support@play11.global' },
+      onClick: () => navigate('/support'),
       bgIcon: <Headphones size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
     },
     { 
