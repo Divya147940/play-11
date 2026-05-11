@@ -361,7 +361,7 @@ const MatchQuizRoom = () => {
                     let border = '1px solid #e2e8f0';
                     
                     if (i === currentIdx) {
-                      bg = '#3b82f6'; // Blue for current
+                      bg = '#10b981'; // Green for current
                       color = '#ffffff';
                       border = 'none';
                     } else if (answers[i] !== undefined) {

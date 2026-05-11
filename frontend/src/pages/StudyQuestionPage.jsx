@@ -350,7 +350,7 @@ const StudyQuestionPage = () => {
                   let color = '#94a3b8';
                   
                   if (i === currentIdx) {
-                    bg = '#eab308'; // Yellow for current
+                    bg = '#10b981'; // Green for current
                     color = '#ffffff';
                   } else if (answers[q.id] !== undefined) {
                     bg = '#3b82f6'; // Blue for answered
