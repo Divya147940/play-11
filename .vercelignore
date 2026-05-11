@@ -1,0 +1,11 @@
+node_modules
+frontend/node_modules
+api/node_modules
+server/node_modules
+.git
+.env
+api/.env
+api/play11.db
+server/play11.db
+dist
+frontend/dist
