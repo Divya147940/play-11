@@ -19,8 +19,6 @@ const Header = () => {
   const navItems = [
     { name: 'Home', path: '/', icon: <Home size={18} /> },
     { name: 'Quiz Arena', path: '/home-choice', icon: <Globe size={18} /> },
-    { name: 'Study Zone', path: '/quiz-arena/study-zone', icon: <BookOpen size={18} /> },
-    { name: 'Sport Zone', path: '/quiz-arena/sport-zone', icon: <Trophy size={18} /> },
     { name: 'Leaderboard', path: '/leaderboard', icon: <Trophy size={18} /> },
   ];
 
