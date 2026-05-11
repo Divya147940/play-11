@@ -90,9 +90,9 @@ const App = () => {
           <Route path="/leaderboard/:id" element={<Layout><LeaderboardPage /></Layout>} />
           
           <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
-          <Route path="/history" element={<ProtectedRoute><Layout><HistoryPage /></Layout></ProtectedRoute>} />
-          <Route path="/balance" element={<ProtectedRoute><Layout><BalancePage /></Layout></ProtectedRoute>} />
-          <Route path="/vouchers" element={<ProtectedRoute><Layout><VouchersPage /></Layout></ProtectedRoute>} />
+          <Route path="/history" element={<Layout><HistoryPage /></Layout>} />
+          <Route path="/balance" element={<Layout><BalancePage /></Layout>} />
+          <Route path="/vouchers" element={<Layout><VouchersPage /></Layout>} />
           
           {/* Admin Panels */}
           <Route path="/admin/login" element={<Layout hideNav><AdminLoginPage /></Layout>} />
