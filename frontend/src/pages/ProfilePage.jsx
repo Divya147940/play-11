@@ -100,7 +100,7 @@ const ProfilePage = () => {
         icon: <FileText size={18} />, 
         title: 'Terms And Conditions', 
         subtext: 'Read our legal policies', 
-        onClick: () => navigate('/terms'),
+        onClick: () => navigate('/legal'),
         isSubsection: true
       }
     ] : []),

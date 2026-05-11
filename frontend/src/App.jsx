@@ -31,6 +31,7 @@ import LegalPage from './pages/LegalPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import BalancePage from './pages/BalancePage';
 import VouchersPage from './pages/VouchersPage';
+import AboutUsPage from './pages/AboutUsPage';
 import './index.css';
 
 const ProtectedAdminRoute = ({ children }) => {
@@ -100,6 +101,7 @@ const App = () => {
           
           {/* Legal & Static Pages */}
           <Route path="/legal" element={<Layout><LegalPage /></Layout>} />
+          <Route path="/about" element={<Layout><AboutUsPage /></Layout>} />
           <Route path="/how-it-works" element={<HowItWorksPage />} />
           
           {/* Fallback */}
