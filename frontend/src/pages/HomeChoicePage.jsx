@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import UpcomingQuizzes from '../components/UpcomingQuizzes';
 import { quizService, settingsService } from '../services/api';
@@ -12,6 +12,7 @@ import newsIcon from '../assets/news-icon.png';
 
 const HomeChoicePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const userName = localStorage.getItem('user_name') || 'Scholar';
 
   const quizRooms = [
@@ -66,7 +67,7 @@ const HomeChoicePage = () => {
   ];
 
   const tabs = ['All Rooms', 'Live', 'Upcoming', 'My Joined'];
-  const [selectedTab, setSelectedTab] = React.useState('All Rooms');
+  const [selectedTab, setSelectedTab] = React.useState(location.state?.tab || 'All Rooms');
   const [allQuizzes, setAllQuizzes] = React.useState([]);
   const [joinedQuizzes, setJoinedQuizzes] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
