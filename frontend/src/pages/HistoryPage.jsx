@@ -236,15 +236,8 @@ const HistoryPage = () => {
               </div>
             ))
           ) : (
-            <div className="glass-premium flex-center" style={{ gridColumn: '1/-1', padding: '8rem', flexDirection: 'column', gap: '2rem' }}>
-               <div style={{ width: '100px', height: '100px', background: 'hsla(var(--primary), 0.05)', borderRadius: '50%', color: 'hsl(var(--primary))' }} className="flex-center">
-                  <HistoryIcon size={48} strokeWidth={1} />
-               </div>
-               <div style={{ textAlign: 'center' }}>
-                 <p style={{ fontSize: '1.5rem', fontWeight: 950, color: 'hsl(var(--foreground))', marginBottom: '0.5rem' }}>No Data Fragments Found</p>
-                 <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'hsl(var(--muted-foreground))' }}>Your engagement record is currently empty.</p>
-               </div>
-               <button className="shimmer-btn" onClick={() => navigate('/home-choice')} style={{ padding: '1.25rem 2.5rem' }}>ENTER FIRST ARENA</button>
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '5rem 0', opacity: 0.5 }}>
+               <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#64748b' }}>No quiz records found for the selected period.</p>
             </div>
           )}
         </div>
