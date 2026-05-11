@@ -314,6 +314,21 @@ const GameQuestionPage = () => {
               </button>
               <button 
                 onClick={() => {
+                  if (currentIdx < questions.length - 1) {
+                    setCurrentIdx(currentIdx + 1);
+                  }
+                }}
+                disabled={currentIdx === questions.length - 1 || isSubmitting}
+                style={{
+                  background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b',
+                  padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
+                  opacity: currentIdx === questions.length - 1 ? 0.3 : 1
+                }}
+              >
+                Skip
+              </button>
+              <button 
+                onClick={() => {
                   if (currentIdx === questions.length - 1) {
                     handleSubmit();
                   } else {

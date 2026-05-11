@@ -330,6 +330,21 @@ const MatchQuizRoom = () => {
                   {currentIdx === 0 ? (language === 'Hindi' ? "वापस" : "Back") : (language === 'Hindi' ? "पिछला" : "Previous")}
                 </button>
                 <button 
+                  onClick={() => {
+                    if (currentIdx < questions.length - 1) {
+                      setCurrentIdx(currentIdx + 1);
+                    }
+                  }}
+                  disabled={currentIdx === questions.length - 1 || loading}
+                  style={{
+                    background: 'transparent', border: '1px solid #e2e8f0', color: '#64748b',
+                    padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
+                    opacity: currentIdx === questions.length - 1 ? 0.3 : 1
+                  }}
+                >
+                  {language === 'Hindi' ? "छोड़ें" : "Skip"}
+                </button>
+                <button 
                   onClick={handleNext}
                   disabled={answers[currentIdx] === undefined || loading}
                   style={{
