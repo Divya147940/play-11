@@ -29,6 +29,8 @@ import MatchQuizRoom from './pages/MatchQuizRoom';
 import DummyQuizFlow from './pages/DummyQuizFlow';
 import LegalPage from './pages/LegalPage';
 import HowItWorksPage from './pages/HowItWorksPage';
+import BalancePage from './pages/BalancePage';
+import VouchersPage from './pages/VouchersPage';
 import './index.css';
 
 const ProtectedAdminRoute = ({ children }) => {
@@ -89,6 +91,8 @@ const App = () => {
           
           <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
           <Route path="/history" element={<ProtectedRoute><Layout><HistoryPage /></Layout></ProtectedRoute>} />
+          <Route path="/balance" element={<ProtectedRoute><Layout><BalancePage /></Layout></ProtectedRoute>} />
+          <Route path="/vouchers" element={<ProtectedRoute><Layout><VouchersPage /></Layout></ProtectedRoute>} />
           
           {/* Admin Panels */}
           <Route path="/admin/login" element={<Layout hideNav><AdminLoginPage /></Layout>} />

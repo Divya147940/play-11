@@ -49,7 +49,7 @@ const ProfilePage = () => {
       icon: <Wallet size={20} />, 
       title: 'My Balance', 
       subtext: 'View your coins, points and rewards', 
-      onClick: () => {},
+      onClick: () => navigate('/balance'),
       bgIcon: <Wallet size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
     },
     { 
@@ -63,7 +63,7 @@ const ProfilePage = () => {
       icon: <Ticket size={20} />, 
       title: 'My Vouchers', 
       subtext: 'View and manage your vouchers', 
-      onClick: () => {},
+      onClick: () => navigate('/vouchers'),
       bgIcon: <Ticket size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
     },
     { 
