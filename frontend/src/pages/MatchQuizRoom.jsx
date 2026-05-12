@@ -19,6 +19,8 @@ const MatchQuizRoom = () => {
   const [globalBanner, setGlobalBanner] = useState('');
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
         // Use Promise.all for parallel fetching to speed up loading
         const [quizObj, qRes] = await Promise.all([
           quizService.getQuizById(id),
