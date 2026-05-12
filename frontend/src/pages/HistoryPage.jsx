@@ -62,9 +62,9 @@ const HistoryPage = () => {
                   : 'N/A',
                 rawDate: h.submitted_at,
                 score: h.total_score || 0,
-                rank: h.rank || '-',
-                won: h.won_amount && h.won_amount > 0 ? `₹${h.won_amount}` : '-',
-                winnerId: h.winner_id,
+                rank: h.leaderboard_rank || '-',
+                won: h.display_won_amount > 0 ? `₹${h.display_won_amount}` : '-',
+                winnerId: h.quiz_winner_id,
                 winnerName: h.winner_name,
                 userId: h.user_id
               };

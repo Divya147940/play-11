@@ -33,8 +33,11 @@ const initDB = async () => {
       );
     `);
 
+    // Ensure migrations always run to catch schema updates (ALTER TABLE IF NOT EXISTS is safe)
+    seedAndMigrate().catch(err => console.error('Background DB Error:', err));
+
     if (checkTable.rows[0].exists) {
-      console.log('✅ Database already initialized, skipping heavy schema checks.');
+      console.log('✅ Database already initialized, migration check started in background.');
       global.dbInitialized = true;
       return;
     }
@@ -181,9 +184,6 @@ const initDB = async () => {
       CREATE INDEX IF NOT EXISTS idx_sub_answers_sub ON submission_answers(submission_id);
     `);
     
-    // Asynchronously handle migrations and seeding without blocking
-    seedAndMigrate().catch(err => console.error('Background DB Error:', err));
-    
     global.dbInitialized = true;
     console.log('✅ PostgreSQL (Neon) schema initialized.');
   } catch (error) {
@@ -215,6 +215,9 @@ const seedAndMigrate = async () => {
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS correct_count INTEGER DEFAULT 0;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS wrong_count INTEGER DEFAULT 0;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS time_taken TEXT;
+        ALTER TABLE submissions ADD COLUMN IF NOT EXISTS won_amount NUMERIC DEFAULT 0;
+        ALTER TABLE submissions ADD COLUMN IF NOT EXISTS rank INTEGER;
+        ALTER TABLE submissions ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS coins NUMERIC DEFAULT 0;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0;
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS prize_amount INTEGER DEFAULT 0;

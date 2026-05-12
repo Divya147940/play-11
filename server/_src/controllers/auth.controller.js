@@ -153,17 +153,20 @@ const getUserHistory = async (req, res) => {
   
   try {
     let query = `
-      SELECT s.*, q.title, q.zone_id, q.winner_id, u.name as winner_name,
-      (
-        SELECT COUNT(*) + 1
-        FROM submissions s2
-        WHERE s2.quiz_id = s.quiz_id 
-        AND s2.total_score > s.total_score
-      ) as rank
+      SELECT s.*, q.title, q.zone_id, q.winner_id as quiz_winner_id, q.prize_amount, 
+             COALESCE(u.name, 'Admin Declared') as winner_name,
+             CASE WHEN s.user_id = q.winner_id THEN q.prize_amount ELSE 0 END as display_won_amount,
+             (
+               SELECT COUNT(*) + 1
+               FROM submissions s2
+               WHERE s2.quiz_id = s.quiz_id 
+               AND s2.total_score > s.total_score
+             ) as leaderboard_rank
       FROM submissions s 
       LEFT JOIN quizzes q ON s.quiz_id = q.id 
       LEFT JOIN users u ON q.winner_id = u.id
       WHERE s.user_id = $1 
+      ORDER BY s.submitted_at DESC
     `;
     const params = [userId];
 
@@ -195,7 +198,7 @@ const getSubmissionReview = async (req, res) => {
   try {
     // 1. Get submission info and verify ownership
     const { rows: subRows } = await db.query(
-      'SELECT s.*, q.title, q.winner_id, q.status as quiz_status FROM submissions s JOIN quizzes q ON s.quiz_id = q.id WHERE s.id = $1 AND s.user_id = $2',
+      'SELECT s.*, q.title, q.winner_id as quiz_winner_id, q.status as quiz_status, q.prize_amount FROM submissions s JOIN quizzes q ON s.quiz_id = q.id WHERE s.id = $1 AND s.user_id = $2',
       [id, userId]
     );
 

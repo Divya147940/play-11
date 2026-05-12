@@ -215,9 +215,10 @@ const declareWinner = async (req, res) => {
     // 2. Mark Winner in Quiz
     await db.query("UPDATE quizzes SET winner_id = $1, status = 'completed' WHERE id = $2", [winner_id, id]);
 
-    // 3. Add Prize to User Balance
+    // 3. Add Prize to User Balance and update submission
     if (prizeAmount > 0) {
       await db.query("UPDATE users SET coins = coins + $1 WHERE id = $2", [prizeAmount, winner_id]);
+      await db.query("UPDATE submissions SET won_amount = $1 WHERE quiz_id = $2 AND user_id = $3", [prizeAmount, id, winner_id]);
     }
 
     await db.query('COMMIT');

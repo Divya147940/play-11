@@ -44,7 +44,7 @@ const ProfilePage = () => {
       .then(data => {
         if (data.success && data.history) {
           const quizzes = data.history.length;
-          const wins = data.history.filter(h => h.won_amount && parseFloat(h.won_amount) > 0).length;
+          const wins = data.history.filter(h => h.display_won_amount && parseFloat(h.display_won_amount) > 0).length;
           const points = data.history.reduce((sum, h) => sum + (parseFloat(h.total_score) || 0), 0);
           setUserStats({ quizzes, wins, points });
         }

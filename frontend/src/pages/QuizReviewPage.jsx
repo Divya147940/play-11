@@ -82,7 +82,7 @@ const QuizReviewPage = () => {
         </div>
 
         {/* Stats Summary Bar - ONLY SHOW IF RESULT DECLARED */}
-        {submission.winner_id && (
+        {submission.quiz_winner_id && (
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(3, 1fr)', 
@@ -109,7 +109,7 @@ const QuizReviewPage = () => {
           </div>
         )}
 
-        {!submission.winner_id && (
+        {!submission.quiz_winner_id && (
           <div className="glass-premium" style={{ marginBottom: '3rem', padding: '1.5rem', borderRadius: '1.5rem', background: '#fffbeb', border: '1px solid #fef3c7', textAlign: 'center' }}>
              <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#b45309' }}>
                🛡️ Performance details & correct answers will be revealed once the official results are declared by the admin.
@@ -144,7 +144,7 @@ const QuizReviewPage = () => {
                 {item.options.map((opt, oIdx) => {
                   const isUserSelected = String(item.selected_value) === String(opt.value);
                   const isCorrect = String(item.correct_value) === String(opt.value);
-                  const isResultDeclared = !!submission.winner_id;
+                  const isResultDeclared = !!submission.quiz_winner_id;
                   
                   let bgColor = '#f8fafc';
                   let borderColor = '#e2e8f0';

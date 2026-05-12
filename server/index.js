@@ -26,14 +26,12 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Initialize Database - Disabled automatic init on Vercel to prevent cold-start timeouts
-if (process.env.NODE_ENV !== 'production' || process.env.FORCE_INIT_DB === 'true') {
-  initDB().then(() => {
-    console.log('✅ Database initialization complete.');
-  }).catch(err => {
-    console.error('❌ Database initialization failed:', err);
-  });
-}
+// Initialize Database
+initDB().then(() => {
+  console.log('✅ Database initialization/migration complete.');
+}).catch(err => {
+  console.error('❌ Database initialization failed:', err);
+});
 
 // API Routes
 const apiRouter = express.Router();
