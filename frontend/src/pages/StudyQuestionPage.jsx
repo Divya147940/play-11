@@ -288,14 +288,18 @@ const StudyQuestionPage = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
               {currentQ?.options?.map((opt, idx) => {
-                const isSelected = answers[currentIdx] != null && answers[currentIdx] == idx;
+                // Simplest possible check to avoid any equality issues
+                const isSelected = answers[currentIdx] == idx;
+                const activeBg = '#3b82f6';
+                const activeText = '#ffffff';
+                
                 return (
                   <div key={idx} className={`option-item ${isSelected ? 'selected' : ''}`} onClick={() => handleOptionSelect(idx)} style={{
                     display: 'flex', alignItems: 'center', gap: '1rem',
                     padding: '1.25rem 1.5rem', borderRadius: '1rem',
-                    border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                    background: isSelected ? '#3b82f6' : '#ffffff',
-                    color: isSelected ? '#ffffff' : '#0f172a',
+                    border: isSelected ? `2px solid ${activeBg}` : '1px solid #e2e8f0',
+                    background: isSelected ? activeBg : '#ffffff',
+                    color: isSelected ? activeText : '#0f172a',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     boxShadow: isSelected ? '0 8px 20px -4px rgba(59, 130, 246, 0.3)' : 'none'
