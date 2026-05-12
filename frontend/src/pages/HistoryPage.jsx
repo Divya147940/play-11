@@ -53,6 +53,7 @@ const HistoryPage = () => {
               
               return {
                 id: h.id,
+                quizId: h.quiz_id,
                 title: h.title,
                 zoneId: h.zone_id,
                 type: h.zone_id === 'study-zone' ? 'Study' : 'Game',
@@ -325,22 +326,35 @@ const HistoryPage = () => {
                   </div>
                 </div>
 
-                {/* Action button */}
-                <button 
-                  onClick={() => navigate(`/quiz-review/${item.id}`)}
-                  style={{ 
-                    width: '100%', padding: '16px', borderRadius: '18px', 
-                    background: '#0f172a', color: 'white', border: 'none',
-                    fontSize: '1rem', fontWeight: 800, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-                    transition: 'all 0.2s', boxShadow: '0 8px 20px -8px rgba(15, 23, 42, 0.4)'
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#1e293b'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = '#0f172a'; }}
-                >
-                  <CheckCircle2 size={18} />
-                  Review Performance
-                </button>
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button 
+                    onClick={() => navigate(`/quiz-review/${item.id}`)}
+                    style={{ 
+                      flex: 1, padding: '14px', borderRadius: '14px', 
+                      background: '#0f172a', color: 'white', border: 'none',
+                      fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                      transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.2)'
+                    }}
+                  >
+                    <CheckCircle2 size={16} />
+                    Review
+                  </button>
+                  <button 
+                    onClick={() => navigate(`/leaderboard/${item.quizId}`)}
+                    style={{ 
+                      flex: 1, padding: '14px', borderRadius: '14px', 
+                      background: '#f97316', color: 'white', border: 'none',
+                      fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                      transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.2)'
+                    }}
+                  >
+                    <Trophy size={16} />
+                    Leaderboard
+                  </button>
+                </div>
               </div>
             ))}
           </div>

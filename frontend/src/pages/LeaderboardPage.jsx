@@ -31,29 +31,13 @@ const LeaderboardPage = () => {
         const data = JSON.parse(text);
         if (!data.success) throw new Error(data.error || 'Failed to load leaderboard.');
 
-        // Merge real data with mock data if list is short, to match the "full" look of the image
+        // Use only real data from the API
         const realData = data.leaderboard || [];
-        const mockNames = ['Priya Sharma', 'Rahul Singh', 'Amit Sharma', 'Suresh Kumar', 'Meera Verma', 'Nitin Kumar', 'Pooja Devi'];
-        const mockScores = [980, 890, 830, 800, 780, 760, 740];
         
-        let combined = [...realData];
-        if (combined.length < 10) {
-          mockNames.forEach((name, i) => {
-            if (combined.length < 10 && !combined.find(p => p.name === name)) {
-              combined.push({
-                user_id: `mock-${i}`,
-                name: name,
-                total_score: mockScores[i] || 500,
-                isMock: true
-              });
-            }
-          });
-        }
-
         // Sort by score
-        combined.sort((a, b) => b.total_score - a.total_score);
+        realData.sort((a, b) => b.total_score - a.total_score);
 
-        const ranked = combined.map((p, i) => {
+        const ranked = realData.map((p, i) => {
           const parts = (p.name || 'User').trim().split(/\s+/);
           let avatar = '';
           if (parts.length >= 2) {
