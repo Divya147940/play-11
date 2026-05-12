@@ -1164,7 +1164,12 @@ const AdminDashboard = () => {
                              <button onClick={() => handleDeclareWinner(selectedQuiz.id, p.user_id)} className="admin-winner-btn">Declare Winner</button>
                            )}
                            {selectedQuiz.winner_id === p.user_id && (
-                             <Award color="#f59e0b" />
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontWeight: 900 }}>
+                                <Award size={16} /> WON 🎉
+                             </div>
+                           )}
+                           {selectedQuiz.winner_id && selectedQuiz.winner_id !== p.user_id && (
+                             <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Ended</span>
                            )}
                         </td>
                       </tr>
