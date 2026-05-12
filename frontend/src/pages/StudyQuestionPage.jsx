@@ -288,9 +288,9 @@ const StudyQuestionPage = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
               {currentQ?.options?.map((opt, idx) => {
-                const isSelected = answers[currentIdx] === idx;
+                const isSelected = answers[currentIdx] != null && answers[currentIdx] == idx;
                 return (
-                  <div key={idx} className="option-item" onClick={() => handleOptionSelect(idx)} style={{
+                  <div key={idx} className={`option-item ${isSelected ? 'selected' : ''}`} onClick={() => handleOptionSelect(idx)} style={{
                     display: 'flex', alignItems: 'center', gap: '1rem',
                     padding: '1.25rem 1.5rem', borderRadius: '1rem',
                     border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
