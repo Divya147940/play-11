@@ -29,34 +29,30 @@ const StudyQuestionPage = () => {
       }
     }
 
-    // 1. Fetch Quiz Details
-    fetch(`/api/quizzes/${id}`, { headers })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          if (data.quiz.is_submitted) {
+    // Parallel fetching for 2x faster loading
+    Promise.all([
+      fetch(`/api/quizzes/${id}`, { headers }).then(res => res.json()),
+      fetch(`/api/quizzes/${id}/questions`).then(res => res.json())
+    ])
+      .then(([quizData, questionsData]) => {
+        // Handle Quiz Details
+        if (quizData.success) {
+          if (quizData.quiz.is_submitted) {
             navigate(`/study-result/${id}`);
             return;
           }
-          setQuizDetails(data.quiz);
-          if (data.quiz.timer_minutes) {
-            setTimeLeft(data.quiz.timer_minutes * 60);
-            setInitialTime(data.quiz.timer_minutes * 60);
+          setQuizDetails(quizData.quiz);
+          if (quizData.quiz.timer_minutes) {
+            setTimeLeft(quizData.quiz.timer_minutes * 60);
+            setInitialTime(quizData.quiz.timer_minutes * 60);
           }
         }
-      })
-      .catch(console.error);
 
-    // 2. Fetch Questions
-    fetch(`/api/quizzes/${id}/questions`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.questions.length > 0) {
-          setQuestions(data.questions);
+        // Handle Questions
+        if (questionsData.success && questionsData.questions.length > 0) {
+          setQuestions(questionsData.questions);
         } else {
-          setQuestions([
-            { id: 'mock', question_text: 'No questions available.', options: [] }
-          ]);
+          setQuestions([{ id: 'mock', question_text: 'No questions available.', options: [] }]);
         }
       })
       .catch(console.error)
@@ -132,12 +128,12 @@ const StudyQuestionPage = () => {
 
     setSubmittedSuccessfully(true);
 
-    // Add a small delay so user can see the "Submitted Successfully" green line
+    // Remove the 2s artificial delay for instant loading
     setTimeout(() => {
       setIsFinished(true);
       setIsSubmitting(false);
       navigate(`/study-result/${id}`, { state: stats });
-    }, 2000);
+    }, 100);
     
   }, [answers, id, navigate, isFinished, isSubmitting, questions, timeLeft, initialTime]);
 
@@ -290,21 +286,23 @@ const StudyQuestionPage = () => {
                 return (
                   <div key={idx} className="option-item" onClick={() => handleOptionSelect(idx)} style={{
                     display: 'flex', alignItems: 'center', gap: '1rem',
-                    padding: '1rem 1.25rem', borderRadius: '0.75rem',
+                    padding: '1.25rem 1.5rem', borderRadius: '1rem',
                     border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                    background: isSelected ? '#eff6ff' : '#ffffff',
+                    background: isSelected ? '#3b82f6' : '#ffffff',
+                    color: isSelected ? '#ffffff' : '#0f172a',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    boxShadow: isSelected ? '0 8px 20px -4px rgba(59, 130, 246, 0.3)' : 'none'
                   }}>
                     <div style={{
-                      width: '28px', height: '28px', borderRadius: '50%',
-                      background: isSelected ? '#1e293b' : '#0f172a',
-                      color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '0.8rem', fontWeight: 800
+                      width: '32px', height: '32px', borderRadius: '50%',
+                      background: isSelected ? '#ffffff' : '#1e293b',
+                      color: isSelected ? '#3b82f6' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.9rem', fontWeight: 800
                     }}>
                       {String.fromCharCode(65 + idx)}
                     </div>
-                    <span style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>{opt.text}</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{opt.text}</span>
                   </div>
                 );
               })}

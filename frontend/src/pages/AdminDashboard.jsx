@@ -289,8 +289,10 @@ const AdminDashboard = () => {
       const data = await res.json();
       if (data.success) {
         alert(data.message || 'Winner declared!');
-        fetchData(); // Refresh list
-        setSelectedQuiz(null);
+        // Update local state instead of closing
+        setSelectedQuiz(prev => ({ ...prev, winner_id: userId }));
+        fetchData(); // Refresh global list
+        fetchParticipants(quizId); // Refresh participants to show 'WON'
       }
     } catch (err) {
       console.error(err);

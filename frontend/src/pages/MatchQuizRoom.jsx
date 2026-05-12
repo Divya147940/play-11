@@ -19,25 +19,27 @@ const MatchQuizRoom = () => {
   const [globalBanner, setGlobalBanner] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const quizObj = await quizService.getQuizById(id);
+        // Use Promise.all for parallel fetching to speed up loading
+        const [quizObj, qRes] = await Promise.all([
+          quizService.getQuizById(id),
+          quizService.getQuestions(id)
+        ]);
+
         if (quizObj.is_submitted) {
           navigate(`/game-result/${id}`);
           return;
         }
         setQuiz(quizObj);
         setTimeLeft((quizObj.timer_minutes || 10) * 60);
-
-        const qRes = await quizService.getQuestions(id);
         setQuestions(qRes);
 
-        // Fetch global banner
-        const { settingsService } = await import('../services/api');
-        const bannerData = await settingsService.getSetting('quiz_room_banner_url');
-        if (bannerData.success) {
-          setGlobalBanner(bannerData.value);
-        }
+        // Fetch global banner in background
+        import('../services/api').then(async ({ settingsService }) => {
+          const bannerData = await settingsService.getSetting('quiz_room_banner_url');
+          if (bannerData.success) {
+            setGlobalBanner(bannerData.value);
+          }
+        });
       } catch (err) {
         console.error(err);
         alert(err.message || 'Failed to load quiz');
@@ -296,21 +298,23 @@ const MatchQuizRoom = () => {
                   return (
                     <div key={idx} onClick={() => handleOptionClick(idx)} style={{
                       display: 'flex', alignItems: 'center', gap: '1rem',
-                      padding: '1rem 1.25rem', borderRadius: '0.75rem',
+                      padding: '1.25rem 1.5rem', borderRadius: '1rem',
                       border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                      background: isSelected ? '#eff6ff' : '#ffffff',
+                      background: isSelected ? '#3b82f6' : '#ffffff',
+                      color: isSelected ? '#ffffff' : '#0f172a',
                       cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s ease',
+                      boxShadow: isSelected ? '0 8px 20px -4px rgba(59, 130, 246, 0.3)' : 'none'
                     }}>
                       <div style={{
-                        width: '28px', height: '28px', borderRadius: '50%',
-                        background: isSelected ? '#0f172a' : '#f1f5f9',
-                        color: isSelected ? '#ffffff' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '0.8rem', fontWeight: 800, border: isSelected ? 'none' : '1px solid #e2e8f0'
+                        width: '32px', height: '32px', borderRadius: '50%',
+                        background: isSelected ? '#ffffff' : '#f1f5f9',
+                        color: isSelected ? '#3b82f6' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.9rem', fontWeight: 800, border: isSelected ? 'none' : '1px solid #e2e8f0'
                       }}>
                         {String.fromCharCode(65 + idx)}
                       </div>
-                      <span style={{ fontSize: 'clamp(0.9rem, 3vw, 1rem)', fontWeight: 700, color: '#0f172a', wordBreak: 'break-word' }}>
+                      <span style={{ fontSize: 'clamp(0.9rem, 3vw, 1.1rem)', fontWeight: 800, wordBreak: 'break-word' }}>
                         {language === 'Hindi' ? (opt.hindiText || opt.text) : opt.text}
                       </span>
                     </div>

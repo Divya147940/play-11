@@ -23,13 +23,22 @@ const QuizReviewPage = () => {
     fetch(`/api/auth/submission/${id}/review`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Submission review data not found');
+        return res.json();
+      })
       .then(resData => {
+        console.log('Review data loaded:', resData);
         if (resData.success) {
           setData(resData);
+        } else {
+          setData(null);
         }
       })
-      .catch(console.error)
+      .catch(err => {
+        console.error('Review Fetch Error:', err);
+        setData(null);
+      })
       .finally(() => setLoading(false));
   }, [id, navigate]);
 
