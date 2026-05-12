@@ -9,13 +9,13 @@ const QuizReviewPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const sessionRaw = localStorage.getItem('play11_session');
+    const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
     if (!sessionRaw) return navigate('/login');
 
-    let token = sessionRaw;
+    let token = '';
     try {
       const parsed = JSON.parse(sessionRaw);
-      token = parsed.token || sessionRaw;
+      token = parsed.token || (typeof sessionRaw === 'string' ? sessionRaw : '');
     } catch (e) {
       token = sessionRaw;
     }
