@@ -106,7 +106,15 @@ const StudyQuestionPage = () => {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({ 
-            answers,
+            // Format answers correctly for the backend
+            answers: Object.keys(answers).reduce((acc, idx) => {
+              const q = questions[parseInt(idx)];
+              const optIdx = answers[idx];
+              if (q && q.options && q.options[optIdx]) {
+                acc[q.id] = String(q.options[optIdx].value);
+              }
+              return acc;
+            }, {}),
             time_taken: stats.time 
           })
         });
@@ -155,10 +163,8 @@ const StudyQuestionPage = () => {
 
   const handleOptionSelect = (optionIdx) => {
     if (isFinished) return;
-    const q = questions[currentIdx];
-    if (q && q.id && q.options && q.options[optionIdx]) {
-      setAnswers({ ...answers, [q.id]: String(q.options[optionIdx].value) });
-    }
+    // Use currentIdx as the key for 100% reliability in UI highlighting
+    setAnswers({ ...answers, [currentIdx]: optionIdx });
   };
 
   if (loading) {
@@ -282,7 +288,7 @@ const StudyQuestionPage = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
               {currentQ?.options?.map((opt, idx) => {
-                const isSelected = String(answers[currentQ.id]) === String(opt.value);
+                const isSelected = answers[currentIdx] === idx;
                 return (
                   <div key={idx} className="option-item" onClick={() => handleOptionSelect(idx)} style={{
                     display: 'flex', alignItems: 'center', gap: '1rem',
@@ -377,7 +383,7 @@ const StudyQuestionPage = () => {
                   if (i === currentIdx) {
                     bg = '#3b82f6'; // Blue for current
                     color = '#ffffff';
-                  } else if (answers[q.id] !== undefined) {
+                  } else if (answers[i] !== undefined) {
                     bg = '#10b981'; // Green for answered
                     color = '#ffffff';
                   }
