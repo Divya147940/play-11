@@ -109,16 +109,24 @@ const StudyQuestionPage = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ answers })
+          body: JSON.stringify({ 
+            answers,
+            time_taken: stats.time 
+          })
         });
         
         const data = await res.json();
         if (data.success && data.submission) {
-           stats.score = data.submission.total_score || stats.score;
+           stats.score = parseFloat(data.submission.total_score || stats.score);
            stats.rank = data.submission.rank || stats.rank;
+           stats.correct = data.submission.correct_count || 0;
+           stats.wrong = data.submission.wrong_count || 0;
+        } else {
+           alert("Error submitting quiz: " + (data.error || "Unknown error"));
         }
       } catch (err) {
         console.error("Submission failed:", err);
+        alert("Network error: Could not submit quiz. Please check your connection.");
       }
     }
 
@@ -151,9 +159,9 @@ const StudyQuestionPage = () => {
 
   const handleOptionSelect = (optionIdx) => {
     if (isFinished) return;
-    const qId = questions[currentIdx]?.id;
-    if (qId) {
-      setAnswers({ ...answers, [qId]: optionIdx });
+    const q = questions[currentIdx];
+    if (q && q.id && q.options && q.options[optionIdx]) {
+      setAnswers({ ...answers, [q.id]: String(q.options[optionIdx].value) });
     }
   };
 

@@ -9,8 +9,16 @@ const QuizReviewPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('play11_session');
-    if (!token) return navigate('/login');
+    const sessionRaw = localStorage.getItem('play11_session');
+    if (!sessionRaw) return navigate('/login');
+
+    let token = sessionRaw;
+    try {
+      const parsed = JSON.parse(sessionRaw);
+      token = parsed.token || sessionRaw;
+    } catch (e) {
+      token = sessionRaw;
+    }
 
     fetch(`/api/auth/submission/${id}/review`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -64,31 +72,41 @@ const QuizReviewPage = () => {
           </div>
         </div>
 
-        {/* Stats Summary Bar */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(3, 1fr)', 
-          gap: '1rem', 
-          marginBottom: '3rem',
-          background: 'white',
-          padding: '1.5rem',
-          borderRadius: '1.5rem',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
-          border: '1px solid #f1f5f9'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>SCORE</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#3b82f6' }}>{submission.total_score}</div>
+        {/* Stats Summary Bar - ONLY SHOW IF RESULT DECLARED */}
+        {submission.winner_id && (
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(3, 1fr)', 
+            gap: '1rem', 
+            marginBottom: '3rem',
+            background: 'white',
+            padding: '1.5rem',
+            borderRadius: '1.5rem',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
+            border: '1px solid #f1f5f9'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>SCORE</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#3b82f6' }}>{submission.total_score}</div>
+            </div>
+            <div style={{ textAlign: 'center', borderLeft: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>ACCURACY</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#10b981' }}>{Math.round((submission.correct_count / (submission.correct_count + submission.wrong_count || 1)) * 100)}%</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>CORRECT</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#0f172a' }}>{submission.correct_count}</div>
+            </div>
           </div>
-          <div style={{ textAlign: 'center', borderLeft: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9' }}>
-            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>ACCURACY</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#10b981' }}>{Math.round((submission.correct_count / (submission.correct_count + submission.wrong_count || 1)) * 100)}%</div>
+        )}
+
+        {!submission.winner_id && (
+          <div className="glass-premium" style={{ marginBottom: '3rem', padding: '1.5rem', borderRadius: '1.5rem', background: '#fffbeb', border: '1px solid #fef3c7', textAlign: 'center' }}>
+             <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#b45309' }}>
+               🛡️ Performance details & correct answers will be revealed once the official results are declared by the admin.
+             </p>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>CORRECT</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#0f172a' }}>{submission.correct_count}</div>
-          </div>
-        </div>
+        )}
 
         {/* Questions List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -115,37 +133,76 @@ const QuizReviewPage = () => {
 
               <div style={{ display: 'grid', gap: '0.75rem' }}>
                 {item.options.map((opt, oIdx) => {
-                  const isUserSelected = item.selected_value === opt.value;
-                  const isCorrect = item.correct_value === opt.value;
+                  const isUserSelected = String(item.selected_value) === String(opt.value);
+                  const isCorrect = String(item.correct_value) === String(opt.value);
+                  const isResultDeclared = !!submission.winner_id;
                   
                   let bgColor = '#f8fafc';
                   let borderColor = '#e2e8f0';
                   let icon = null;
+                  let label = null;
 
-                  if (isCorrect) {
-                    bgColor = '#f0fdf4';
-                    borderColor = '#10b981';
-                    icon = <CheckCircle2 size={16} color="#10b981" />;
-                  } else if (isUserSelected && !isCorrect) {
-                    bgColor = '#fef2f2';
-                    borderColor = '#ef4444';
-                    icon = <XCircle size={16} color="#ef4444" />;
+                  if (isResultDeclared) {
+                    // Show full feedback after result declared
+                    if (isCorrect) {
+                      bgColor = '#f0fdf4';
+                      borderColor = '#10b981';
+                      icon = <CheckCircle2 size={18} color="#10b981" />;
+                      if (isUserSelected) label = "CORRECT ANSWER";
+                      else label = "CORRECT OPTION";
+                    } else if (isUserSelected && !isCorrect) {
+                      bgColor = '#fef2f2';
+                      borderColor = '#ef4444';
+                      icon = <XCircle size={18} color="#ef4444" />;
+                      label = "YOUR WRONG SELECTION";
+                    }
+                  } else {
+                    // Hide correct answer, only show user's choice
+                    if (isUserSelected) {
+                      bgColor = '#eff6ff';
+                      borderColor = '#3b82f6';
+                      label = "YOUR SELECTION";
+                    }
                   }
 
                   return (
                     <div key={oIdx} style={{ 
-                      padding: '1rem 1.25rem', 
-                      borderRadius: '1rem', 
+                      padding: '1.25rem 1.5rem', 
+                      borderRadius: '1.25rem', 
                       background: bgColor, 
-                      border: `1.5px solid ${borderColor}`,
+                      border: `2px solid ${borderColor}`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      transition: 'all 0.2s'
+                      transition: 'all 0.2s',
+                      boxShadow: (isResultDeclared && (isUserSelected || isCorrect)) || (!isResultDeclared && isUserSelected) ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'
                     }}>
-                      <span style={{ fontSize: '0.95rem', fontWeight: 700, color: isCorrect ? '#065f46' : (isUserSelected ? '#991b1b' : '#334155') }}>
-                        {opt.text}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                         <div style={{ 
+                           width: '24px', height: '24px', borderRadius: '50%', 
+                           background: isResultDeclared ? (isCorrect ? '#10b981' : (isUserSelected ? '#ef4444' : '#1e293b')) : (isUserSelected ? '#3b82f6' : '#1e293b'),
+                           color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                           fontSize: '0.7rem', fontWeight: 900
+                         }}>
+                           {String.fromCharCode(65 + oIdx)}
+                         </div>
+                         <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ 
+                              fontSize: '1rem', 
+                              fontWeight: 700, 
+                              color: isResultDeclared ? (isCorrect ? '#065f46' : (isUserSelected ? '#991b1b' : '#334155')) : (isUserSelected ? '#1e40af' : '#334155') 
+                            }}>
+                              {opt.text}
+                            </span>
+                            {label && <span style={{ 
+                              fontSize: '0.6rem', 
+                              fontWeight: 900, 
+                              color: isResultDeclared ? (isCorrect ? '#059669' : '#ef4444') : '#3b82f6', 
+                              textTransform: 'uppercase', 
+                              marginTop: '2px' 
+                            }}>{label}</span>}
+                         </div>
+                      </div>
                       {icon}
                     </div>
                   );
@@ -162,6 +219,21 @@ const QuizReviewPage = () => {
           ))}
         </div>
 
+        {/* Footer Action */}
+        <div style={{ marginTop: '4rem', textAlign: 'center' }}>
+          <button 
+            onClick={() => navigate('/history')}
+            style={{ 
+              background: '#0f172a', color: 'white', padding: '1.25rem 3rem', borderRadius: '1.5rem', 
+              border: 'none', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer',
+              boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.4)', transition: 'all 0.3s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            Return to Activity
+          </button>
+        </div>
       </div>
     </div>
   );

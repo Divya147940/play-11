@@ -207,23 +207,58 @@ const GameResultPage = () => {
           </div>
 
           {/* Return Home button */}
-          <button
-            onClick={() => navigate('/home-choice')}
-            style={{
-              background: '#f97316',
-              border: 'none',
-              color: '#ffffff',
-              padding: '1rem 3rem',
-              borderRadius: '0.75rem',
-              fontWeight: 800,
-              fontSize: '1rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            Return Home
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => navigate('/home-choice')}
+              style={{
+                background: 'transparent',
+                border: '1px solid #334155',
+                color: '#f8fafc',
+                padding: '1rem 1.5rem',
+                borderRadius: '0.75rem',
+                fontWeight: 800,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Return Home
+            </button>
+            <button
+              onClick={() => navigate(`/quiz-review/${id}`)}
+              style={{
+                background: '#3b82f6',
+                border: 'none',
+                color: '#ffffff',
+                padding: '1rem 1.5rem',
+                borderRadius: '0.75rem',
+                fontWeight: 800,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Review Performance
+            </button>
+            <button
+              onClick={() => navigate('/history')}
+              style={{
+                background: '#f97316',
+                border: 'none',
+                color: '#ffffff',
+                padding: '1rem 1.5rem',
+                borderRadius: '0.75rem',
+                fontWeight: 800,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              My Activity
+            </button>
+          </div>
         </div>
       </div>
     </div>

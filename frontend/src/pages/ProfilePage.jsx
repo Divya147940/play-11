@@ -23,6 +23,34 @@ const ProfilePage = () => {
   const [name, setName] = React.useState(getInitialName());
   const [isEditing, setIsEditing] = React.useState(false);
   const [showMore, setShowMore] = React.useState(false);
+  const [userStats, setUserStats] = React.useState({ quizzes: 0, wins: 0, points: 0 });
+
+  React.useEffect(() => {
+    const sessionRaw = localStorage.getItem('play11_session');
+    if (!sessionRaw) return;
+    
+    let token = sessionRaw;
+    try {
+      const parsed = JSON.parse(sessionRaw);
+      token = parsed.token || sessionRaw;
+    } catch (e) {
+      token = sessionRaw;
+    }
+
+    fetch('/api/auth/history', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.history) {
+          const quizzes = data.history.length;
+          const wins = data.history.filter(h => h.won_amount && parseFloat(h.won_amount) > 0).length;
+          const points = data.history.reduce((sum, h) => sum + (parseFloat(h.total_score) || 0), 0);
+          setUserStats({ quizzes, wins, points });
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   const handleNameSave = (newName) => {
     localStorage.setItem('user_name', newName);
@@ -39,9 +67,9 @@ const ProfilePage = () => {
   };
 
   const stats = [
-    { label: 'QUIZZES', value: '24', icon: <History size={24} />, bgColor: '#f3f0ff', iconColor: '#7c3aed' },
-    { label: 'WINS', value: '12', icon: <Award size={24} />, bgColor: '#fffbeb', iconColor: '#f59e0b' },
-    { label: 'POINTS', value: '4.5k', icon: <ShieldCheck size={24} />, bgColor: '#f0fdf4', iconColor: '#10b981' }
+    { label: 'QUIZZES', value: userStats.quizzes.toString(), icon: <History size={24} />, bgColor: '#f3f0ff', iconColor: '#7c3aed' },
+    { label: 'WINS', value: userStats.wins.toString(), icon: <Award size={24} />, bgColor: '#fffbeb', iconColor: '#f59e0b' },
+    { label: 'POINTS', value: userStats.points.toString(), icon: <ShieldCheck size={24} />, bgColor: '#f0fdf4', iconColor: '#10b981' }
   ];
 
   const menuItems = [

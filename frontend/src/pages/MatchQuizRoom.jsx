@@ -53,14 +53,13 @@ const MatchQuizRoom = () => {
     if (isFinished) return;
     setLoading(true);
     try {
-      // Convert {0: 1, 1: 3} to [{question_id: '...', selected_value: '...'}]
-      const formattedAnswers = Object.keys(answers).map(idx => {
+      const formattedAnswers = {};
+      Object.keys(answers).forEach(idx => {
         const q = questions[parseInt(idx)];
         const optIdx = answers[idx];
-        return {
-          question_id: q.id,
-          selected_value: q.options[optIdx].value
-        };
+        if (q && q.options && q.options[optIdx]) {
+          formattedAnswers[q.id] = q.options[optIdx].value;
+        }
       });
 
       const result = await quizService.submitQuiz(id, formattedAnswers);
@@ -123,22 +122,22 @@ const MatchQuizRoom = () => {
   const progressPercent = questions.length ? ((currentIdx + 1) / questions.length) * 100 : 0;
   const answeredCount = Object.keys(answers).length;
 
-  const score = submissionResult?.result?.total_score || 0;
-  const rank = submissionResult?.result?.rank || '-';
-  const correct = submissionResult?.result?.correct_count || 0;
-  const wrong = submissionResult?.result?.wrong_count || 0;
+  const score = submissionResult?.submission?.total_score || submissionResult?.result?.score || 0;
+  const rank = submissionResult?.submission?.rank || submissionResult?.result?.rank || '-';
+  const correct = submissionResult?.submission?.correct_count || submissionResult?.result?.correct || 0;
+  const wrong = submissionResult?.submission?.wrong_count || submissionResult?.result?.wrong || 0;
 
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: '#f8fafc', 
+      background: '#0f172a', 
       fontFamily: 'Inter, sans-serif', 
-      color: '#0f172a',
+      color: '#f8fafc',
       overflowX: 'hidden',
       width: '100%',
       boxSizing: 'border-box'
     }}>
-      <div className="match-quiz-room" style={{ minHeight: '100vh', background: '#f8fafc', paddingBottom: '3rem' }}>
+      <div className="match-quiz-room" style={{ minHeight: '100vh', background: '#0f172a', paddingBottom: '3rem' }}>
       <Header />
       {/* Global Admin Banner */}
       {globalBanner && (

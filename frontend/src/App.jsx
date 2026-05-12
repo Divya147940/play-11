@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import SplashPage from './pages/SplashPage';
@@ -48,6 +48,13 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const App = () => {
+  useEffect(() => {
+    const session = localStorage.getItem('play11_session');
+    if (session) {
+       console.log('Session exists:', session.substring(0, 50));
+    }
+  }, []);
+
   return (
     <Router>
       <div className="app-shell" style={{ minHeight: '100vh', position: 'relative' }}>

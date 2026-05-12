@@ -11,6 +11,15 @@ const settingsRoutes = require('./_src/routes/settings.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const fs = require('fs');
+const path = require('path');
+
+// Logger Middleware
+app.use((req, res, next) => {
+  const logMsg = `${new Date().toISOString()} | ${req.method} ${req.url} | ${JSON.stringify(req.headers['authorization'] || 'No Auth')}\n`;
+  fs.appendFileSync(path.join(__dirname, 'server_requests.log'), logMsg);
+  next();
+});
 
 // Basic Middleware
 app.use(cors());

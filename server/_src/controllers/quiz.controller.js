@@ -200,13 +200,28 @@ const submitQuiz = async (req, res) => {
 
     await Promise.all(submissionAnswersPromises);
 
+    // Calculate final score
     const score = (correctCount * marksPerQ) - (wrongCount * negativeMarks);
+    const { time_taken } = req.body;
     
-    await db.query('INSERT INTO submissions (id, user_id, quiz_id, status, total_score, correct_count, wrong_count, submitted_at) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)',
-      [subId, userId, id, 'completed', score, correctCount, wrongCount]);
+    await db.query('INSERT INTO submissions (id, user_id, quiz_id, status, total_score, correct_count, wrong_count, time_taken, submitted_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)',
+      [subId, userId, id, 'completed', score, correctCount, wrongCount, time_taken || null]);
+
+    const { rows: rankRows } = await db.query(`
+      SELECT COUNT(*) + 1 as rank
+      FROM submissions
+      WHERE quiz_id = $1 AND total_score > $2
+    `, [id, score]);
 
     res.json({ 
       success: true, 
+      submission: {
+        id: subId,
+        total_score: score,
+        correct_count: correctCount,
+        wrong_count: wrongCount,
+        rank: rankRows[0].rank
+      },
       result: {
         total: totalQuestions,
         correct: correctCount,

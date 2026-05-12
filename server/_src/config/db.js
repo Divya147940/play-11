@@ -47,6 +47,8 @@ const initDB = async () => {
         id TEXT PRIMARY KEY,
         mobile TEXT UNIQUE NOT NULL,
         name TEXT,
+        coins NUMERIC DEFAULT 0,
+        points INTEGER DEFAULT 0,
         status TEXT DEFAULT 'active',
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -82,6 +84,7 @@ const initDB = async () => {
         timer_minutes INTEGER DEFAULT 5,
         status TEXT DEFAULT 'active',
         reward_text TEXT,
+        prize_amount INTEGER DEFAULT 0,
         entry_type TEXT DEFAULT 'free',
         open_at TIMESTAMPTZ,
         close_at TIMESTAMPTZ,
@@ -138,6 +141,7 @@ const initDB = async () => {
         correct_count INTEGER DEFAULT 0,
         wrong_count INTEGER DEFAULT 0,
         total_marks INTEGER DEFAULT 0,
+        time_taken TEXT,
         submitted_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -210,6 +214,10 @@ const seedAndMigrate = async () => {
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS total_score NUMERIC DEFAULT 0;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS correct_count INTEGER DEFAULT 0;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS wrong_count INTEGER DEFAULT 0;
+        ALTER TABLE submissions ADD COLUMN IF NOT EXISTS time_taken TEXT;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS coins NUMERIC DEFAULT 0;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0;
+        ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS prize_amount INTEGER DEFAULT 0;
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS banner_url TEXT;
     `);
 

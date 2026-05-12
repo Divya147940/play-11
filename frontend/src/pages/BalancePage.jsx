@@ -4,7 +4,8 @@ import { ArrowLeft, Wallet, Plus, ArrowUpRight, ArrowDownLeft, Landmark, History
 
 const BalancePage = () => {
   const navigate = useNavigate();
-  const [balance, setBalance] = useState({ coins: 0, points: 4500, bonus: 0 });
+  const [balance, setBalance] = useState({ coins: 0, points: 0, bonus: 0 });
+  const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState([
     { id: 1, title: 'Quiz Won: IPL Special', amount: '+500', type: 'credit', date: 'Today, 2:30 PM' },
     { id: 2, title: 'Entry Fee: Banking Mock', amount: '-50', type: 'debit', date: 'Yesterday' },
@@ -12,9 +13,42 @@ const BalancePage = () => {
     { id: 4, title: 'Quiz Won: Player Knowledge', amount: '+200', type: 'credit', date: '3 days ago' },
   ]);
 
+  useEffect(() => {
+    const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
+    if (!sessionRaw) {
+      setLoading(false);
+      return;
+    }
+    
+    let token;
+    try {
+      const session = JSON.parse(sessionRaw);
+      token = session.token || sessionRaw;
+    } catch (e) {
+      token = sessionRaw;
+    }
+
+    fetch('/api/auth/balance', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setBalance(data.balance);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', paddingBottom: '100px', fontFamily: "'Outfit', sans-serif" }}>
-      <div className="container" style={{ paddingTop: '7rem', maxWidth: '800px', margin: '0 auto', paddingLeft: '1.25rem', paddingRight: '1.25rem' }}>
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <p style={{ fontWeight: 800, color: '#64748b' }}>Loading Wallet...</p>
+        </div>
+      ) : (
+        <div className="container" style={{ paddingTop: '7rem', maxWidth: '800px', margin: '0 auto', paddingLeft: '1.25rem', paddingRight: '1.25rem' }}>
         
         {/* Top Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
@@ -160,7 +194,8 @@ const BalancePage = () => {
             ))}
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -109,17 +109,25 @@ const GameQuestionPage = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ answers })
+          body: JSON.stringify({ 
+            answers,
+            time_taken: stats.time 
+          })
         });
         
         const data = await res.json();
         if (data.success && data.submission) {
            // If server returned official stats, use them
-           stats.score = data.submission.total_score || stats.score;
+           stats.score = parseFloat(data.submission.total_score || stats.score);
            stats.rank = data.submission.rank || stats.rank;
+           stats.correct = data.submission.correct_count || 0;
+           stats.wrong = data.submission.wrong_count || 0;
+        } else {
+           alert("Error submitting game quiz: " + (data.error || "Unknown error"));
         }
       } catch (err) {
         console.error("Submission failed:", err);
+        alert("Network error: Could not submit game quiz. Please check your connection.");
       }
     }
 
@@ -152,9 +160,9 @@ const GameQuestionPage = () => {
 
   const handleOptionSelect = (optionIdx) => {
     if (isFinished) return;
-    const qId = questions[currentIdx]?.id;
-    if (qId) {
-      setAnswers({ ...answers, [qId]: optionIdx });
+    const q = questions[currentIdx];
+    if (q && q.id && q.options && q.options[optionIdx]) {
+      setAnswers({ ...answers, [q.id]: String(q.options[optionIdx].value) });
     }
   };
 
@@ -258,16 +266,16 @@ const GameQuestionPage = () => {
           <div className="question-card" style={{ flex: '0 1 550px', background: '#ffffff', borderRadius: '1.5rem', padding: '1.5rem', color: '#0f172a' }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f97316', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 QUESTION {currentIdx + 1} OF {questions.length}
               </span>
-              <span style={{ background: '#fff7ed', color: '#ea580c', fontSize: '0.7rem', fontWeight: 800, padding: '4px 12px', borderRadius: '999px' }}>
+              <span style={{ background: '#eff6ff', color: '#3b82f6', fontSize: '0.7rem', fontWeight: 800, padding: '4px 12px', borderRadius: '999px' }}>
                 MATCH PREDICTION
               </span>
             </div>
 
             <div style={{ width: '100%', height: '6px', background: '#f1f5f9', borderRadius: '999px', marginBottom: '2rem' }}>
-              <div style={{ width: `${progressPercent}%`, height: '100%', background: '#f97316', borderRadius: '999px', transition: 'width 0.3s ease' }}></div>
+              <div style={{ width: `${progressPercent}%`, height: '100%', background: '#3b82f6', borderRadius: '999px', transition: 'width 0.3s ease' }}></div>
             </div>
 
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '2rem', lineHeight: 1.4, color: '#0f172a' }}>
@@ -276,13 +284,13 @@ const GameQuestionPage = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
               {currentQ?.options?.map((opt, idx) => {
-                const isSelected = answers[currentQ.id] === idx;
+                const isSelected = String(answers[currentQ.id]) === String(opt.value);
                 return (
                   <div key={idx} className="option-item" onClick={() => handleOptionSelect(idx)} style={{
                     display: 'flex', alignItems: 'center', gap: '1rem',
                     padding: '1rem 1.25rem', borderRadius: '0.75rem',
-                    border: isSelected ? '2px solid #f97316' : '1px solid #e2e8f0',
-                    background: isSelected ? '#fff7ed' : '#ffffff',
+                    border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                    background: isSelected ? '#eff6ff' : '#ffffff',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease'
                   }}>
@@ -341,9 +349,9 @@ const GameQuestionPage = () => {
                 }}
                 disabled={answers[currentQ?.id] === undefined || isSubmitting}
                 style={{
-                  background: (answers[currentQ?.id] === undefined || isSubmitting) ? '#94a3b8' : '#f97316', border: 'none', color: '#ffffff',
+                  background: (answers[currentQ?.id] === undefined || isSubmitting) ? '#94a3b8' : '#3b82f6', border: 'none', color: '#ffffff',
                   padding: '0.75rem 2rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.9rem', cursor: (answers[currentQ?.id] === undefined || isSubmitting) ? 'not-allowed' : 'pointer',
-                  boxShadow: (answers[currentQ?.id] === undefined || isSubmitting) ? 'none' : '0 4px 12px rgba(249, 115, 22, 0.3)',
+                  boxShadow: (answers[currentQ?.id] === undefined || isSubmitting) ? 'none' : '0 4px 12px rgba(59, 130, 246, 0.3)',
                   transition: 'all 0.2s ease',
                   minWidth: '160px'
                 }}
@@ -367,7 +375,7 @@ const GameQuestionPage = () => {
                   let color = '#94a3b8';
                   
                   if (i === currentIdx) {
-                    bg = '#f97316'; // Orange for current
+                    bg = '#3b82f6'; // Blue for current
                     color = '#ffffff';
                   } else if (answers[q.id] !== undefined) {
                     bg = '#10b981'; // Green for answered (solved)
@@ -414,8 +422,8 @@ const GameQuestionPage = () => {
           </div>
 
           {/* Help Note */}
-          <div style={{ flex: '1 1 300px', background: 'rgba(249, 115, 22, 0.05)', borderRadius: '1.25rem', padding: '1.5rem', border: '1px solid rgba(249, 115, 22, 0.1)', display: 'flex', alignItems: 'center' }}>
-             <div style={{ display: 'flex', gap: '0.75rem', color: '#f97316' }}>
+          <div style={{ flex: '1 1 300px', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '1.25rem', padding: '1.5rem', border: '1px solid rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center' }}>
+             <div style={{ display: 'flex', gap: '0.75rem', color: '#3b82f6' }}>
                 <Trophy size={20} />
                 <div>
                   <p style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: '0.25rem' }}>WINNER INFO</p>

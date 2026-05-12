@@ -153,7 +153,7 @@ const getUserHistory = async (req, res) => {
   
   try {
     let query = `
-      SELECT s.*, q.title, q.zone_id,
+      SELECT s.*, q.title, q.zone_id, q.winner_id, u.name as winner_name,
       (
         SELECT COUNT(*) + 1
         FROM submissions s2
@@ -161,7 +161,8 @@ const getUserHistory = async (req, res) => {
         AND s2.total_score > s.total_score
       ) as rank
       FROM submissions s 
-      JOIN quizzes q ON s.quiz_id = q.id 
+      LEFT JOIN quizzes q ON s.quiz_id = q.id 
+      LEFT JOIN users u ON q.winner_id = u.id
       WHERE s.user_id = $1 
     `;
     const params = [userId];
@@ -178,6 +179,8 @@ const getUserHistory = async (req, res) => {
     query += ` ORDER BY s.submitted_at DESC`;
     
     const { rows } = await db.query(query, params);
+    console.log(`[HistoryAPI] Found ${rows.length} rows for user: ${userId}`);
+    
     res.json({ success: true, history: rows });
   } catch (error) {
     console.error(error);
@@ -192,7 +195,7 @@ const getSubmissionReview = async (req, res) => {
   try {
     // 1. Get submission info and verify ownership
     const { rows: subRows } = await db.query(
-      'SELECT s.*, q.title FROM submissions s JOIN quizzes q ON s.quiz_id = q.id WHERE s.id = $1 AND s.user_id = $2',
+      'SELECT s.*, q.title, q.winner_id, q.status as quiz_status FROM submissions s JOIN quizzes q ON s.quiz_id = q.id WHERE s.id = $1 AND s.user_id = $2',
       [id, userId]
     );
 
@@ -230,10 +233,22 @@ const getSubmissionReview = async (req, res) => {
   }
 };
 
+const getBalance = async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    const { rows } = await db.query('SELECT coins, points FROM users WHERE id = $1', [userId]);
+    if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json({ success: true, balance: { coins: rows[0].coins || 0, points: rows[0].points || 0, bonus: 0 } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   sendOtp,
   verifyOtp,
   updateProfile,
   getUserHistory,
-  getSubmissionReview
+  getSubmissionReview,
+  getBalance
 };

@@ -23,6 +23,9 @@ const AdminDashboard = () => {
   const [serverTime, setServerTime] = useState(new Date());
   const [isParsing, setIsParsing] = useState(false);
   const [parseProgress, setParseProgress] = useState(0);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewData, setReviewData] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
   const [homeBannerUrl, setHomeBannerUrl] = useState('');
@@ -65,6 +68,7 @@ const AdminDashboard = () => {
       entry_amount: 10,
       open_at: '',
       close_at: '',
+      prize_amount: 0,
       banner_url: '',
       questions: defaultQuestions
     };
@@ -284,12 +288,32 @@ const AdminDashboard = () => {
       });
       const data = await res.json();
       if (data.success) {
-        alert('Winner declared!');
+        alert(data.message || 'Winner declared!');
         fetchData(); // Refresh list
         setSelectedQuiz(null);
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const fetchSubmissionReview = async (submissionId) => {
+    setReviewLoading(true);
+    setShowReviewModal(true);
+    try {
+      const token = localStorage.getItem('play11_admin_session');
+      const res = await fetch(`/api/admin/submissions/${submissionId}/review`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReviewData(data);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to load review data');
+    } finally {
+      setReviewLoading(false);
     }
   };
   
@@ -345,6 +369,7 @@ const AdminDashboard = () => {
           open_at: new Date(quiz.open_at).toISOString().slice(0, 16),
           close_at: new Date(quiz.close_at).toISOString().slice(0, 16),
           banner_url: quiz.banner_url || '',
+          prize_amount: quiz.prize_amount || 0,
           questions: questions
         });
         setIsEditing(true);
@@ -836,6 +861,10 @@ const AdminDashboard = () => {
                   <label>CLOSE AT</label>
                   <input className="admin-input" type="datetime-local" required value={newQuiz.close_at} onChange={e => setNewQuiz({...newQuiz, close_at: e.target.value})} />
                 </div>
+                <div className="form-group">
+                  <label>PRIZE AMOUNT (₹)</label>
+                  <input className="admin-input" type="number" value={newQuiz.prize_amount} onChange={e => setNewQuiz({...newQuiz, prize_amount: parseInt(e.target.value)})} />
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2.5rem' }}>
@@ -1108,7 +1137,8 @@ const AdminDashboard = () => {
                       <th style={{ padding: '1rem' }}>Rank</th>
                       <th style={{ padding: '1rem' }}>User</th>
                       <th style={{ padding: '1rem' }}>Score</th>
-                      <th style={{ padding: '1rem' }}>Submitted At</th>
+                      <th style={{ padding: '1rem' }}>Time Taken</th>
+                      <th style={{ padding: '1rem' }}>Details</th>
                       <th style={{ padding: '1rem' }}>Action</th>
                     </tr>
                   </thead>
@@ -1120,8 +1150,15 @@ const AdminDashboard = () => {
                           <p style={{ fontWeight: 700 }}>{p.name}</p>
                           <p style={{ fontSize: '0.75rem', color: '#64748b' }}>{p.mobile}</p>
                         </td>
-                        <td style={{ padding: '1rem', fontWeight: 800, color: '#10b981' }}>{p.score}</td>
-                        <td style={{ padding: '1rem', fontSize: '0.85rem' }}>{new Date(p.submitted_at).toLocaleTimeString()}</td>
+                        <td style={{ padding: '1rem' }}>
+                           <span style={{ fontWeight: 800, color: '#10b981' }}>{p.correct_count}</span>
+                           <span style={{ color: '#94a3b8', margin: '0 4px' }}>/</span>
+                           <span style={{ fontWeight: 600, color: '#64748b' }}>{p.total_questions}</span>
+                        </td>
+                        <td style={{ padding: '1rem', fontWeight: 800, color: '#3b82f6' }}>{p.time_taken || 'N/A'}</td>
+                        <td style={{ padding: '1rem' }}>
+                           <button onClick={() => fetchSubmissionReview(p.id)} style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer' }}>View Answers</button>
+                        </td>
                         <td style={{ padding: '1rem' }}>
                            {!selectedQuiz.winner_id && (
                              <button onClick={() => handleDeclareWinner(selectedQuiz.id, p.user_id)} className="admin-winner-btn">Declare Winner</button>
@@ -1323,6 +1360,65 @@ const AdminDashboard = () => {
             </div>
 
             <p style={{ color: '#64748b', fontWeight: 600 }}>Banners have been moved to the <strong style={{ color: '#3b82f6', cursor: 'pointer' }} onClick={() => setActiveTab('Banners')}>Banners Section</strong>.</p>
+          </div>
+        )}
+
+        {/* Review Modal */}
+        {showReviewModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+            <div style={{ background: 'white', width: '100%', maxWidth: '700px', maxHeight: '90vh', borderRadius: '1.5rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+               <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ fontWeight: 900 }}>Submission Detailed Review</h3>
+                  <button onClick={() => { setShowReviewModal(false); setReviewData(null); }} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.75rem', fontWeight: 800, cursor: 'pointer' }}>Close</button>
+               </div>
+               <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+                  {reviewLoading && <div style={{ textAlign: 'center', padding: '2rem' }}><Loader2 className="animate-spin" size={32} /></div>}
+                  {!reviewLoading && reviewData && (
+                    <div style={{ display: 'grid', gap: '1.5rem' }}>
+                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
+                          <div>
+                             <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b' }}>SCORE</p>
+                             <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#10b981' }}>{reviewData.submission.correct_count} Correct / {reviewData.submission.wrong_count} Wrong</p>
+                          </div>
+                          <div>
+                             <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b' }}>TIME TAKEN</p>
+                             <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#3b82f6' }}>{reviewData.submission.time_taken || 'N/A'}</p>
+                          </div>
+                       </div>
+                       
+                       {reviewData.answers.map((ans, idx) => (
+                         <div key={idx} style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '1rem' }}>
+                            <p style={{ fontWeight: 800, marginBottom: '0.75rem' }}>{idx + 1}. {ans.question_text}</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                               {ans.options?.map((opt, oIdx) => {
+                                 const isSelected = String(ans.selected_value) === String(opt.value);
+                                 const isCorrect = String(ans.correct_value) === String(opt.value);
+                                 
+                                 let bgColor = 'white';
+                                 let borderColor = '#e2e8f0';
+                                 if (isSelected) {
+                                   bgColor = isCorrect ? '#dcfce7' : '#fee2e2';
+                                   borderColor = isCorrect ? '#22c55e' : '#ef4444';
+                                 } else if (isCorrect) {
+                                   bgColor = '#eff6ff';
+                                   borderColor = '#3b82f6';
+                                 }
+
+                                 return (
+                                   <div key={oIdx} style={{ padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: bgColor, border: `1px solid ${borderColor}`, fontSize: '0.85rem', fontWeight: 600 }}>
+                                      {opt.text} 
+                                      {isSelected && <span style={{ marginLeft: '4px', fontSize: '0.65rem', fontWeight: 900 }}>{isCorrect ? '(USER ✅)' : '(USER ❌)'}</span>}
+                                      {isCorrect && !isSelected && <span style={{ marginLeft: '4px', fontSize: '0.65rem', fontWeight: 900 }}>(CORRECT)</span>}
+                                   </div>
+                                 );
+                               })}
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                  )}
+               </div>
+            </div>
           </div>
         )}
       </div>

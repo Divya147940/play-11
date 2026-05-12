@@ -79,7 +79,7 @@ const toggleUserStatus = async (req, res) => {
 const createQuiz = async (req, res) => {
   const { 
     zone_id, category_id, match_id, title, hindiTitle, description, hindiDescription, 
-    total_questions, timer_minutes, entry_amount,
+    total_questions, timer_minutes, entry_amount, prize_amount,
     open_at, close_at, marks_per_q, banner_url, questions 
   } = req.body;
   
@@ -90,8 +90,8 @@ const createQuiz = async (req, res) => {
     
     // 1. Insert Quiz
     await db.query(
-      "INSERT INTO quizzes (id, zone_id, category_id, match_id, title, hindi_title, description, hindi_description, total_questions, timer_minutes, entry_amount, open_at, close_at, status, marks_per_q, banner_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)",
-      [quizId, zone_id, category_id, match_id || null, title, hindiTitle || null, description, hindiDescription || null, total_questions, timer_minutes, entry_amount || 0, open_at, close_at, 'active', marks_per_q || 2, banner_url || null]
+      "INSERT INTO quizzes (id, zone_id, category_id, match_id, title, hindi_title, description, hindi_description, total_questions, timer_minutes, entry_amount, prize_amount, open_at, close_at, status, marks_per_q, banner_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)",
+      [quizId, zone_id, category_id, match_id || null, title, hindiTitle || null, description, hindiDescription || null, total_questions, timer_minutes, entry_amount || 0, prize_amount || 0, open_at, close_at, 'active', marks_per_q || 2, banner_url || null]
     );
 
     if (questions && Array.isArray(questions)) {
@@ -183,9 +183,10 @@ const getQuizParticipants = async (req, res) => {
   const { id } = req.params;
   try {
     const { rows } = await db.query(`
-      SELECT s.*, u.name, u.mobile, u.status as user_status
+      SELECT s.*, u.name, u.mobile, u.status as user_status, q.total_questions
       FROM submissions s
       JOIN users u ON s.user_id = u.id
+      JOIN quizzes q ON s.quiz_id = q.id
       WHERE s.quiz_id = $1
       ORDER BY s.total_score DESC, s.submitted_at ASC
     `, [id]);
@@ -205,9 +206,24 @@ const declareWinner = async (req, res) => {
       return res.status(400).json({ error: 'This user did not participate in the quiz and cannot be declared winner.' });
     }
 
+    await db.query('BEGIN');
+    
+    // 1. Get Prize Amount
+    const { rows: quizRows } = await db.query("SELECT prize_amount FROM quizzes WHERE id = $1", [id]);
+    const prizeAmount = quizRows[0]?.prize_amount || 0;
+
+    // 2. Mark Winner in Quiz
     await db.query("UPDATE quizzes SET winner_id = $1, status = 'completed' WHERE id = $2", [winner_id, id]);
-    res.json({ success: true });
+
+    // 3. Add Prize to User Balance
+    if (prizeAmount > 0) {
+      await db.query("UPDATE users SET coins = coins + $1 WHERE id = $2", [prizeAmount, winner_id]);
+    }
+
+    await db.query('COMMIT');
+    res.json({ success: true, message: `Winner declared and reward of ₹${prizeAmount} added to user wallet.` });
   } catch (error) {
+    await db.query('ROLLBACK');
     res.status(500).json({ error: error.message });
   }
 };
@@ -351,9 +367,9 @@ const updateQuiz = async (req, res) => {
       `UPDATE quizzes SET 
         zone_id = $1, category_id = $2, match_id = $3, title = $4, hindi_title = $5, 
         description = $6, hindi_description = $7, total_questions = $8, timer_minutes = $9, 
-        entry_amount = $10, open_at = $11, close_at = $12, marks_per_q = $13, banner_url = $14
-      WHERE id = $15`,
-      [zone_id, category_id, match_id || null, title, hindiTitle || null, description, hindiDescription || null, total_questions, timer_minutes, entry_amount || 0, open_at, close_at, marks_per_q || 2, banner_url || null, id]
+        entry_amount = $10, prize_amount = $11, open_at = $12, close_at = $13, marks_per_q = $14, banner_url = $15
+      WHERE id = $16`,
+      [zone_id, category_id, match_id || null, title, hindiTitle || null, description, hindiDescription || null, total_questions, timer_minutes, entry_amount || 0, prize_amount || 0, open_at, close_at, marks_per_q || 2, banner_url || null, id]
     );
 
     if (questions && Array.isArray(questions)) {
@@ -428,6 +444,34 @@ const deleteMatch = async (req, res) => {
   }
 };
 
+const getSubmissionReviewAdmin = async (req, res) => {
+  const { id } = req.params; // submission_id
+  try {
+    const { rows: subRows } = await db.query(
+      'SELECT s.*, q.title FROM submissions s JOIN quizzes q ON s.quiz_id = q.id WHERE s.id = $1',
+      [id]
+    );
+
+    if (subRows.length === 0) return res.status(404).json({ error: 'Submission not found' });
+
+    const { rows: answers } = await db.query(`
+      SELECT sa.*, q.question_text, q.hindi_question_text,
+      (SELECT answer_value FROM correct_answers ca WHERE ca.question_id = q.id LIMIT 1) as correct_value,
+      (SELECT json_agg(json_build_object('text', qo.option_text, 'value', qo.option_value)) 
+       FROM question_options qo WHERE qo.question_id = q.id) as options
+      FROM submission_answers sa
+      JOIN questions q ON sa.question_id = q.id
+      WHERE sa.submission_id = $1
+      ORDER BY q.sort_order ASC
+    `, [id]);
+
+    res.json({ success: true, submission: subRows[0], answers });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getUsers,
@@ -436,6 +480,7 @@ module.exports = {
   createQuiz,
   getQuizzesWithStats,
   getQuizParticipants,
+  getSubmissionReviewAdmin,
   declareWinner,
   updateMatch,
   addMatch,
