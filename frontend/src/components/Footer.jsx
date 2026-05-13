@@ -70,7 +70,6 @@ const Footer = () => {
             </div>
             <div className="footer-info-tags">
                <span>Secure Connection</span>
-               <span>v2.0.4 Premium</span>
             </div>
         </div>
       </div>

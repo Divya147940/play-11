@@ -43,7 +43,6 @@ const Header = () => {
           <div className="logo-box">U</div>
           <div className="logo-box">Z</div>
           <div className="logo-box">O</div>
-          <span style={{ color: '#3b82f6', fontSize: '0.6rem', fontWeight: 900, background: 'rgba(59, 130, 246, 0.1)', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}>v2</span>
         </div>
 
         {/* Desktop Nav */}
