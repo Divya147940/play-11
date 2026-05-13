@@ -18,7 +18,16 @@ const LeaderboardPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem('play11_token');
+        const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
+        let token = '';
+        if (sessionRaw) {
+          try {
+            const parsed = JSON.parse(sessionRaw);
+            token = parsed.token || sessionRaw;
+          } catch (e) {
+            token = sessionRaw;
+          }
+        }
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
         const endpoint = isGlobal

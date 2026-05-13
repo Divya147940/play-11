@@ -16,8 +16,10 @@ const path = require('path');
 
 // Logger Middleware
 app.use((req, res, next) => {
-  const logMsg = `${new Date().toISOString()} | ${req.method} ${req.url} | ${JSON.stringify(req.headers['authorization'] || 'No Auth')}\n`;
-  fs.appendFileSync(path.join(__dirname, 'server_requests.log'), logMsg);
+  res.on('finish', () => {
+    const logMsg = `${new Date().toISOString()} | ${req.method} ${req.url} | ${res.statusCode} | ${JSON.stringify(req.headers['authorization'] || 'No Auth')}\n`;
+    fs.appendFileSync(path.join(__dirname, 'server_requests.log'), logMsg);
+  });
   next();
 });
 

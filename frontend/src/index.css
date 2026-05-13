@@ -66,9 +66,9 @@ body {
     right: 0;
     z-index: 1000;
     background: #0d1f3c !important;
-    border: 0 !important;
-    border-top: 0 !important;
-    border-bottom: 0 !important;
+    border: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
     box-shadow: none !important;
     outline: none !important;
     padding: 0 !important;
@@ -115,7 +115,12 @@ body {
 .mobile-only { display: none; }
 .desktop-only { display: block; }
 
-.logo-boxes { display: flex; gap: 8px; }
+.logo-boxes { 
+    display: flex; 
+    gap: 8px; 
+    position: relative;
+    z-index: 1001; /* Higher than nav-links and other header elements */
+}
 
 .logo-box {
     width: 38px;
@@ -1228,12 +1233,18 @@ h2 {
         gap: 30px;
         align-items: center;
         transform: translateY(-120%);
-        transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+        transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
         z-index: 19;
         border-bottom: 2px solid rgba(56, 189, 248, 0.2);
+        visibility: hidden;
+        pointer-events: none;
     }
     
-    .nav-links.open { transform: translateY(0); }
+    .nav-links.open { 
+        transform: translateY(0); 
+        visibility: visible;
+        pointer-events: auto;
+    }
     .nav-links a { font-size: 18px; font-weight: 700; }
     
     .menu-toggle { display: block; }
@@ -1478,9 +1489,9 @@ h2 {
     right: 0;
     z-index: 1000;
     background: #0d1f3c;
-    border: 0 !important;
-    border-top: 0 !important;
-    border-bottom: 0 !important;
+    border: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
     box-shadow: none !important;
     transition: all 0.3s ease;
     height: 70px;

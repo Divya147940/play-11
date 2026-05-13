@@ -1,23 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, ChevronRight, ShieldCheck, History, Award, Mail, Wallet, Trophy, Ticket, Gamepad2, MoreHorizontal, Headphones, MoreVertical, FileText, Info } from 'lucide-react';
+import { User, ChevronRight, ShieldCheck, History, Award, Wallet, Trophy, Ticket, Gamepad2, MoreHorizontal, Headphones, FileText } from 'lucide-react';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const isGuest = !localStorage.getItem('play11_session');
-  const mobile = localStorage.getItem('user_mobile') || 'Not Linked';
   const getInitialName = () => {
     const storedName = localStorage.getItem('user_name');
     if (storedName) return storedName;
-    
-    const userStr = localStorage.getItem('play11_user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        if (user && user.name) return user.name;
-      } catch (e) {}
-    }
-    return isGuest ? 'Guest Explorer' : 'Scholar';
+    return 'Scholar';
   };
 
   const [name, setName] = React.useState(getInitialName());
@@ -26,20 +16,26 @@ const ProfilePage = () => {
   const [userStats, setUserStats] = React.useState({ quizzes: 0, wins: 0, points: 0 });
 
   React.useEffect(() => {
+    const guestId = localStorage.getItem('play11_guest_id');
     const sessionRaw = localStorage.getItem('play11_session');
-    if (!sessionRaw) return;
     
-    let token = sessionRaw;
-    try {
-      const parsed = JSON.parse(sessionRaw);
-      token = parsed.token || sessionRaw;
-    } catch (e) {
-      token = sessionRaw;
+    let token = '';
+    let headers = {};
+    
+    if (sessionRaw) {
+      try {
+        const parsed = JSON.parse(sessionRaw);
+        token = parsed.token || sessionRaw;
+        headers['Authorization'] = `Bearer ${token}`;
+      } catch (e) {
+        token = sessionRaw;
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+    } else if (guestId) {
+      headers['x-guest-id'] = guestId;
     }
 
-    fetch('/api/auth/history', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
+    fetch('/api/auth/history', { headers })
       .then(res => res.json())
       .then(data => {
         if (data.success && data.history) {
@@ -54,16 +50,8 @@ const ProfilePage = () => {
 
   const handleNameSave = (newName) => {
     localStorage.setItem('user_name', newName);
-    setName(newName);
+    setName(newName || 'Scholar');
     setIsEditing(false);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('play11_session');
-    localStorage.removeItem('play11_user');
-    localStorage.removeItem('user_mobile');
-    localStorage.removeItem('user_name');
-    navigate('/login');
   };
 
   const stats = [
@@ -131,14 +119,7 @@ const ProfilePage = () => {
         onClick: () => navigate('/legal'),
         isSubsection: true
       }
-    ] : []),
-    { 
-      icon: isGuest ? <User size={20} /> : <LogOut size={20} />, 
-      title: isGuest ? 'Sign In / Register' : 'Logout', 
-      subtext: isGuest ? 'Access your account or create a new one' : 'Terminate your current session', 
-      onClick: isGuest ? () => navigate('/login') : handleLogout,
-      bgIcon: <User size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
-    }
+    ] : [])
   ];
 
   return (
@@ -242,14 +223,6 @@ const ProfilePage = () => {
                 zIndex: item.isActive ? 5 : 1,
                 opacity: item.isSubsection ? 0.9 : 1
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.01)';
-                if (!item.isActive && !item.isSubsection) e.currentTarget.style.backgroundColor = '#f8fafc';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                if (!item.isActive && !item.isSubsection) e.currentTarget.style.backgroundColor = 'white';
-              }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', zIndex: 2 }}>
                 <div style={{ 
@@ -286,7 +259,6 @@ const ProfilePage = () => {
             </div>
           ))}
         </div>
-
       </div>
     </div>
   );

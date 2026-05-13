@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  BarChart3, Users, BookOpen, Trophy, 
-  Settings, LayoutDashboard, PlusCircle, 
-  AlertCircle, ChevronRight, Search, 
+import {
+  BarChart3, Users, BookOpen, Trophy,
+  Settings, LayoutDashboard, PlusCircle,
+  AlertCircle, ChevronRight, Search,
   MoreVertical, CheckCircle2, Clock,
   ArrowUpRight, ArrowDownRight, Globe, Lock, Unlock, Edit, Trash2, Shield, Upload,
   Plus, Save, Trash, Award, FileText, Image as ImageIcon, Loader2
@@ -198,19 +198,19 @@ const AdminDashboard = () => {
         open_at: new Date(newQuiz.open_at).toISOString(),
         close_at: new Date(newQuiz.close_at).toISOString()
       };
-      
+
       const url = isEditing ? `/api/admin/quizzes/${editId}` : '/api/admin/quizzes';
       const method = isEditing ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
         method: method,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(quizData)
       });
-      
+
       if (res.status === 401) {
         alert('Your session has expired. Please login again.');
         window.location.href = '/admin/login';
@@ -280,7 +280,7 @@ const AdminDashboard = () => {
       const token = localStorage.getItem('play11_admin_session');
       const res = await fetch(`/api/admin/quizzes/${quizId}/declare-winner`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -318,7 +318,7 @@ const AdminDashboard = () => {
       setReviewLoading(false);
     }
   };
-  
+
   const handleDeleteQuiz = async (id) => {
     if (!window.confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) return;
     try {
@@ -430,13 +430,13 @@ const AdminDashboard = () => {
 
   const handleTranslate = async (index, type, optIndex = null, fromLang, toLang, value, force = false) => {
     if (!value) return;
-    
+
     // Check if target is already filled (skip if not forced)
     const qs = [...newQuiz.questions];
     if (!force) {
       if (type === 'question') {
         const target = toLang === 'hi' ? qs[index].hindiText : qs[index].text;
-        if (target) return; 
+        if (target) return;
       } else if (type === 'option') {
         const target = toLang === 'hi' ? qs[index].options[optIndex].hindiText : qs[index].options[optIndex].text;
         if (target) return;
@@ -464,7 +464,7 @@ const AdminDashboard = () => {
         setNewQuiz(prev => ({ ...prev, [toLang === 'hi' ? 'hindiDescription' : 'description']: translated }));
         return;
       }
-    setNewQuiz({ ...newQuiz, questions: qs });
+      setNewQuiz({ ...newQuiz, questions: qs });
     }
   };
 
@@ -501,7 +501,7 @@ const AdminDashboard = () => {
     setParseProgress(0);
 
     const fileExt = file.name.split('.').pop().toLowerCase();
-    
+
     try {
       if (fileExt === 'json') {
         const reader = new FileReader();
@@ -512,7 +512,7 @@ const AdminDashboard = () => {
           setIsParsing(false);
         };
         reader.readAsText(file);
-      } 
+      }
       else if (fileExt === 'csv') {
         Papa.parse(file, {
           complete: (results) => {
@@ -566,15 +566,20 @@ const AdminDashboard = () => {
     let currentQ = null;
 
     lines.forEach(line => {
+      // Skip title/header lines if they match the quiz title
+      if (newQuiz.title && line.toLowerCase() === newQuiz.title.toLowerCase()) return;
+      if (newQuiz.hindiTitle && line === newQuiz.hindiTitle) return;
+
       // New Question detection (starts with digit or Q:)
-      if (/^\d+[\.\)]|Q:/i.test(line)) {
+      const qMatch = line.match(/^(\d+)[\.\)]\s*(.*)/i) || line.match(/^Q:\s*(.*)/i);
+      if (qMatch) {
         if (currentQ) questions.push(currentQ);
         currentQ = {
-          text: line.replace(/^\d+[\.\)]|Q:/i, '').trim(),
+          text: qMatch[qMatch[2] ? 2 : 1].trim(),
           options: [],
           correctOptionIndex: 0
         };
-      } 
+      }
       // Option detection (A/B/C/D)
       else if (/^[A-D][\.\)]/i.test(line) && currentQ) {
         currentQ.options.push({ text: line.replace(/^[A-D][\.\)]/i, '').trim(), hindiText: '' });
@@ -584,6 +589,18 @@ const AdminDashboard = () => {
         const ans = line.replace(/Ans:|Answer:/i, '').trim().toUpperCase();
         const index = ['A', 'B', 'C', 'D'].indexOf(ans);
         if (index !== -1) currentQ.correctOptionIndex = index;
+      }
+      // If it doesn't match anything but we have no current question, it might be the start
+      else if (!currentQ) {
+        currentQ = {
+          text: line,
+          options: [],
+          correctOptionIndex: 0
+        };
+      }
+      // Otherwise, append to current question text
+      else if (currentQ && currentQ.options.length === 0) {
+        currentQ.text += " " + line;
       }
     });
 
@@ -597,13 +614,13 @@ const AdminDashboard = () => {
   };
 
   const SidebarItem = ({ icon, label }) => (
-    <div 
+    <div
       onClick={() => setActiveTab(label)}
-      style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '1rem', 
-        padding: '0.85rem 1.25rem', 
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        padding: '0.85rem 1.25rem',
         borderRadius: '1rem',
         cursor: 'pointer',
         background: activeTab === label ? 'linear-gradient(90deg, #3b82f6, #2dd4bf)' : 'transparent',
@@ -621,10 +638,10 @@ const AdminDashboard = () => {
       {/* Sidebar */}
       <div style={{ width: '280px', background: 'white', borderRight: '1px solid #e2e8f0', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem', padding: '0 0.5rem' }}>
-           <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #3b82f6, #2dd4bf)', borderRadius: '12px' }} className="flex-center">
-              <Shield size={20} color="white" />
-           </div>
-           <h2 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Play11 Admin</h2>
+          <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #3b82f6, #2dd4bf)', borderRadius: '12px' }} className="flex-center">
+            <Shield size={20} color="white" />
+          </div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Play11 Admin</h2>
         </div>
         <SidebarItem icon={<LayoutDashboard />} label="Overview" />
         <SidebarItem icon={<Upload />} label="Upload Quiz" />
@@ -638,40 +655,40 @@ const AdminDashboard = () => {
       {/* Content */}
       <div style={{ flex: 1, padding: '2.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-           <h1 style={{ fontSize: '1.75rem', fontWeight: 900 }}>{activeTab}</h1>
-           <button 
-             onClick={() => {
-               localStorage.removeItem('play11_admin_session');
-               window.location.href = '/admin/login';
-             }}
-             style={{ 
-               padding: '0.6rem 1.2rem', 
-               background: '#fee2e2', 
-               color: '#ef4444', 
-               border: 'none', 
-               borderRadius: '0.75rem', 
-               fontWeight: 800,
-               cursor: 'pointer'
-             }}
-           >
-             Logout
-           </button>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 900 }}>{activeTab}</h1>
+          <button
+            onClick={() => {
+              localStorage.removeItem('play11_admin_session');
+              window.location.href = '/admin/login';
+            }}
+            style={{
+              padding: '0.6rem 1.2rem',
+              background: '#fee2e2',
+              color: '#ef4444',
+              border: 'none',
+              borderRadius: '0.75rem',
+              fontWeight: 800,
+              cursor: 'pointer'
+            }}
+          >
+            Logout
+          </button>
         </div>
 
         {activeTab === 'Overview' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
-             <div className="bento-card-admin" style={{ background: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Users</p>
-                <h3 style={{ fontSize: '2rem', fontWeight: 900 }}>{statsData?.users || 0}</h3>
-             </div>
-             <div className="bento-card-admin" style={{ background: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Active Quizzes</p>
-                <h3 style={{ fontSize: '2rem', fontWeight: 900 }}>{statsData?.quizzes || 0}</h3>
-             </div>
-             <div className="bento-card-admin" style={{ background: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Submissions</p>
-                <h3 style={{ fontSize: '2rem', fontWeight: 900 }}>{statsData?.submissions || 0}</h3>
-             </div>
+            <div className="bento-card-admin" style={{ background: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Users</p>
+              <h3 style={{ fontSize: '2rem', fontWeight: 900 }}>{statsData?.users || 0}</h3>
+            </div>
+            <div className="bento-card-admin" style={{ background: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Active Quizzes</p>
+              <h3 style={{ fontSize: '2rem', fontWeight: 900 }}>{statsData?.quizzes || 0}</h3>
+            </div>
+            <div className="bento-card-admin" style={{ background: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Submissions</p>
+              <h3 style={{ fontSize: '2rem', fontWeight: 900 }}>{statsData?.submissions || 0}</h3>
+            </div>
           </div>
         )}
 
@@ -689,11 +706,11 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <div 
-                style={{ 
-                  border: '2px dashed #cbd5e1', 
-                  borderRadius: '1rem', 
-                  padding: '3rem 2rem', 
+              <div
+                style={{
+                  border: '2px dashed #cbd5e1',
+                  borderRadius: '1rem',
+                  padding: '3rem 2rem',
                   textAlign: 'center',
                   background: '#f8fafc',
                   cursor: 'pointer',
@@ -707,12 +724,12 @@ const AdminDashboard = () => {
                 }}
                 onClick={() => document.getElementById('bulk-file-input').click()}
               >
-                <input 
+                <input
                   id="bulk-file-input"
-                  type="file" 
-                  accept=".json,.csv,.txt,.png,.jpg,.jpeg" 
-                  onChange={e => handleAutoIngest(e.target.files[0])} 
-                  style={{ display: 'none' }} 
+                  type="file"
+                  accept=".json,.csv,.txt,.png,.jpg,.jpeg"
+                  onChange={e => handleAutoIngest(e.target.files[0])}
+                  style={{ display: 'none' }}
                 />
                 {isParsing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
@@ -726,10 +743,10 @@ const AdminDashboard = () => {
                       <p style={{ fontWeight: 700 }}>Click or drag file here</p>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                       <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>CSV</span>
-                       <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>TXT</span>
-                       <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>PNG/JPG</span>
-                       <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>JSON</span>
+                      <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>CSV</span>
+                      <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>TXT</span>
+                      <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>PNG/JPG</span>
+                      <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>JSON</span>
                     </div>
                   </>
                 )}
@@ -747,26 +764,26 @@ const AdminDashboard = () => {
 
             {/* Manual Entry Quick Start */}
             <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-               <div style={{ width: '64px', height: '64px', background: '#f0fdf4', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                  <PlusCircle size={32} color="#22c55e" />
-               </div>
-               <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '0.5rem' }}>Manual Creation</h3>
-               <p style={{ color: '#64748b', marginBottom: '2rem', maxWidth: '300px' }}>Start a fresh quiz from scratch with our intuitive step-by-step builder.</p>
-               <button 
-                 onClick={() => setActiveTab('Create Quiz')}
-                 style={{ 
-                   padding: '1rem 2rem', 
-                   background: '#22c55e', 
-                   color: 'white', 
-                   border: 'none', 
-                   borderRadius: '1rem', 
-                   fontWeight: 800, 
-                   cursor: 'pointer',
-                   fontSize: '1rem'
-                 }}
-               >
-                 Start Manual Quiz
-               </button>
+              <div style={{ width: '64px', height: '64px', background: '#f0fdf4', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                <PlusCircle size={32} color="#22c55e" />
+              </div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '0.5rem' }}>Manual Creation</h3>
+              <p style={{ color: '#64748b', marginBottom: '2rem', maxWidth: '300px' }}>Start a fresh quiz from scratch with our intuitive step-by-step builder.</p>
+              <button
+                onClick={() => setActiveTab('Create Quiz')}
+                style={{
+                  padding: '1rem 2rem',
+                  background: '#22c55e',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '1rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  fontSize: '1rem'
+                }}
+              >
+                Start Manual Quiz
+              </button>
             </div>
           </div>
         )}
@@ -774,11 +791,11 @@ const AdminDashboard = () => {
         {activeTab === 'Create Quiz' && (
           <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
             {/* Server Time Display */}
-            <div style={{ 
-              marginBottom: '2rem', 
-              padding: '1rem 1.5rem', 
-              background: '#eff6ff', 
-              borderRadius: '1rem', 
+            <div style={{
+              marginBottom: '2rem',
+              padding: '1rem 1.5rem',
+              background: '#eff6ff',
+              borderRadius: '1rem',
               border: '1px solid #dbeafe',
               display: 'flex',
               justifyContent: 'space-between',
@@ -809,8 +826,8 @@ const AdminDashboard = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label>QUIZ TITLE (ENGLISH)</label>
                   </div>
-                  <input className="admin-input" required value={newQuiz.title} 
-                    onChange={e => setNewQuiz({...newQuiz, title: e.target.value})} 
+                  <input className="admin-input" required value={newQuiz.title}
+                    onChange={e => setNewQuiz({ ...newQuiz, title: e.target.value })}
                     onBlur={e => handleTranslate(null, 'title', null, 'en', 'hi', e.target.value)}
                   />
                 </div>
@@ -818,8 +835,8 @@ const AdminDashboard = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label>QUIZ TITLE (HINDI)</label>
                   </div>
-                  <input className="admin-input" value={newQuiz.hindiTitle} 
-                    onChange={e => setNewQuiz({...newQuiz, hindiTitle: e.target.value})} 
+                  <input className="admin-input" value={newQuiz.hindiTitle}
+                    onChange={e => setNewQuiz({ ...newQuiz, hindiTitle: e.target.value })}
                     onBlur={e => handleTranslate(null, 'title', null, 'hi', 'en', e.target.value)}
                   />
                 </div>
@@ -827,7 +844,7 @@ const AdminDashboard = () => {
                   <label>CATEGORY</label>
                   <select className="admin-input" value={newQuiz.category_id} onChange={e => {
                     const cat = categories.find(c => c.id === e.target.value);
-                    setNewQuiz({...newQuiz, category_id: e.target.value, zone_id: cat?.zone_id || 'study-zone'});
+                    setNewQuiz({ ...newQuiz, category_id: e.target.value, zone_id: cat?.zone_id || 'study-zone' });
                   }}>
                     {categories.map(cat => (
                       <option key={cat.id} value={cat.id}>
@@ -838,15 +855,15 @@ const AdminDashboard = () => {
                 </div>
                 <div className="form-group">
                   <label>TIMER (MINUTES)</label>
-                  <input className="admin-input" type="number" value={newQuiz.timer_minutes} onChange={e => setNewQuiz({...newQuiz, timer_minutes: parseInt(e.target.value)})} />
+                  <input className="admin-input" type="number" value={newQuiz.timer_minutes} onChange={e => setNewQuiz({ ...newQuiz, timer_minutes: parseInt(e.target.value) })} />
                 </div>
                 <div className="form-group">
                   <label>ENTRY AMOUNT (₹)</label>
-                  <input className="admin-input" type="number" value={newQuiz.entry_amount} onChange={e => setNewQuiz({...newQuiz, entry_amount: parseInt(e.target.value)})} />
+                  <input className="admin-input" type="number" value={newQuiz.entry_amount} onChange={e => setNewQuiz({ ...newQuiz, entry_amount: parseInt(e.target.value) })} />
                 </div>
                 <div className="form-group">
                   <label>ASSOCIATED MATCH (OPTIONAL)</label>
-                  <select className="admin-input" value={newQuiz.match_id} onChange={e => setNewQuiz({...newQuiz, match_id: e.target.value})}>
+                  <select className="admin-input" value={newQuiz.match_id} onChange={e => setNewQuiz({ ...newQuiz, match_id: e.target.value })}>
                     <option value="">None / Independent Quiz</option>
                     {matches.map(m => (
                       <option key={m.id} value={m.id}>
@@ -857,15 +874,15 @@ const AdminDashboard = () => {
                 </div>
                 <div className="form-group">
                   <label>OPEN AT</label>
-                  <input className="admin-input" type="datetime-local" required value={newQuiz.open_at} onChange={e => setNewQuiz({...newQuiz, open_at: e.target.value})} />
+                  <input className="admin-input" type="datetime-local" required value={newQuiz.open_at} onChange={e => setNewQuiz({ ...newQuiz, open_at: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label>CLOSE AT</label>
-                  <input className="admin-input" type="datetime-local" required value={newQuiz.close_at} onChange={e => setNewQuiz({...newQuiz, close_at: e.target.value})} />
+                  <input className="admin-input" type="datetime-local" required value={newQuiz.close_at} onChange={e => setNewQuiz({ ...newQuiz, close_at: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label>PRIZE AMOUNT (₹)</label>
-                  <input className="admin-input" type="number" value={newQuiz.prize_amount} onChange={e => setNewQuiz({...newQuiz, prize_amount: parseInt(e.target.value)})} />
+                  <input className="admin-input" type="number" value={newQuiz.prize_amount} onChange={e => setNewQuiz({ ...newQuiz, prize_amount: parseInt(e.target.value) })} />
                 </div>
               </div>
 
@@ -874,8 +891,8 @@ const AdminDashboard = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label>DESCRIPTION (ENGLISH)</label>
                   </div>
-                  <textarea className="admin-input" style={{ minHeight: '80px' }} value={newQuiz.description} 
-                    onChange={e => setNewQuiz({...newQuiz, description: e.target.value})} 
+                  <textarea className="admin-input" style={{ minHeight: '80px' }} value={newQuiz.description}
+                    onChange={e => setNewQuiz({ ...newQuiz, description: e.target.value })}
                     onBlur={e => handleTranslate(null, 'description', null, 'en', 'hi', e.target.value)}
                   />
                 </div>
@@ -883,8 +900,8 @@ const AdminDashboard = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label>DESCRIPTION (HINDI)</label>
                   </div>
-                  <textarea className="admin-input" style={{ minHeight: '80px' }} value={newQuiz.hindiDescription} 
-                    onChange={e => setNewQuiz({...newQuiz, hindiDescription: e.target.value})} 
+                  <textarea className="admin-input" style={{ minHeight: '80px' }} value={newQuiz.hindiDescription}
+                    onChange={e => setNewQuiz({ ...newQuiz, hindiDescription: e.target.value })}
                     onBlur={e => handleTranslate(null, 'description', null, 'hi', 'en', e.target.value)}
                   />
                 </div>
@@ -892,11 +909,11 @@ const AdminDashboard = () => {
 
               <div className="form-group" style={{ marginBottom: '2.5rem' }}>
                 <label>QUIZ BANNER IMAGE URL (OPTIONAL)</label>
-                <input 
-                  className="admin-input" 
+                <input
+                  className="admin-input"
                   placeholder="https://example.com/banner.jpg"
                   value={newQuiz.banner_url}
-                  onChange={e => setNewQuiz({...newQuiz, banner_url: e.target.value})}
+                  onChange={e => setNewQuiz({ ...newQuiz, banner_url: e.target.value })}
                 />
                 {newQuiz.banner_url && (
                   <div style={{ marginTop: '1rem' }}>
@@ -921,30 +938,30 @@ const AdminDashboard = () => {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                       <div style={{ position: 'relative' }}>
-                        <input 
-                          placeholder="Question Text (English)" 
-                          className="admin-input" 
+                        <input
+                          placeholder="Question Text (English)"
+                          className="admin-input"
                           required
                           value={q.text}
                           onChange={e => {
                             const val = e.target.value;
                             const qs = [...newQuiz.questions];
-                            qs[idx] = {...qs[idx], text: val};
-                            setNewQuiz({...newQuiz, questions: qs});
+                            qs[idx] = { ...qs[idx], text: val };
+                            setNewQuiz({ ...newQuiz, questions: qs });
                           }}
                           onBlur={e => handleTranslate(idx, 'question', null, 'en', 'hi', e.target.value)}
                         />
                       </div>
                       <div style={{ position: 'relative' }}>
-                        <input 
-                          placeholder="Question Text (Hindi)" 
-                          className="admin-input" 
+                        <input
+                          placeholder="Question Text (Hindi)"
+                          className="admin-input"
                           value={q.hindiText}
                           onChange={e => {
                             const val = e.target.value;
                             const qs = [...newQuiz.questions];
-                            qs[idx] = {...qs[idx], hindiText: val};
-                            setNewQuiz({...newQuiz, questions: qs});
+                            qs[idx] = { ...qs[idx], hindiText: val };
+                            setNewQuiz({ ...newQuiz, questions: qs });
                           }}
                           onBlur={e => handleTranslate(idx, 'question', null, 'hi', 'en', e.target.value)}
                         />
@@ -955,23 +972,23 @@ const AdminDashboard = () => {
                       {q.options.map((opt, optIdx) => (
                         <div key={optIdx} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1rem', background: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
                           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <input 
-                              type="radio" 
-                              name={`correct-${idx}`} 
+                            <input
+                              type="radio"
+                              name={`correct-${idx}`}
                               checked={q.correctOptionIndex === optIdx}
                               onChange={() => {
                                 const qs = [...newQuiz.questions];
-                                qs[idx] = {...qs[idx], correctOptionIndex: optIdx};
-                                setNewQuiz({...newQuiz, questions: qs});
+                                qs[idx] = { ...qs[idx], correctOptionIndex: optIdx };
+                                setNewQuiz({ ...newQuiz, questions: qs });
                               }}
                             />
                             <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>Correct Option {optIdx + 1}</span>
                           </div>
                           <div style={{ position: 'relative' }}>
-                            <input 
-                              placeholder="Option Text (English)" 
-                              className="admin-input" 
-                              style={{ padding: '8px 12px', fontSize: '0.85rem', width: '100%' }} 
+                            <input
+                              placeholder="Option Text (English)"
+                              className="admin-input"
+                              style={{ padding: '8px 12px', fontSize: '0.85rem', width: '100%' }}
                               required
                               value={opt.text}
                               onChange={e => {
@@ -986,10 +1003,10 @@ const AdminDashboard = () => {
                             />
                           </div>
                           <div style={{ position: 'relative' }}>
-                            <input 
-                              placeholder="Option Text (Hindi)" 
-                              className="admin-input" 
-                              style={{ padding: '8px 12px', fontSize: '0.85rem', width: '100%' }} 
+                            <input
+                              placeholder="Option Text (Hindi)"
+                              className="admin-input"
+                              style={{ padding: '8px 12px', fontSize: '0.85rem', width: '100%' }}
                               value={opt.hindiText}
                               onChange={e => {
                                 const val = e.target.value;
@@ -1045,16 +1062,16 @@ const AdminDashboard = () => {
               </div>
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => {
                     if (window.confirm('Clear all form data?')) {
                       localStorage.removeItem('play11_quiz_draft');
                       window.location.reload();
                     }
                   }}
-                  style={{ 
-                    flex: 1, 
+                  style={{
+                    flex: 1,
                     padding: '1.25rem',
                     background: '#f1f5f9',
                     color: '#64748b',
@@ -1085,39 +1102,39 @@ const AdminDashboard = () => {
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                   <button onClick={() => { setSelectedQuiz(q); fetchParticipants(q.id); }} className="admin-secondary-btn">Manage</button>
-                   <button 
-                     onClick={() => handleEditQuiz(q)} 
-                     style={{ 
-                       padding: '8px 16px', 
-                       background: '#f0fdf4', 
-                       color: '#16a34a', 
-                       border: 'none', 
-                       borderRadius: '10px', 
-                       cursor: 'pointer',
-                       fontWeight: 800,
-                       fontSize: '0.85rem'
-                     }}
-                   >
-                     Modify
-                   </button>
-                   <button 
-                     onClick={() => handleDeleteQuiz(q.id)} 
-                     style={{ 
-                       padding: '8px', 
-                       background: '#fee2e2', 
-                       color: '#ef4444', 
-                       border: 'none', 
-                       borderRadius: '10px', 
-                       cursor: 'pointer',
-                       display: 'flex',
-                       alignItems: 'center',
-                       justifyContent: 'center'
-                     }}
-                     title="Delete Quiz"
-                   >
-                     <Trash2 size={18} />
-                   </button>
+                  <button onClick={() => { setSelectedQuiz(q); fetchParticipants(q.id); }} className="admin-secondary-btn">Manage</button>
+                  <button
+                    onClick={() => handleEditQuiz(q)}
+                    style={{
+                      padding: '8px 16px',
+                      background: '#f0fdf4',
+                      color: '#16a34a',
+                      border: 'none',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontWeight: 800,
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    Modify
+                  </button>
+                  <button
+                    onClick={() => handleDeleteQuiz(q.id)}
+                    style={{
+                      padding: '8px',
+                      background: '#fee2e2',
+                      color: '#ef4444',
+                      border: 'none',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Delete Quiz"
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 </div>
               </div>
             ))}
@@ -1153,26 +1170,26 @@ const AdminDashboard = () => {
                           <p style={{ fontSize: '0.75rem', color: '#64748b' }}>{p.mobile}</p>
                         </td>
                         <td style={{ padding: '1rem' }}>
-                           <span style={{ fontWeight: 800, color: '#10b981' }}>{p.correct_count}</span>
-                           <span style={{ color: '#94a3b8', margin: '0 4px' }}>/</span>
-                           <span style={{ fontWeight: 600, color: '#64748b' }}>{p.total_questions}</span>
+                          <span style={{ fontWeight: 800, color: '#10b981' }}>{p.correct_count}</span>
+                          <span style={{ color: '#94a3b8', margin: '0 4px' }}>/</span>
+                          <span style={{ fontWeight: 600, color: '#64748b' }}>{p.total_questions}</span>
                         </td>
                         <td style={{ padding: '1rem', fontWeight: 800, color: '#3b82f6' }}>{p.time_taken || 'N/A'}</td>
                         <td style={{ padding: '1rem' }}>
-                           <button onClick={() => fetchSubmissionReview(p.id)} style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer' }}>View Answers</button>
+                          <button onClick={() => fetchSubmissionReview(p.id)} style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer' }}>View Answers</button>
                         </td>
                         <td style={{ padding: '1rem' }}>
-                           {!selectedQuiz.winner_id && (
-                             <button onClick={() => handleDeclareWinner(selectedQuiz.id, p.user_id)} className="admin-winner-btn">Declare Winner</button>
-                           )}
-                           {selectedQuiz.winner_id === p.user_id && (
-                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontWeight: 900 }}>
-                                <Award size={16} /> WON 🎉
-                             </div>
-                           )}
-                           {selectedQuiz.winner_id && selectedQuiz.winner_id !== p.user_id && (
-                             <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Ended</span>
-                           )}
+                          {!selectedQuiz.winner_id && (
+                            <button onClick={() => handleDeclareWinner(selectedQuiz.id, p.user_id)} className="admin-winner-btn">Declare Winner</button>
+                          )}
+                          {selectedQuiz.winner_id === p.user_id && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontWeight: 900 }}>
+                              <Award size={16} /> WON 🎉
+                            </div>
+                          )}
+                          {selectedQuiz.winner_id && selectedQuiz.winner_id !== p.user_id && (
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Ended</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -1186,35 +1203,35 @@ const AdminDashboard = () => {
         {activeTab === 'Users' && (
           <div style={{ background: 'white', borderRadius: '1.5rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-               <thead style={{ background: '#f8fafc' }}>
-                 <tr style={{ textAlign: 'left' }}>
-                   <th style={{ padding: '1.25rem' }}>Name</th>
-                   <th style={{ padding: '1.25rem' }}>Mobile</th>
-                   <th style={{ padding: '1.25rem' }}>Status</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {allUsers.map(u => (
-                   <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                     <td style={{ padding: '1.25rem', fontWeight: 700 }}>{u.name || 'N/A'}</td>
-                     <td style={{ padding: '1.25rem' }}>{u.mobile}</td>
-                     <td style={{ padding: '1.25rem' }}>
-                        <span style={{ 
-                          padding: '4px 12px', 
-                          borderRadius: '999px', 
-                          fontSize: '0.7rem', 
-                          fontWeight: 900,
-                          background: u.status === 'active' ? '#dcfce7' : '#fee2e2',
-                          color: u.status === 'active' ? '#15803d' : '#b91c1c'
-                        }}>
-                          {u.status.toUpperCase()}
-                        </span>
-                     </td>
-                   </tr>
-                 ))}
-               </tbody>
+              <thead style={{ background: '#f8fafc' }}>
+                <tr style={{ textAlign: 'left' }}>
+                  <th style={{ padding: '1.25rem' }}>Name</th>
+                  <th style={{ padding: '1.25rem' }}>Mobile</th>
+                  <th style={{ padding: '1.25rem' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allUsers.map(u => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '1.25rem', fontWeight: 700 }}>{u.name || 'N/A'}</td>
+                    <td style={{ padding: '1.25rem' }}>{u.mobile}</td>
+                    <td style={{ padding: '1.25rem' }}>
+                      <span style={{
+                        padding: '4px 12px',
+                        borderRadius: '999px',
+                        fontSize: '0.7rem',
+                        fontWeight: 900,
+                        background: u.status === 'active' ? '#dcfce7' : '#fee2e2',
+                        color: u.status === 'active' ? '#15803d' : '#b91c1c'
+                      }}>
+                        {u.status.toUpperCase()}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
-           </div>
+          </div>
         )}
 
         {activeTab === 'Banners' && (
@@ -1234,14 +1251,14 @@ const AdminDashboard = () => {
                 <div className="form-group" style={{ marginBottom: '2rem' }}>
                   <label>Home Hero Banner Image URL</label>
                   <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input 
-                      className="admin-input" 
+                    <input
+                      className="admin-input"
                       placeholder="https://example.com/image.jpg"
-                      value={homeBannerUrl} 
-                      onChange={e => setHomeBannerUrl(e.target.value)} 
+                      value={homeBannerUrl}
+                      onChange={e => setHomeBannerUrl(e.target.value)}
                     />
-                    <button 
-                      className="admin-primary-btn" 
+                    <button
+                      className="admin-primary-btn"
                       style={{ padding: '0 2rem', background: '#3b82f6' }}
                       onClick={() => handleUpdateSetting('home_banner_url', homeBannerUrl)}
                     >
@@ -1256,11 +1273,11 @@ const AdminDashboard = () => {
                 {homeBannerUrl && (
                   <div style={{ marginBottom: '2rem' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '1rem' }}>Preview</label>
-                    <div style={{ 
-                      width: '100%', 
-                      height: '180px', 
-                      borderRadius: '1.25rem', 
-                      overflow: 'hidden', 
+                    <div style={{
+                      width: '100%',
+                      height: '180px',
+                      borderRadius: '1.25rem',
+                      overflow: 'hidden',
                       border: '1px solid #e2e8f0',
                       position: 'relative'
                     }}>
@@ -1302,14 +1319,14 @@ const AdminDashboard = () => {
                 <div className="form-group" style={{ marginBottom: '2rem' }}>
                   <label>Quiz Room Global Banner URL</label>
                   <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input 
-                      className="admin-input" 
+                    <input
+                      className="admin-input"
                       placeholder="Enter image URL"
-                      value={quizRoomBannerUrl} 
-                      onChange={e => setQuizRoomBannerUrl(e.target.value)} 
+                      value={quizRoomBannerUrl}
+                      onChange={e => setQuizRoomBannerUrl(e.target.value)}
                     />
-                    <button 
-                      className="admin-primary-btn" 
+                    <button
+                      className="admin-primary-btn"
                       style={{ padding: '0 2rem', background: '#22c55e' }}
                       onClick={() => handleUpdateSetting('quiz_room_banner_url', quizRoomBannerUrl)}
                     >
@@ -1321,11 +1338,11 @@ const AdminDashboard = () => {
                 {quizRoomBannerUrl && (
                   <div style={{ marginBottom: '2rem' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '1rem' }}>Preview</label>
-                    <div style={{ 
-                      width: '100%', 
-                      height: '150px', 
-                      borderRadius: '1.25rem', 
-                      overflow: 'hidden', 
+                    <div style={{
+                      width: '100%',
+                      height: '150px',
+                      borderRadius: '1.25rem',
+                      overflow: 'hidden',
                       border: '1px solid #e2e8f0',
                       position: 'relative'
                     }}>
@@ -1374,57 +1391,180 @@ const AdminDashboard = () => {
         {showReviewModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
             <div style={{ background: 'white', width: '100%', maxWidth: '700px', maxHeight: '90vh', borderRadius: '1.5rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-               <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ fontWeight: 900 }}>Submission Detailed Review</h3>
-                  <button onClick={() => { setShowReviewModal(false); setReviewData(null); }} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.75rem', fontWeight: 800, cursor: 'pointer' }}>Close</button>
-               </div>
-               <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
-                  {reviewLoading && <div style={{ textAlign: 'center', padding: '2rem' }}><Loader2 className="animate-spin" size={32} /></div>}
-                  {!reviewLoading && reviewData && (
-                    <div style={{ display: 'grid', gap: '1.5rem' }}>
-                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
-                          <div>
-                             <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b' }}>SCORE</p>
-                             <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#10b981' }}>{reviewData.submission.correct_count} Correct / {reviewData.submission.wrong_count} Wrong</p>
+              <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontWeight: 900 }}>Submission Detailed Review</h3>
+                <button onClick={() => { setShowReviewModal(false); setReviewData(null); }} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.75rem', fontWeight: 800, cursor: 'pointer' }}>Close</button>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+                {reviewLoading && <div style={{ textAlign: 'center', padding: '2rem' }}><Loader2 className="animate-spin" size={32} /></div>}
+                {!reviewLoading && reviewData && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.5rem' }}>
+                      <div style={{ padding: '1.25rem', background: '#f8fafc', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
+                        <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Submission Stats</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Score:</span>
+                            <span style={{ fontSize: '1rem', fontWeight: 900, color: '#10b981' }}>{reviewData.submission.correct_count} Correct / {reviewData.submission.wrong_count} Wrong</span>
                           </div>
-                          <div>
-                             <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b' }}>TIME TAKEN</p>
-                             <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#3b82f6' }}>{reviewData.submission.time_taken || 'N/A'}</p>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Time Taken:</span>
+                            <span style={{ fontSize: '1rem', fontWeight: 900, color: '#3b82f6' }}>{reviewData.submission.time_taken || 'N/A'}</span>
                           </div>
-                       </div>
-                       
-                       {reviewData.answers.map((ans, idx) => (
-                         <div key={idx} style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '1rem' }}>
-                            <p style={{ fontWeight: 800, marginBottom: '0.75rem' }}>{idx + 1}. {ans.question_text}</p>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                               {ans.options?.map((opt, oIdx) => {
-                                 const isSelected = String(ans.selected_value) === String(opt.value);
-                                 const isCorrect = String(ans.correct_value) === String(opt.value);
-                                 
-                                 let bgColor = 'white';
-                                 let borderColor = '#e2e8f0';
-                                 if (isSelected) {
-                                   bgColor = isCorrect ? '#dcfce7' : '#fee2e2';
-                                   borderColor = isCorrect ? '#22c55e' : '#ef4444';
-                                 } else if (isCorrect) {
-                                   bgColor = '#eff6ff';
-                                   borderColor = '#3b82f6';
-                                 }
-
-                                 return (
-                                   <div key={oIdx} style={{ padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: bgColor, border: `1px solid ${borderColor}`, fontSize: '0.85rem', fontWeight: 600 }}>
-                                      {opt.text} 
-                                      {isSelected && <span style={{ marginLeft: '4px', fontSize: '0.65rem', fontWeight: 900 }}>{isCorrect ? '(USER ✅)' : '(USER ❌)'}</span>}
-                                      {isCorrect && !isSelected && <span style={{ marginLeft: '4px', fontSize: '0.65rem', fontWeight: 900 }}>(CORRECT)</span>}
-                                   </div>
-                                 );
-                               })}
-                            </div>
-                         </div>
-                       ))}
+                        </div>
+                      </div>
+                      <div style={{ padding: '1.25rem', background: '#f8fafc', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
+                        <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>User Details</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a' }}>{participants.find(p => p.id === reviewData.submission.id)?.name || 'User'}</p>
+                          <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>{participants.find(p => p.id === reviewData.submission.id)?.mobile || 'N/A'}</p>
+                        </div>
+                      </div>
                     </div>
-                  )}
-               </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e293b', textTransform: 'uppercase' }}>Question Wise Details</p>
+                      {reviewData.answers.map((ans, idx) => {
+                        // Normalize correct answer value (could be A,B,C,D or 0,1,2,3)
+                        const normalizeIndex = (val) => {
+                          if (val === null || val === undefined) return -1;
+                          const v = String(val).toUpperCase();
+                          const mapping = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, '0': 0, '1': 1, '2': 2, '3': 3 };
+                          return mapping[v] ?? -1;
+                        };
+
+                        const isResultDeclared = !!reviewData.submission.quiz_winner_id;
+
+                        // High-precision cleanup logic for corrupted ingestion
+                        const subTitle = reviewData.submission.title?.trim().toLowerCase();
+                        const qText = ans.question_text?.trim().toLowerCase();
+
+                        // Check if the saved question text is actually just the quiz title
+                        const isTitleMatch = qText === subTitle || qText === "question" || !ans.question_text;
+                        // Check if the real question text (with ?) is hidden in the options
+                        const opt0HasQMark = ans.options?.[0]?.text?.includes('?');
+
+                        const isCorrupted = (isTitleMatch || (!ans.question_text?.includes('?') && opt0HasQMark)) && ans.options?.length > 1;
+
+                        const displayQuestion = isCorrupted ? ans.options[0].text : ans.question_text;
+                        const optionsToDisplay = [...(isCorrupted ? ans.options.slice(1) : (ans.options || []))];
+
+                        // Data Recovery padding
+                        const selIdx = normalizeIndex(ans.selected_value);
+                        const corIdxRaw = normalizeIndex(ans.correct_value);
+                        let corIdx = corIdxRaw;
+                        if (isCorrupted && ans.options?.[corIdxRaw]?.text?.trim() === (isCorrupted ? ans.options[0].text : ans.question_text)?.trim()) {
+                          corIdx = corIdxRaw + 1;
+                        }
+                        const targetLen = Math.max(4, selIdx + 1, corIdx + 1);
+                        
+                        while (optionsToDisplay.length < targetLen && optionsToDisplay.length < 10) {
+                          optionsToDisplay.push({ 
+                            text: 'Option data not available', 
+                            value: String(optionsToDisplay.length + (isCorrupted ? 1 : 0)) 
+                          });
+                        }
+
+                        // Adjusted correct index: If corrupted and pointing to the question text, shift by 1
+                        const correctIdxRaw = normalizeIndex(ans.correct_value);
+                        let correctIdx = correctIdxRaw;
+                        if (isCorrupted && ans.options?.[correctIdxRaw]?.text?.trim() === displayQuestion?.trim()) {
+                          correctIdx = correctIdxRaw + 1;
+                        }
+
+                        return (
+                          <div key={idx} style={{ padding: '2.5rem', border: '1px solid #f1f5f9', borderRadius: '2rem', background: 'white', boxShadow: '0 8px 30px rgba(0,0,0,0.02)', marginBottom: '2.5rem' }}>
+                            <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2.5rem', alignItems: 'flex-start' }}>
+                              <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: 950, color: 'white', flexShrink: 0 }}>
+                                {idx + 1}
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                  <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>QUESTION TEXT</p>
+                                  <span style={{ fontSize: '0.6rem', fontWeight: 900, color: '#3b82f6', background: '#eff6ff', padding: '4px 10px', borderRadius: '20px' }}>POINT: {ans.marks || 1}</span>
+                                </div>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.4, margin: 0 }}>{displayQuestion}</h3>
+                                {ans.hindi_question_text && <p style={{ fontSize: '1.1rem', color: '#475569', marginTop: '1rem', fontWeight: 600, margin: 0, paddingLeft: '1.25rem', borderLeft: '4px solid #e2e8f0' }}>{ans.hindi_question_text}</p>}
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+                              {optionsToDisplay.map((opt, oIdx) => {
+                                // Map back to original indices if we shifted/filtered
+                                const actualVal = opt.value;
+                                const selectedIdx = normalizeIndex(ans.selected_value);
+
+                                const isSelected = String(selectedIdx) === String(actualVal);
+                                const isCorrect = String(correctIdx) === String(actualVal);
+
+                                let bgColor = '#f8fafc';
+                                let borderColor = '#e2e8f0';
+                                let textColor = '#475569';
+                                let badge = null;
+
+                                if (isCorrect) {
+                                  bgColor = '#f0fdf4';
+                                  borderColor = '#10b981';
+                                  textColor = '#166534';
+                                  badge = isSelected ? 'CORRECTLY ANSWERED' : 'CORRECT ANSWER';
+                                } else if (isSelected && !isCorrect) {
+                                  bgColor = '#fef2f2';
+                                  borderColor = '#ef4444';
+                                  textColor = '#991b1b';
+                                  badge = 'WRONG SELECTION';
+                                }
+
+                                return (
+                                  <div key={oIdx} style={{
+                                    padding: '1.5rem 2rem',
+                                    borderRadius: '1.5rem',
+                                    background: bgColor,
+                                    border: `2px solid ${borderColor}`,
+                                    fontSize: '1rem',
+                                    fontWeight: 700,
+                                    color: textColor,
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    transition: 'all 0.3s ease'
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: isCorrect ? '#10b981' : (isSelected ? '#ef4444' : '#64748b'), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900 }}>
+                                        {String.fromCharCode(65 + oIdx)}
+                                      </div>
+                                      <span style={{ lineHeight: 1.4 }}>{opt.text}</span>
+                                    </div>
+                                    {badge && (
+                                      <span style={{ fontSize: '0.65rem', fontWeight: 950, padding: '6px 12px', borderRadius: '8px', background: isCorrect ? '#10b981' : '#ef4444', color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {badge}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {isResultDeclared && !optionsToDisplay.some(opt => String(correctIdx) === String(opt.value)) && (
+                              <div style={{ marginTop: '1.5rem', padding: '1.25rem', background: '#f0fdf4', borderRadius: '1.25rem', border: '1px solid #10b981', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#10b981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem' }}>✓</div>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#166534' }}>
+                                  CORRECT ANSWER (IN DATABASE): {ans.options?.find(o => normalizeIndex(o.value) === correctIdx)?.text || 'N/A'}
+                                </span>
+                              </div>
+                            )}
+
+                            {!ans.selected_value && (
+                              <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#fffbeb', borderRadius: '1.5rem', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#b45309' }}>⚠️ QUESTION WAS SKIPPED BY USER</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

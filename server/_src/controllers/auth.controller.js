@@ -150,6 +150,7 @@ const updateProfile = async (req, res) => {
 const getUserHistory = async (req, res) => {
   const userId = req.user.userId;
   const { startDate, endDate } = req.query;
+  console.log(`[DEBUG] Fetching history for user: ${userId}, dates: ${startDate} to ${endDate}`);
   
   try {
     let query = `
@@ -166,7 +167,6 @@ const getUserHistory = async (req, res) => {
       LEFT JOIN quizzes q ON s.quiz_id = q.id 
       LEFT JOIN users u ON q.winner_id = u.id
       WHERE s.user_id = $1 
-      ORDER BY s.submitted_at DESC
     `;
     const params = [userId];
 

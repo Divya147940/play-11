@@ -42,16 +42,16 @@ const ProtectedAdminRoute = ({ children }) => {
 };
 
 const ProtectedRoute = ({ children }) => {
-  const isAuth = localStorage.getItem('play11_session');
-  const isAdminAuth = localStorage.getItem('play11_admin_session');
-  return (isAuth || isAdminAuth) ? children : <Navigate to="/login" replace />;
+  // Authentication disabled per user request - always allow access
+  return children;
 };
 
 const App = () => {
   useEffect(() => {
-    const session = localStorage.getItem('play11_session');
-    if (session) {
-       console.log('Session exists:', session.substring(0, 50));
+    // Ensure a persistent guest ID exists for anonymous tracking
+    if (!localStorage.getItem('play11_guest_id')) {
+      const newGuestId = 'guest-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('play11_guest_id', newGuestId);
     }
   }, []);
 

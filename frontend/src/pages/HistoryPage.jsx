@@ -16,14 +16,18 @@ const HistoryPage = () => {
 
   const fetchHistory = () => {
     const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
-    if (!sessionRaw) return setLoading(false);
+    const guestId = localStorage.getItem('play11_guest_id');
+    const headers = {};
     
-    let token = '';
-    try {
-      const parsed = JSON.parse(sessionRaw);
-      token = parsed.token || (typeof sessionRaw === 'string' ? sessionRaw : '');
-    } catch (e) {
-      token = sessionRaw;
+    if (sessionRaw) {
+      try {
+        const parsed = JSON.parse(sessionRaw);
+        headers['Authorization'] = `Bearer ${parsed.token || sessionRaw}`;
+      } catch (e) {
+        headers['Authorization'] = `Bearer ${sessionRaw}`;
+      }
+    } else if (guestId) {
+      headers['x-guest-id'] = guestId;
     }
     
     setLoading(true);
@@ -31,11 +35,7 @@ const HistoryPage = () => {
     if (startDate) url += `startDate=${startDate}&`;
     if (endDate) url += `endDate=${endDate}&`;
 
-    fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
+    fetch(url, { headers })
       .then(res => {
         if (!res.ok) {
           return res.json().then(err => { throw new Error(err.error || 'Failed to fetch history') });
@@ -363,16 +363,29 @@ const HistoryPage = () => {
             <div style={{ width: '80px', height: '80px', borderRadius: '30px', background: '#f8fafc', margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <HistoryIcon size={40} color="#cbd5e1" />
             </div>
-            <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', marginBottom: '12px' }}>No Activity Found</h2>
+            <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', marginBottom: '12px' }}>
+              {!localStorage.getItem('play11_session') ? 'Login to View Activity' : 'No Activity Found'}
+            </h2>
             <p style={{ color: '#64748b', fontSize: '1.1rem', maxWidth: '400px', margin: '0 auto 32px' }}>
-              It looks like you haven't played any quizzes in this period yet. Time to test your knowledge!
+              {!localStorage.getItem('play11_session') 
+                ? 'Please sign in to your account to track your quiz performance and winnings.'
+                : "It looks like you haven't played any quizzes in this period yet. Time to test your knowledge!"}
             </p>
-            <button 
-              onClick={() => navigate('/home-choice')}
-              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '16px', fontSize: '1rem', fontWeight: 800, cursor: 'pointer' }}
-            >
-              Start Your First Quiz →
-            </button>
+            {!localStorage.getItem('play11_session') ? (
+              <button 
+                onClick={() => navigate('/login')}
+                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '16px', fontSize: '1rem', fontWeight: 800, cursor: 'pointer' }}
+              >
+                Login Now →
+              </button>
+            ) : (
+              <button 
+                onClick={() => navigate('/home-choice')}
+                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '16px', fontSize: '1rem', fontWeight: 800, cursor: 'pointer' }}
+              >
+                Start Your First Quiz →
+              </button>
+            )}
           </div>
         )}
       </div>

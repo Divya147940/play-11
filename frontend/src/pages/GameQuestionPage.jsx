@@ -92,53 +92,55 @@ const GameQuestionPage = () => {
 
     // Check login for actual submission (User or Admin)
     const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
+    const guestId = localStorage.getItem('play11_guest_id');
+    const headers = { 'Content-Type': 'application/json' };
     
     if (sessionRaw) {
-      let token;
       try {
         const session = JSON.parse(sessionRaw);
-        token = session.token || sessionRaw;
+        headers['Authorization'] = `Bearer ${session.token || sessionRaw}`;
       } catch (e) {
-        token = sessionRaw;
+        headers['Authorization'] = `Bearer ${sessionRaw}`;
       }
-
-      try {
-        const res = await fetch(`/api/quizzes/${id}/submit`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ 
-            answers,
-            time_taken: stats.time 
-          })
-        });
-        
-        const data = await res.json();
-        if (data.success && data.submission) {
-           // If server returned official stats, use them
-           stats.score = parseFloat(data.submission.total_score || stats.score);
-           stats.rank = data.submission.rank || stats.rank;
-           stats.correct = data.submission.correct_count || 0;
-           stats.wrong = data.submission.wrong_count || 0;
-        } else {
-           alert("Error submitting game quiz: " + (data.error || "Unknown error"));
-        }
-      } catch (err) {
-        console.error("Submission failed:", err);
-        alert("Network error: Could not submit game quiz. Please check your connection.");
-      }
+    } else if (guestId) {
+      headers['x-guest-id'] = guestId;
     }
 
-    setSubmittedSuccessfully(true);
-    
-    // Add a small delay so user can see the "Submitted Successfully" green line
-    setTimeout(() => {
-      setIsFinished(true);
+    try {
+      const res = await fetch(`/api/quizzes/${id}/submit`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ 
+          answers,
+          time_taken: stats.time 
+        })
+      });
+      
+      const data = await res.json();
+      if (data.success && data.submission) {
+         // If server returned official stats, use them
+         stats.score = parseFloat(data.submission.total_score || stats.score);
+         stats.rank = data.submission.rank || stats.rank;
+         stats.correct = data.submission.correct_count || 0;
+         stats.wrong = data.submission.wrong_count || 0;
+
+         setSubmittedSuccessfully(true);
+         
+         // Add a small delay so user can see the "Submitted Successfully" green line
+         setTimeout(() => {
+           setIsFinished(true);
+           setIsSubmitting(false);
+           navigate(`/game-result/${id}`, { state: stats });
+         }, 2000);
+      } else {
+         setIsSubmitting(false);
+         alert("Error submitting game quiz: " + (data.error || "Unknown error"));
+      }
+    } catch (err) {
       setIsSubmitting(false);
-      navigate(`/game-result/${id}`, { state: stats });
-    }, 2000);
+      console.error("Submission failed:", err);
+      alert("Network error: Could not submit game quiz. Please check your connection.");
+    }
     
   }, [answers, id, navigate, isFinished, isSubmitting, questions, timeLeft, initialTime]);
 

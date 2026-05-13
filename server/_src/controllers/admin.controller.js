@@ -453,20 +453,23 @@ const getSubmissionReviewAdmin = async (req, res) => {
       [id]
     );
 
-    if (subRows.length === 0) return res.status(404).json({ error: 'Submission not found' });
+    const submission = subRows[0];
+    const quizId = submission.quiz_id;
 
     const { rows: answers } = await db.query(`
-      SELECT sa.*, q.question_text, q.hindi_question_text,
-      (SELECT answer_value FROM correct_answers ca WHERE ca.question_id = q.id LIMIT 1) as correct_value,
-      (SELECT json_agg(json_build_object('text', qo.option_text, 'value', qo.option_value)) 
-       FROM question_options qo WHERE qo.question_id = q.id) as options
-      FROM submission_answers sa
-      JOIN questions q ON sa.question_id = q.id
-      WHERE sa.submission_id = $1
-      ORDER BY q.sort_order ASC
-    `, [id]);
+      SELECT 
+        q.id as question_id, q.question_text, q.hindi_question_text,
+        sa.selected_value, sa.is_correct,
+        (SELECT answer_value FROM correct_answers ca WHERE ca.question_id = q.id LIMIT 1) as correct_value,
+        (SELECT json_agg(json_build_object('text', qo.option_text, 'value', qo.option_value)) 
+         FROM question_options qo WHERE qo.question_id = q.id) as options
+      FROM questions q
+      LEFT JOIN submission_answers sa ON q.id = sa.question_id AND sa.submission_id = $1
+      WHERE q.quiz_id = $2
+      ORDER BY q.sort_order ASC, q.id ASC
+    `, [id, quizId]);
 
-    res.json({ success: true, submission: subRows[0], answers });
+    res.json({ success: true, submission, answers });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });

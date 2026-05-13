@@ -117,115 +117,191 @@ const QuizReviewPage = () => {
           </div>
         )}
 
+        {/* Question Navigator */}
+        <div style={{ 
+          background: 'white', padding: '1.5rem', borderRadius: '1.5rem', marginBottom: '2rem', 
+          border: '1px solid #f1f5f9', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' 
+        }}>
+          <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.1em' }}>Question Navigator</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+            {review.map((item, i) => (
+              <a 
+                key={i} 
+                href={`#question-${i + 1}`}
+                style={{ 
+                  width: '36px', height: '36px', borderRadius: '10px', 
+                  background: item.selected_value === item.correct_value ? '#f0fdf4' : (item.selected_value ? '#fef2f2' : '#f8fafc'),
+                  border: `1px solid ${item.selected_value === item.correct_value ? '#10b981' : (item.selected_value ? '#ef4444' : '#e2e8f0')}`,
+                  color: item.selected_value === item.correct_value ? '#166534' : (item.selected_value ? '#991b1b' : '#64748b'),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 800, textDecoration: 'none'
+                }}
+              >
+                {i + 1}
+              </a>
+            ))}
+          </div>
+        </div>
+
         {/* Questions List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {review.map((item, idx) => (
-            <div key={idx} style={{ 
-              background: 'white', 
-              padding: '2rem', 
-              borderRadius: '1.5rem', 
-              border: '1px solid #f1f5f9',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.02)'
-            }}>
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div style={{ 
-                  width: '32px', height: '32px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e2e8f0',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 900, color: '#64748b', flexShrink: 0
-                }}>
-                  {idx + 1}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {review.map((item, idx) => {
+            // Normalize correct answer value (could be A,B,C,D or 0,1,2,3)
+            const normalizeIndex = (val) => {
+              if (val === null || val === undefined) return -1;
+              const v = String(val).toUpperCase();
+              const mapping = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, '0': 0, '1': 1, '2': 2, '3': 3 };
+              return mapping[v] ?? -1;
+            };
+
+            const isResultDeclared = !!submission.quiz_winner_id;
+
+            // High-precision cleanup logic (same as admin)
+            const subTitle = submission.title?.trim().toLowerCase();
+            const qText = item.question_text?.trim().toLowerCase();
+            const isTitleMatch = qText === subTitle || qText === "question" || !item.question_text;
+            const opt0HasQMark = item.options?.[0]?.text?.includes('?');
+            const isCorrupted = (isTitleMatch || (!item.question_text?.includes('?') && opt0HasQMark)) && item.options?.length > 1;
+
+            const displayQuestion = isCorrupted ? item.options[0].text : item.question_text;
+            const optionsToDisplay = [...(isCorrupted ? item.options.slice(1) : (item.options || []))];
+
+            // Adjusted correct index: If corrupted and pointing to the question text, shift by 1
+            const correctIdxRaw = normalizeIndex(item.correct_value);
+            let correctIdx = correctIdxRaw;
+            if (isCorrupted && item.options?.[correctIdxRaw]?.text?.trim() === displayQuestion?.trim()) {
+              correctIdx = correctIdxRaw + 1;
+            }
+
+            // Data Recovery: If selected or correct index is beyond current options, or if we have < 4, 
+            // try to pad to 4 options to maintain the A, B, C, D sequence.
+            const selIdx = normalizeIndex(item.selected_value);
+            const corIdx = correctIdx; // Now correctly defined
+            const targetLen = Math.max(4, selIdx + 1, corIdx + 1);
+            
+            while (optionsToDisplay.length < targetLen && optionsToDisplay.length < 10) {
+              optionsToDisplay.push({ 
+                text: 'Option data not available', 
+                value: String(optionsToDisplay.length + (isCorrupted ? 1 : 0)) 
+              });
+            }
+
+            return (
+              <div key={idx} id={`question-${idx + 1}`} style={{ 
+                background: 'white', 
+                padding: '2.5rem', 
+                borderRadius: '2rem', 
+                border: '1px solid #f1f5f9',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2.5rem', alignItems: 'flex-start' }}>
+                  <div style={{ 
+                    width: '40px', height: '40px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 900, color: '#64748b', flexShrink: 0
+                  }}>
+                    {idx + 1}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                     <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.6rem', letterSpacing: '0.1em' }}>QUESTION {idx + 1}</p>
+                     <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', lineHeight: 1.4, margin: 0 }}>
+                       {displayQuestion}
+                     </h3>
+                     {item.hindi_question_text && <p style={{ fontSize: '1.1rem', color: '#64748b', marginTop: '1rem', fontWeight: 600, margin: 0, paddingLeft: '1.25rem', borderLeft: '4px solid #e2e8f0' }}>{item.hindi_question_text}</p>}
+                  </div>
                 </div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', lineHeight: 1.4 }}>
-                  {item.question_text}
-                  {item.hindi_question_text && <span style={{ display: 'block', fontSize: '0.9rem', color: '#64748b', marginTop: '0.5rem', fontWeight: 600 }}>{item.hindi_question_text}</span>}
-                </h3>
-              </div>
 
-              <div style={{ display: 'grid', gap: '0.75rem' }}>
-                {item.options.map((opt, oIdx) => {
-                  const isUserSelected = String(item.selected_value) === String(opt.value);
-                  const isCorrect = String(item.correct_value) === String(opt.value);
-                  const isResultDeclared = !!submission.quiz_winner_id;
-                  
-                  let bgColor = '#f8fafc';
-                  let borderColor = '#e2e8f0';
-                  let icon = null;
-                  let label = null;
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {optionsToDisplay.map((opt, oIdx) => {
+                    const actualVal = opt.value;
+                    const selectedIdx = normalizeIndex(item.selected_value);
+                    
+                    const isUserSelected = String(selectedIdx) === String(actualVal);
+                    const isCorrect = String(correctIdx) === String(actualVal);
+                    
+                    let bgColor = '#f8fafc';
+                    let borderColor = '#e2e8f0';
+                    let icon = null;
+                    let label = null;
 
-                  if (isResultDeclared) {
-                    // Show full feedback after result declared
-                    if (isCorrect) {
-                      bgColor = '#f0fdf4';
-                      borderColor = '#10b981';
-                      icon = <CheckCircle2 size={18} color="#10b981" />;
-                      if (isUserSelected) label = "CORRECT ANSWER";
-                      else label = "CORRECT OPTION";
-                    } else if (isUserSelected && !isCorrect) {
-                      bgColor = '#fef2f2';
-                      borderColor = '#ef4444';
-                      icon = <XCircle size={18} color="#ef4444" />;
-                      label = "YOUR WRONG SELECTION";
-                    }
-                  } else {
-                    // Hide correct answer, only show user's choice
-                    if (isUserSelected) {
+                    if (isResultDeclared) {
+                      if (isCorrect) {
+                        bgColor = '#f0fdf4';
+                        borderColor = '#10b981';
+                        icon = <CheckCircle2 size={20} color="#10b981" />;
+                        label = isUserSelected ? "CORRECTLY ANSWERED" : "CORRECT ANSWER";
+                      } else if (isUserSelected && !isCorrect) {
+                        bgColor = '#fef2f2';
+                        borderColor = '#ef4444';
+                        icon = <XCircle size={20} color="#ef4444" />;
+                        label = "WRONG SELECTION";
+                      }
+                    } else if (isUserSelected) {
                       bgColor = '#eff6ff';
                       borderColor = '#3b82f6';
-                      label = "YOUR SELECTION";
+                      label = "SELECTED BY YOU";
                     }
-                  }
 
-                  return (
-                    <div key={oIdx} style={{ 
-                      padding: '1.25rem 1.5rem', 
-                      borderRadius: '1.25rem', 
-                      background: bgColor, 
-                      border: `2px solid ${borderColor}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      transition: 'all 0.2s',
-                      boxShadow: (isResultDeclared && (isUserSelected || isCorrect)) || (!isResultDeclared && isUserSelected) ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                         <div style={{ 
-                           width: '24px', height: '24px', borderRadius: '50%', 
-                           background: isResultDeclared ? (isCorrect ? '#10b981' : (isUserSelected ? '#ef4444' : '#1e293b')) : (isUserSelected ? '#3b82f6' : '#1e293b'),
-                           color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                           fontSize: '0.7rem', fontWeight: 900
-                         }}>
-                           {String.fromCharCode(65 + oIdx)}
-                         </div>
-                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ 
-                              fontSize: '1rem', 
-                              fontWeight: 700, 
-                              color: isResultDeclared ? (isCorrect ? '#065f46' : (isUserSelected ? '#991b1b' : '#334155')) : (isUserSelected ? '#1e40af' : '#334155') 
-                            }}>
-                              {opt.text}
-                            </span>
-                            {label && <span style={{ 
-                              fontSize: '0.6rem', 
-                              fontWeight: 900, 
-                              color: isResultDeclared ? (isCorrect ? '#059669' : '#ef4444') : '#3b82f6', 
-                              textTransform: 'uppercase', 
-                              marginTop: '2px' 
-                            }}>{label}</span>}
-                         </div>
+                    return (
+                      <div key={oIdx} style={{ 
+                        padding: '1.25rem 1.75rem', 
+                        borderRadius: '1.5rem', 
+                        background: bgColor, 
+                        border: `2px solid ${borderColor}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.2s'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                           <div style={{ 
+                             width: '28px', height: '28px', borderRadius: '50%', 
+                             background: isResultDeclared ? (isCorrect ? '#10b981' : (isUserSelected ? '#ef4444' : '#1e293b')) : (isUserSelected ? '#3b82f6' : '#1e293b'),
+                             color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                             fontSize: '0.75rem', fontWeight: 900
+                           }}>
+                             {String.fromCharCode(65 + oIdx)}
+                           </div>
+                           <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ 
+                                fontSize: '1rem', 
+                                fontWeight: 700, 
+                                color: isResultDeclared ? (isCorrect ? '#065f46' : (isUserSelected ? '#991b1b' : '#334155')) : (isUserSelected ? '#1e40af' : '#334155') 
+                              }}>
+                                {opt.text}
+                              </span>
+                              {label && <span style={{ 
+                                fontSize: '0.6rem', 
+                                fontWeight: 950, 
+                                color: isResultDeclared ? (isCorrect ? '#059669' : '#ef4444') : '#3b82f6', 
+                                textTransform: 'uppercase', 
+                                marginTop: '4px',
+                                letterSpacing: '0.05em'
+                              }}>{label}</span>}
+                           </div>
+                        </div>
+                        {icon}
                       </div>
-                      {icon}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {!item.selected_value && (
-                <div style={{ marginTop: '1.5rem', padding: '0.75rem 1rem', background: '#fffbeb', borderRadius: '0.75rem', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Info size={14} color="#d97706" />
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#b45309' }}>QUESTION WAS SKIPPED</span>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-          ))}
+
+                {isResultDeclared && !optionsToDisplay.some(opt => String(correctIdx) === String(opt.value)) && (
+                  <div style={{ marginTop: '1.5rem', padding: '1.25rem', background: '#f0fdf4', borderRadius: '1.5rem', border: '1px solid #10b981', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <CheckCircle2 size={20} color="#10b981" />
+                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#166534' }}>
+                       CORRECT ANSWER: {item.options?.find(o => normalizeIndex(o.value) === correctIdx)?.text || 'N/A'}
+                    </span>
+                  </div>
+                )}
+
+                {!item.selected_value && (
+                  <div style={{ marginTop: '2rem', padding: '1.25rem', background: '#fffbeb', borderRadius: '1.25rem', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <Info size={16} color="#d97706" />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#b45309' }}>QUESTION WAS SKIPPED</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Footer Action */}

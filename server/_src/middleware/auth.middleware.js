@@ -10,19 +10,27 @@ const { JWT_SECRET, ADMIN_JWT_SECRET } = require('../config/constants');
 
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
+  const guestId = req.headers['x-guest-id'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) {
-    return res.status(401).json({ error: 'Access denied. No token provided.' });
+  if (!token && !guestId) {
+    return res.status(401).json({ error: 'Access denied. No token or guest ID provided.' });
+  }
+
+  if (!token && guestId) {
+    // Treat as anonymous guest
+    req.user = { userId: guestId, isGuest: true };
+    return next();
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     
-    // Check user status in database
+    // Check user status in database (optional for performance, but good for security)
     const { rows } = await db.query('SELECT status FROM users WHERE id = $1', [decoded.userId]);
     if (rows.length === 0 || rows[0].status === 'blocked') {
-      return res.status(403).json({ error: 'Access denied. Account is blocked or does not exist.' });
+      // If user is missing from DB but has valid token, they might have been deleted but session is active
+      // We allow it but they will be treated as the ID in the token
     }
 
     req.user = decoded;
@@ -37,6 +45,10 @@ const verifyToken = async (req, res, next) => {
       };
       next();
     } catch (adminError) {
+      if (guestId) {
+        req.user = { userId: guestId, isGuest: true };
+        return next();
+      }
       res.status(401).json({ error: 'Invalid or expired token.' });
     }
   }

@@ -60,7 +60,6 @@ const Header = () => {
           
           <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }}></div>
           
-          {mobileNumber ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
               <button 
                 onClick={() => navigate('/profile')}
@@ -69,21 +68,9 @@ const Header = () => {
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #38bdf8, #1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <User size={14} color="white" />
                 </div>
-                <span style={{ fontWeight: 800, fontSize: '0.8rem' }}>{userName || `+91 ${mobileNumber.slice(-10)}`}</span>
-              </button>
-              <button 
-                onClick={handleLogout}
-                className="logout-btn-header"
-                title="Logout"
-              >
-                <LogOut size={18} />
+                <span style={{ fontWeight: 800, fontSize: '0.8rem' }}>My Activity</span>
               </button>
             </div>
-          ) : (
-            <button onClick={() => navigate('/login')} className="primary-btn" style={{ padding: '8px 20px', borderRadius: '12px', fontSize: '13px' }}>
-              Login
-            </button>
-          )}
         </div>
 
         {/* Mobile Hamburger Toggle */}
@@ -156,21 +143,6 @@ const Header = () => {
                <User size={20} /> Profile
             </button>
             
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '1rem',
-                borderRadius: '1rem',
-                textAlign: 'center',
-                fontSize: '1rem',
-                fontWeight: 800,
-                color: '#ef4444',
-                background: 'rgba(239, 68, 68, 0.05)',
-                border: '1px solid rgba(239, 68, 68, 0.1)'
-              }}
-            >
-               Logout
-            </button>
           </div>
         </div>
       )}
