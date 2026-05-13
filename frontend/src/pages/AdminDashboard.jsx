@@ -155,29 +155,28 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleUpdateSetting = async (key, value) => {
-    setIsUpdatingSettings(true);
-    let finalValue = value;
-
-    // Auto-extract direct link if it's a Google Images search link
-    if (value && value.includes('google.com/imgres')) {
+  const extractImageUrl = (url) => {
+    if (url && url.includes('google.com/imgres')) {
       try {
-        const urlParams = new URLSearchParams(value.split('?')[1]);
+        const urlParams = new URLSearchParams(url.split('?')[1]);
         const extracted = urlParams.get('imgurl');
-        if (extracted) {
-          finalValue = decodeURIComponent(extracted);
-          // Also update the local state so the user sees the change
-          if (key === 'home_banner_url') setHomeBannerUrl(finalValue);
-          if (key === 'quiz_room_banner_url') setQuizRoomBannerUrl(finalValue);
-        }
-      } catch (err) {
-        console.warn('Failed to extract Google Image URL:', err);
+        if (extracted) return decodeURIComponent(extracted);
+      } catch (e) {
+        console.error('Failed to extract Google Image URL', e);
       }
     }
+    return url;
+  };
+
+  const handleUpdateSetting = async (key, value) => {
+    setIsUpdatingSettings(true);
+    const finalValue = extractImageUrl(value);
 
     try {
       const data = await settingsService.updateSetting(key, finalValue);
       if (data.success) {
+        if (key === 'home_banner_url') setHomeBannerUrl(finalValue);
+        if (key === 'quiz_room_banner_url') setQuizRoomBannerUrl(finalValue);
         alert(`${key.replace(/_/g, ' ')} updated successfully!`);
       }
     } catch (err) {
@@ -635,6 +634,65 @@ const AdminDashboard = () => {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', color: '#0f172a' }}>
+      <style>{`
+        .admin-input {
+          width: 100%;
+          padding: 12px 16px;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          color: #0f172a;
+          font-family: inherit;
+          font-weight: 500;
+          transition: all 0.2s;
+        }
+        .admin-input:focus {
+          border-color: #3b82f6;
+          outline: none;
+          background: white;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        .form-group label {
+          display: block;
+          font-size: 0.85rem;
+          font-weight: 800;
+          color: #64748b;
+          margin-bottom: 0.5rem;
+          text-transform: uppercase;
+        }
+        .admin-primary-btn {
+          background: #0f172a;
+          color: white;
+          border: none;
+          border-radius: 14px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .admin-primary-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .admin-secondary-btn {
+          padding: 8px 16px;
+          background: #eff6ff;
+          color: #3b82f6;
+          border: none;
+          border-radius: 10px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+        .admin-winner-btn {
+          padding: 6px 12px;
+          background: #f59e0b;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-weight: 800;
+          font-size: 0.75rem;
+          cursor: pointer;
+        }
+        .flex-center { display: flex; align-items: center; justify-content: center; }
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
       {/* Sidebar */}
       <div style={{ width: '280px', background: 'white', borderRight: '1px solid #e2e8f0', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem', padding: '0 0.5rem' }}>
@@ -913,7 +971,7 @@ const AdminDashboard = () => {
                   className="admin-input"
                   placeholder="https://example.com/banner.jpg"
                   value={newQuiz.banner_url}
-                  onChange={e => setNewQuiz({ ...newQuiz, banner_url: e.target.value })}
+                  onChange={e => setNewQuiz({ ...newQuiz, banner_url: extractImageUrl(e.target.value) })}
                 />
                 {newQuiz.banner_url && (
                   <div style={{ marginTop: '1rem' }}>
@@ -1266,7 +1324,7 @@ const AdminDashboard = () => {
                     </button>
                   </div>
                   <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem', fontWeight: 600 }}>
-                    Note: Use a <strong>direct link</strong> (ends in .jpg, .png). Google Search links will not work.
+                    Note: Use a <strong>direct link</strong> (ends in .jpg, .png).
                   </p>
                 </div>
 
@@ -1281,7 +1339,6 @@ const AdminDashboard = () => {
                       border: '1px solid #e2e8f0',
                       position: 'relative'
                     }}>
-                      {/* Blurred Background Layer */}
                       <div style={{
                         position: 'absolute',
                         top: 0, left: 0, right: 0, bottom: 0,
@@ -1290,13 +1347,12 @@ const AdminDashboard = () => {
                         transform: 'scale(1.1)',
                         zIndex: 0
                       }}></div>
-                      {/* Clear Layer */}
                       <div style={{
                         position: 'relative',
                         zIndex: 1,
                         width: '100%',
                         height: '100%',
-                        background: `url("${homeBannerUrl}") center/100% 100% no-repeat`
+                        background: `url("${homeBannerUrl}") center/contain no-repeat`,
                       }}></div>
                     </div>
                   </div>
@@ -1306,33 +1362,36 @@ const AdminDashboard = () => {
 
             <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
-                <div style={{ width: '48px', height: '48px', background: '#f0fdf4', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <LayoutDashboard size={24} color="#22c55e" />
+                <div style={{ width: '48px', height: '48px', background: '#fef3c7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ImageIcon size={24} color="#d97706" />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Quiz Room Banners</h3>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Manage global banner in active quizzes</p>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Quiz Arena Banners</h3>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Default background for quizzes without a specific banner</p>
                 </div>
               </div>
 
               <div style={{ maxWidth: '700px' }}>
                 <div className="form-group" style={{ marginBottom: '2rem' }}>
-                  <label>Quiz Room Global Banner URL</label>
+                  <label>Global Quiz Room Banner URL</label>
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <input
                       className="admin-input"
-                      placeholder="Enter image URL"
+                      placeholder="https://example.com/quiz-banner.jpg"
                       value={quizRoomBannerUrl}
                       onChange={e => setQuizRoomBannerUrl(e.target.value)}
                     />
                     <button
                       className="admin-primary-btn"
-                      style={{ padding: '0 2rem', background: '#22c55e' }}
+                      style={{ padding: '0 2rem', background: '#d97706' }}
                       onClick={() => handleUpdateSetting('quiz_room_banner_url', quizRoomBannerUrl)}
                     >
                       Update
                     </button>
                   </div>
+                  <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem', fontWeight: 600 }}>
+                    Note: This banner will show up in the Quiz Arena if no specific banner is set for a quiz.
+                  </p>
                 </div>
 
                 {quizRoomBannerUrl && (
@@ -1340,28 +1399,26 @@ const AdminDashboard = () => {
                     <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '1rem' }}>Preview</label>
                     <div style={{
                       width: '100%',
-                      height: '150px',
+                      height: '180px',
                       borderRadius: '1.25rem',
                       overflow: 'hidden',
                       border: '1px solid #e2e8f0',
                       position: 'relative'
                     }}>
-                      {/* Blurred Background Layer */}
                       <div style={{
                         position: 'absolute',
                         top: 0, left: 0, right: 0, bottom: 0,
-                        background: `url("${quizRoomBannerUrl}") center/100% 100% no-repeat`,
+                        background: `url("${quizRoomBannerUrl}") center/cover no-repeat`,
                         filter: 'blur(10px) brightness(0.7)',
                         transform: 'scale(1.1)',
                         zIndex: 0
                       }}></div>
-                      {/* Clear Layer */}
                       <div style={{
                         position: 'relative',
                         zIndex: 1,
                         width: '100%',
                         height: '100%',
-                        background: `url("${quizRoomBannerUrl}") center/100% 100% no-repeat`
+                        background: `url("${quizRoomBannerUrl}") center/contain no-repeat`,
                       }}></div>
                     </div>
                   </div>
@@ -1570,65 +1627,6 @@ const AdminDashboard = () => {
         )}
       </div>
 
-      <style>{`
-        .admin-input {
-          width: 100%;
-          padding: 12px 16px;
-          border-radius: 12px;
-          border: 1px solid #e2e8f0;
-          background: #f8fafc;
-          color: #0f172a;
-          font-family: inherit;
-          font-weight: 500;
-          transition: all 0.2s;
-        }
-        .admin-input:focus {
-          border-color: #3b82f6;
-          outline: none;
-          background: white;
-          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-        }
-        .form-group label {
-          display: block;
-          font-size: 0.85rem;
-          font-weight: 800;
-          color: #64748b;
-          margin-bottom: 0.5rem;
-          text-transform: uppercase;
-        }
-        .admin-primary-btn {
-          background: #0f172a;
-          color: white;
-          border: none;
-          border-radius: 14px;
-          font-weight: 800;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .admin-primary-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .admin-secondary-btn {
-          padding: 8px 16px;
-          background: #eff6ff;
-          color: #3b82f6;
-          border: none;
-          border-radius: 10px;
-          font-weight: 800;
-          cursor: pointer;
-        }
-        .admin-winner-btn {
-          padding: 6px 12px;
-          background: #f59e0b;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-weight: 800;
-          font-size: 0.75rem;
-          cursor: pointer;
-        }
-        .flex-center { display: flex; align-items: center; justify-content: center; }
-        .animate-spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 };

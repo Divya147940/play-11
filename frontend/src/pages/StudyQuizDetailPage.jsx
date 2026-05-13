@@ -29,6 +29,36 @@ const StudyQuizDetailPage = () => {
   return (
     <div className="mesh-bg-blue" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'white' }}>
       <div className="container" style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Quiz Banner */}
+        {quiz.effective_banner_url && (
+          <div style={{ 
+            width: '100%', 
+            height: '180px', 
+            borderRadius: '24px', 
+            backgroundColor: '#0d1f3c', 
+            marginBottom: '2rem',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              background: `url("${quiz.effective_banner_url}") center/cover no-repeat`,
+              filter: 'blur(10px) brightness(0.7)',
+              transform: 'scale(1.1)',
+              zIndex: 0
+            }}></div>
+            <div style={{
+              position: 'relative',
+              zIndex: 1,
+              width: '100%',
+              height: '100%',
+              background: `url("${quiz.effective_banner_url}") center/contain no-repeat`,
+            }}></div>
+          </div>
+        )}
+
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '2.5rem', marginTop: '1rem' }}>
           <button onClick={() => navigate(-1)} className="flex-center" style={{ width: '44px', height: '44px', background: 'hsl(var(--muted))', borderRadius: '0.75rem', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--card-border))' }}>

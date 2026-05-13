@@ -38,9 +38,12 @@ const MatchQuizRoom = () => {
         // Fetch global banner in background
         import('../services/api').then(async ({ settingsService }) => {
           const bannerData = await settingsService.getSetting('quiz_room_banner_url');
-          if (bannerData.success) {
-            setGlobalBanner(bannerData.value);
+          let bannerUrl = bannerData.success ? bannerData.value : '';
+          if (!bannerUrl) {
+            const homeBannerData = await settingsService.getSetting('home_banner_url');
+            if (homeBannerData.success) bannerUrl = homeBannerData.value;
           }
+          setGlobalBanner(bannerUrl);
         });
       } catch (err) {
         console.error(err);
@@ -149,7 +152,7 @@ const MatchQuizRoom = () => {
           width: '100%', 
           height: '150px', 
           backgroundColor: '#0d1f3c', 
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: 'none',
           position: 'fixed',
           top: '70px',
           zIndex: 99,
@@ -177,7 +180,7 @@ const MatchQuizRoom = () => {
         </div>
       )}
       
-      <div className="container" style={{ padding: '2rem 1rem', paddingTop: globalBanner ? '230px' : '90px', maxWidth: '1100px', margin: '0 auto' }}>
+      <div className="container" style={{ padding: '2rem 1rem', paddingTop: globalBanner ? '230px' : '85px', maxWidth: '1100px', margin: '0 auto' }}>
         
         {/* Top Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -188,16 +191,51 @@ const MatchQuizRoom = () => {
               borderRadius: '0', 
               padding: '0', 
               marginBottom: '2rem',
-              minHeight: '180px',
+              minHeight: '220px',
               display: 'flex',
               alignItems: 'center',
-              background: quiz?.banner_url ? `url("${quiz.banner_url}") center/100% 100% no-repeat` : (globalBanner ? `url("${globalBanner}") center/100% 100% no-repeat` : 'radial-gradient(circle at top right, #1e3a8a, #0d1f3c)'),
-              backgroundColor: '#0d1f3c', // Fallback color
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              background: quiz?.effective_banner_url ? '#000' : 'radial-gradient(circle at top right, #1e3a8a, #0d1f3c)'
             }}>
-              {!quiz?.banner_url && <div className="quiz-banner-overlay" style={{ opacity: 0.1 }}></div>}
-              <div style={{ position: 'relative', zIndex: 1 }}>
+              {quiz?.effective_banner_url && (
+                <>
+                  {/* Blurred Background Layer */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    background: `url("${quiz.effective_banner_url}") center / cover no-repeat`,
+                    filter: 'blur(20px) brightness(0.8)',
+                    transform: 'scale(1.2)',
+                    zIndex: 0
+                  }}></div>
+                  {/* Foreground Image Layer */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1,
+                    padding: '1rem'
+                  }}>
+                    <img 
+                      src={quiz.effective_banner_url} 
+                      alt="Banner" 
+                      style={{ 
+                        maxWidth: '100%', 
+                        maxHeight: '100%', 
+                        objectFit: 'contain',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                        borderRadius: '12px'
+                      }}
+                      onError={(e) => console.error('IMAGE ERROR:', e)}
+                    />
+                  </div>
+                </>
+              )}
+              
+              <div style={{ position: 'relative', zIndex: 2, padding: '2rem', width: '100%' }}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '999px', marginBottom: '0.75rem', backdropFilter: 'blur(5px)' }}>
                   <span style={{ fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#7dd3fc' }}>QUIZ LIVE FORMAT</span>
                 </div>

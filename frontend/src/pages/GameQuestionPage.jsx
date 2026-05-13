@@ -187,7 +187,7 @@ const GameQuestionPage = () => {
     <div className="game-question-page" style={{ minHeight: '100vh', background: '#0f172a', paddingBottom: '3rem' }}>
       <Header />
       
-      <div className="container" style={{ padding: '2rem 1rem', paddingTop: '6rem' }}>
+      <div className="container" style={{ padding: '2rem 1rem', paddingTop: '85px' }}>
         
         {/* Success Notification Bar */}
         {submittedSuccessfully && (
@@ -239,7 +239,37 @@ const GameQuestionPage = () => {
             <ChevronLeft size={18} /> <span className="back-text">Back</span>
           </button>
 
-          <div className="title-container">
+          <div className="title-container" style={{ width: '100%' }}>
+            {/* Quiz Banner */}
+            {quizDetails?.effective_banner_url && (
+              <div style={{ 
+                width: '100%', 
+                height: '180px', 
+                borderRadius: '1.25rem', 
+                backgroundColor: '#0d1f3c', 
+                marginBottom: '1.5rem',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  background: `url("${quizDetails.effective_banner_url}") center/cover no-repeat`,
+                  filter: 'blur(15px) brightness(0.7)',
+                  transform: 'scale(1.1)',
+                  zIndex: 0
+                }}></div>
+                <div style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  width: '100%',
+                  height: '100%',
+                  background: `url("${quizDetails.effective_banner_url}") center/contain no-repeat`,
+                }}></div>
+              </div>
+            )}
+            
             <h1 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#f8fafc' }}>
               {quizDetails?.title || 'Check how quiz will feel after joining'}
             </h1>

@@ -4,7 +4,12 @@ const { v4: uuidv4 } = require('uuid');
 const getQuizzesByCategory = async (req, res) => {
   const { categoryId } = req.params;
   try {
-    const { rows } = await db.query("SELECT * FROM quizzes WHERE category_id = $1 AND status = 'active'", [categoryId]);
+    const { rows } = await db.query(`
+      SELECT q.*, 
+      COALESCE(NULLIF(q.banner_url, ''), (SELECT value FROM settings WHERE key = 'quiz_room_banner_url' LIMIT 1), (SELECT value FROM settings WHERE key = 'home_banner_url' LIMIT 1)) as effective_banner_url
+      FROM quizzes q 
+      WHERE q.category_id = $1 AND q.status = 'active'
+    `, [categoryId]);
     res.json({ success: true, quizzes: rows });
   } catch (error) {
     console.error(error);
@@ -18,6 +23,7 @@ const getQuizzesByZone = async (req, res) => {
     const userId = req.user ? req.user.userId : null;
     const { rows } = await db.query(`
       SELECT q.*, 
+      COALESCE(NULLIF(q.banner_url, ''), (SELECT value FROM settings WHERE key = 'quiz_room_banner_url' LIMIT 1), (SELECT value FROM settings WHERE key = 'home_banner_url' LIMIT 1)) as effective_banner_url,
       CASE 
         WHEN q.open_at > CURRENT_TIMESTAMP THEN 'UPCOMING'
         WHEN q.close_at < CURRENT_TIMESTAMP THEN 'CLOSED'
@@ -34,7 +40,6 @@ const getQuizzesByZone = async (req, res) => {
       AND q.status = 'active'
       ORDER BY q.open_at ASC
     `, [zoneId, userId]);
-    console.log(`[QuizAPI] Found ${rows.length} active quizzes for zone: ${zoneId}`);
     res.json({ success: true, quizzes: rows });
   } catch (error) {
     console.error(error);
@@ -47,6 +52,7 @@ const getAllQuizzes = async (req, res) => {
     const userId = req.user ? req.user.userId : null;
     const { rows } = await db.query(`
       SELECT q.*, 
+      COALESCE(NULLIF(q.banner_url, ''), (SELECT value FROM settings WHERE key = 'quiz_room_banner_url' LIMIT 1), (SELECT value FROM settings WHERE key = 'home_banner_url' LIMIT 1)) as effective_banner_url,
       CASE 
         WHEN q.open_at > CURRENT_TIMESTAMP + interval '1 minute' THEN 'UPCOMING'
         WHEN q.close_at < CURRENT_TIMESTAMP - interval '1 minute' THEN 'CLOSED'
@@ -74,7 +80,9 @@ const getJoinedQuizzes = async (req, res) => {
   const userId = req.user.userId;
   try {
     const { rows } = await db.query(`
-      SELECT q.*, 'CLOSED' as status_label, true as is_submitted, s.total_score, s.submitted_at
+      SELECT q.*, 
+      COALESCE(q.banner_url, (SELECT value FROM settings WHERE key = 'home_banner_url' LIMIT 1)) as effective_banner_url,
+      'CLOSED' as status_label, true as is_submitted, s.total_score, s.submitted_at
       FROM quizzes q
       JOIN submissions s ON q.id = s.quiz_id
       WHERE s.user_id = $1
@@ -92,7 +100,9 @@ const getQuizById = async (req, res) => {
   const userId = req.user ? req.user.userId : null;
   try {
     const { rows } = await db.query(`
-      SELECT q.*, u.name as winner_name,
+      SELECT q.*, 
+      COALESCE(NULLIF(q.banner_url, ''), (SELECT value FROM settings WHERE key = 'quiz_room_banner_url' LIMIT 1), (SELECT value FROM settings WHERE key = 'home_banner_url' LIMIT 1)) as effective_banner_url,
+      u.name as winner_name,
       CASE 
         WHEN s.id IS NOT NULL THEN true 
         ELSE false 

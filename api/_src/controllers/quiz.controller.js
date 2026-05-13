@@ -18,6 +18,7 @@ const getQuizzesByZone = async (req, res) => {
     const userId = req.user ? req.user.userId : null;
     const { rows } = await db.query(`
       SELECT q.*, 
+      COALESCE(NULLIF(q.banner_url, ''), (SELECT value FROM settings WHERE key = 'quiz_room_banner_url' LIMIT 1), (SELECT value FROM settings WHERE key = 'home_banner_url' LIMIT 1)) as effective_banner_url,
       CASE 
         WHEN q.open_at > CURRENT_TIMESTAMP THEN 'UPCOMING'
         WHEN q.close_at < CURRENT_TIMESTAMP THEN 'CLOSED'
@@ -47,6 +48,7 @@ const getAllQuizzes = async (req, res) => {
     const userId = req.user ? req.user.userId : null;
     const { rows } = await db.query(`
       SELECT q.*, 
+      COALESCE(NULLIF(q.banner_url, ''), (SELECT value FROM settings WHERE key = 'quiz_room_banner_url' LIMIT 1), (SELECT value FROM settings WHERE key = 'home_banner_url' LIMIT 1)) as effective_banner_url,
       CASE 
         WHEN q.open_at > CURRENT_TIMESTAMP + interval '1 minute' THEN 'UPCOMING'
         WHEN q.close_at < CURRENT_TIMESTAMP - interval '1 minute' THEN 'CLOSED'
@@ -93,6 +95,7 @@ const getQuizById = async (req, res) => {
   try {
     const { rows } = await db.query(`
       SELECT q.*, u.name as winner_name,
+      COALESCE(NULLIF(q.banner_url, ''), (SELECT value FROM settings WHERE key = 'quiz_room_banner_url' LIMIT 1), (SELECT value FROM settings WHERE key = 'home_banner_url' LIMIT 1)) as effective_banner_url,
       CASE 
         WHEN s.id IS NOT NULL THEN true 
         ELSE false 

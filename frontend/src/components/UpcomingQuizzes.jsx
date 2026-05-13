@@ -47,6 +47,7 @@ const UpcomingQuizzes = ({ quizzes = [], title = "Multiple quizzes scheduled by 
                     </div>
                  </div>
 
+
                  <h3 style={{ fontSize: 'clamp(0.85rem, 3vw, 1rem)', fontWeight: 900, color: '#0f172a', marginBottom: '0.4rem', lineHeight: 1.2 }}>{quiz.title}</h3>
 
                   <div className="game-status-box" style={{ 

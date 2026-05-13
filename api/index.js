@@ -50,8 +50,13 @@ apiRouter.get('/db-test', async (req, res) => {
   }
 });
 
+const walletRoutes = require('./_src/routes/wallet.routes');
+const voucherRoutes = require('./_src/routes/voucher.routes');
+
 // Mount modular routes
 apiRouter.use('/auth', authRoutes);
+apiRouter.use('/wallet', walletRoutes);
+apiRouter.use('/vouchers', voucherRoutes);
 apiRouter.use('/categories', categoryRoutes);
 apiRouter.use('/quizzes', quizRoutes);
 apiRouter.use('/matches', matchRoutes);

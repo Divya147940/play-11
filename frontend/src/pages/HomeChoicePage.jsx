@@ -150,45 +150,40 @@ const HomeChoicePage = () => {
       <div style={{ paddingTop: '70px', paddingBottom: '6rem' }}>
         
         {/* Hero Banner Section */}
-        {selectedTab === 'All Rooms' && (
-          <div className="quiz-banner-card animate-slide-up stagger-1" style={{ 
-            width: '100%', 
-            paddingLeft: '0', 
-            paddingRight: '0', 
-            paddingTop: '0', 
-            paddingBottom: '0',
-            borderRadius: '0',
-            background: globalBanner ? `url("${globalBanner}") center/100% 100% no-repeat` : 'radial-gradient(circle at top right, #1e3a8a, #0d1f3c)',
-            backgroundColor: '#0d1f3c', // Fallback color
-            minHeight: '180px',
-            position: 'relative',
-            marginBottom: '3rem',
-            overflow: 'hidden'
-          }}>
+        <div className="quiz-banner-card animate-slide-up stagger-1" style={{ 
+          width: '100%', 
+          padding: '0', 
+          borderRadius: '0',
+          minHeight: '200px',
+          position: 'relative',
+          marginBottom: '3rem',
+          overflow: 'hidden',
+          background: 'radial-gradient(circle at top right, #1e3a8a, #0d1f3c)'
+        }}>
             {/* Blurred Background Layer */}
             {globalBanner && (
               <div style={{
                 position: 'absolute',
                 top: 0, left: 0, right: 0, bottom: 0,
-                background: `url("${globalBanner}") center/100% 100% no-repeat`,
+                background: `url("${globalBanner}") center / cover no-repeat`,
                 filter: 'blur(20px) brightness(0.7)',
-                transform: 'scale(1.1)', // Prevent white edges from blur
+                transform: 'scale(1.1)',
                 zIndex: 0
               }}></div>
             )}
             
-            {/* Main Content Layer */}
-            <div style={{ 
-              position: 'relative', 
-              zIndex: 1, 
-              width: '100%', 
-              height: '100%',
-              background: globalBanner ? `url("${globalBanner}") center/100% 100% no-repeat` : 'radial-gradient(circle at top right, #1e3a8a, #0d1f3c)',
-              minHeight: '180px',
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              {!globalBanner && <div className="quiz-banner-overlay"></div>}
+            {/* Main Content Layer (Image) */}
+            {globalBanner && (
+              <div style={{ 
+                position: 'absolute', 
+                top: 0, left: 0, right: 0, bottom: 0,
+                background: `url("${globalBanner}") center / contain no-repeat`,
+                zIndex: 1
+              }}></div>
+            )}
+
+            <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', minHeight: '200px' }}>
+              {!globalBanner && <div className="quiz-banner-overlay" style={{ opacity: 0.1 }}></div>}
               
               {!globalBanner && (
                 <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>

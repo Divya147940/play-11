@@ -8,6 +8,8 @@ const quizRoutes = require('./_src/routes/quiz.routes');
 const matchRoutes = require('./_src/routes/match.routes');
 const adminRoutes = require('./_src/routes/admin.routes');
 const settingsRoutes = require('./_src/routes/settings.routes');
+const walletRoutes = require('./_src/routes/wallet.routes');
+const voucherRoutes = require('./_src/routes/voucher.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,6 +62,8 @@ apiRouter.use('/quizzes', quizRoutes);
 apiRouter.use('/matches', matchRoutes);
 apiRouter.use('/admin', adminRoutes);
 apiRouter.use('/settings', settingsRoutes);
+apiRouter.use('/wallet', walletRoutes);
+apiRouter.use('/vouchers', voucherRoutes);
 
 // Mount API Router
 app.use('/api', apiRouter);

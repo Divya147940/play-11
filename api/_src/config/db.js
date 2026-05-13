@@ -173,15 +173,52 @@ const initDB = async () => {
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS transactions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        amount NUMERIC NOT NULL,
+        type TEXT NOT NULL, -- 'credit', 'debit'
+        category TEXT NOT NULL, -- 'deposit', 'withdraw', 'win', 'entry_fee', 'bonus'
+        status TEXT DEFAULT 'success', -- 'success', 'pending', 'failed'
+        upi_id TEXT,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS vouchers (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        code TEXT UNIQUE NOT NULL,
+        discount_text TEXT NOT NULL,
+        amount NUMERIC DEFAULT 0,
+        type TEXT NOT NULL, -- 'bonus', 'discount', 'free_entry'
+        color TEXT DEFAULT '#7c3aed',
+        expiry_days INTEGER DEFAULT 30,
+        status TEXT DEFAULT 'active'
+      );
+
+      CREATE TABLE IF NOT EXISTS user_vouchers (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        voucher_id TEXT NOT NULL REFERENCES vouchers(id) ON DELETE CASCADE,
+        status TEXT DEFAULT 'active', -- 'active', 'used', 'expired'
+        expires_at TIMESTAMPTZ NOT NULL,
+        redeemed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        description TEXT,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
       -- Performance Indexes
-      CREATE INDEX IF NOT EXISTS idx_quizzes_category ON quizzes(category_id);
-      CREATE INDEX IF NOT EXISTS idx_quizzes_zone ON quizzes(zone_id);
-      CREATE INDEX IF NOT EXISTS idx_quizzes_match ON quizzes(match_id);
-      CREATE INDEX IF NOT EXISTS idx_questions_quiz ON questions(quiz_id);
-      CREATE INDEX IF NOT EXISTS idx_submissions_user ON submissions(user_id);
-      CREATE INDEX IF NOT EXISTS idx_submissions_quiz ON submissions(quiz_id);
-      CREATE INDEX IF NOT EXISTS idx_otp_requests_mobile ON otp_requests(mobile);
-      CREATE INDEX IF NOT EXISTS idx_sub_answers_sub ON submission_answers(submission_id);
+      CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_vouchers_user ON user_vouchers(user_id);
+      CREATE INDEX IF NOT EXISTS idx_vouchers_code ON vouchers(code);
+      CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key);
     `);
     
     global.dbInitialized = true;
@@ -195,6 +232,10 @@ const seedAndMigrate = async () => {
   try {
     // Migrations for existing tables
     await pool.query(`
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus NUMERIC DEFAULT 0;
+        ALTER TABLE transactions ADD COLUMN IF NOT EXISTS upi_id TEXT;
+        ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS amount NUMERIC DEFAULT 0;
+        ALTER TABLE user_vouchers ADD COLUMN IF NOT EXISTS redeemed_at TIMESTAMPTZ;
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS marks_per_q INTEGER DEFAULT 2;
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS entry_type TEXT DEFAULT 'free';
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS entry_amount INTEGER DEFAULT 0;
@@ -238,6 +279,26 @@ const seedAndMigrate = async () => {
         ('cat-g1', 'sport-zone', 'IPL Quiz', 'आईपीएल क्विज', 1);
       `);
       console.log('Database seeded with initial data.');
+    }
+
+    const { rows: voucherRows } = await pool.query('SELECT COUNT(*) as count FROM vouchers');
+    if (parseInt(voucherRows[0].count) === 0) {
+      await pool.query(`
+        INSERT INTO vouchers (id, title, code, discount_text, amount, type, color) VALUES 
+        ('v-1', 'Welcome Bonus', 'WELCOME100', '₹100 Bonus', 100, 'bonus', '#7c3aed'),
+        ('v-2', 'First Quiz Free', 'FREEARENA', '100% OFF', 0, 'free_entry', '#0ea5e9'),
+        ('v-3', 'Mega Contest Pass', 'IPL2024', '₹50 Discount', 50, 'discount', '#f59e0b');
+      `);
+      console.log('Default vouchers seeded.');
+    }
+
+    const { rows: settingsRows } = await pool.query('SELECT COUNT(*) as count FROM settings');
+    if (parseInt(settingsRows[0].count) === 0) {
+      await pool.query(`
+        INSERT INTO settings (key, value, description) VALUES 
+        ('global_quiz_banner', 'https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=2070&auto=format&fit=crop', 'Default banner for quizzes without a specific banner')
+      `);
+      console.log('Default settings seeded.');
     }
 
     const { rows: adminRows } = await pool.query('SELECT COUNT(*) as count FROM admins');

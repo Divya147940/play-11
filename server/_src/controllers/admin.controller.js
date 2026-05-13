@@ -219,6 +219,13 @@ const declareWinner = async (req, res) => {
     if (prizeAmount > 0) {
       await db.query("UPDATE users SET coins = coins + $1 WHERE id = $2", [prizeAmount, winner_id]);
       await db.query("UPDATE submissions SET won_amount = $1 WHERE quiz_id = $2 AND user_id = $3", [prizeAmount, id, winner_id]);
+      
+      // 4. Record Transaction
+      const txId = `tx-${uuidv4().substring(0, 8)}`;
+      await db.query(
+        'INSERT INTO transactions (id, user_id, title, amount, type, category, status, reference_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+        [txId, winner_id, `Quiz Won: ${(quizRows[0]?.title || 'Contest')}`, prizeAmount, 'credit', 'win', 'success', id]
+      );
     }
 
     await db.query('COMMIT');
@@ -356,7 +363,7 @@ const updateQuiz = async (req, res) => {
   const { id } = req.params;
   const { 
     zone_id, category_id, match_id, title, hindiTitle, description, hindiDescription, 
-    total_questions, timer_minutes, entry_amount,
+    total_questions, timer_minutes, entry_amount, prize_amount,
     open_at, close_at, marks_per_q, banner_url, questions 
   } = req.body;
   
