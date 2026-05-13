@@ -16,6 +16,8 @@ router.post('/send-otp', otpLimiter, authController.sendOtp);
 router.post('/verify-otp', authController.verifyOtp);
 router.post('/update-profile', verifyToken, authController.updateProfile);
 router.get('/history', verifyToken, authController.getUserHistory);
+router.get('/balance', verifyToken, authController.getBalance);
+router.get('/submission/:id/review', verifyToken, authController.getSubmissionReview);
 
 // Mock logout
 router.post('/logout', (req, res) => {

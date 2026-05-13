@@ -149,22 +149,40 @@ const updateProfile = async (req, res) => {
 
 const getUserHistory = async (req, res) => {
   const userId = req.user.userId;
+  const { startDate, endDate } = req.query;
+  console.log(`[DEBUG] Fetching history for user: ${userId}, dates: ${startDate} to ${endDate}`);
   
   try {
-    // Calculate rank for each submission using a correlated subquery
-    const { rows } = await db.query(`
-      SELECT s.*, q.title, q.zone_id,
-      (
-        SELECT COUNT(*) + 1
-        FROM submissions s2
-        WHERE s2.quiz_id = s.quiz_id 
-        AND s2.total_score > s.total_score
-      ) as rank
+    let query = `
+      SELECT s.*, q.title, q.zone_id, q.winner_id as quiz_winner_id, q.prize_amount, 
+             COALESCE(u.name, 'Admin Declared') as winner_name,
+             CASE WHEN s.user_id = q.winner_id THEN q.prize_amount ELSE 0 END as display_won_amount,
+             (
+               SELECT COUNT(*) + 1
+               FROM submissions s2
+               WHERE s2.quiz_id = s.quiz_id 
+               AND s2.total_score > s.total_score
+             ) as leaderboard_rank
       FROM submissions s 
-      JOIN quizzes q ON s.quiz_id = q.id 
+      LEFT JOIN quizzes q ON s.quiz_id = q.id 
+      LEFT JOIN users u ON q.winner_id = u.id
       WHERE s.user_id = $1 
-      ORDER BY s.submitted_at DESC
-    `, [userId]);
+    `;
+    const params = [userId];
+
+    if (startDate) {
+      params.push(startDate);
+      query += ` AND s.submitted_at >= $${params.length}`;
+    }
+    if (endDate) {
+      params.push(endDate + ' 23:59:59');
+      query += ` AND s.submitted_at <= $${params.length}`;
+    }
+
+    query += ` ORDER BY s.submitted_at DESC`;
+    
+    const { rows } = await db.query(query, params);
+    console.log(`[HistoryAPI] Found ${rows.length} rows for user: ${userId}`);
     
     res.json({ success: true, history: rows });
   } catch (error) {
@@ -173,9 +191,67 @@ const getUserHistory = async (req, res) => {
   }
 };
 
+const getSubmissionReview = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.userId;
+
+  try {
+    // 1. Get submission info and verify ownership
+    const { rows: subRows } = await db.query(
+      'SELECT s.*, q.title, q.winner_id as quiz_winner_id, q.status as quiz_status, q.prize_amount FROM submissions s JOIN quizzes q ON s.quiz_id = q.id WHERE s.id = $1 AND s.user_id = $2',
+      [id, userId]
+    );
+
+    if (subRows.length === 0) {
+      return res.status(404).json({ error: 'Submission not found or unauthorized' });
+    }
+
+    const submission = subRows[0];
+
+    // 2. Get detailed answers with question text and options
+    const { rows: reviewRows } = await db.query(`
+      SELECT 
+        sa.question_id, sa.selected_value, sa.is_correct,
+        q.question_text, q.hindi_question_text,
+        ca.answer_value as correct_value,
+        (
+          SELECT json_agg(json_build_object('text', qo.option_text, 'value', qo.option_value))
+          FROM question_options qo WHERE qo.question_id = q.id
+        ) as options
+      FROM submission_answers sa
+      JOIN questions q ON sa.question_id = q.id
+      JOIN correct_answers ca ON q.id = ca.question_id
+      WHERE sa.submission_id = $1
+      ORDER BY q.sort_order ASC, q.id ASC
+    `, [id]);
+
+    res.json({
+      success: true,
+      submission,
+      review: reviewRows
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const getBalance = async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    const { rows } = await db.query('SELECT coins, points FROM users WHERE id = $1', [userId]);
+    if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json({ success: true, balance: { coins: rows[0].coins || 0, points: rows[0].points || 0, bonus: 0 } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   sendOtp,
   verifyOtp,
   updateProfile,
-  getUserHistory
+  getUserHistory,
+  getSubmissionReview,
+  getBalance
 };

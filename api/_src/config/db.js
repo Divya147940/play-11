@@ -33,8 +33,11 @@ const initDB = async () => {
       );
     `);
 
+    // Ensure migrations always run to catch schema updates (ALTER TABLE IF NOT EXISTS is safe)
+    seedAndMigrate().catch(err => console.error('Background DB Error:', err));
+
     if (checkTable.rows[0].exists) {
-      console.log('✅ Database already initialized, skipping heavy schema checks.');
+      console.log('✅ Database already initialized, migration check started in background.');
       global.dbInitialized = true;
       return;
     }
@@ -47,6 +50,8 @@ const initDB = async () => {
         id TEXT PRIMARY KEY,
         mobile TEXT UNIQUE NOT NULL,
         name TEXT,
+        coins NUMERIC DEFAULT 0,
+        points INTEGER DEFAULT 0,
         status TEXT DEFAULT 'active',
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -82,6 +87,7 @@ const initDB = async () => {
         timer_minutes INTEGER DEFAULT 5,
         status TEXT DEFAULT 'active',
         reward_text TEXT,
+        prize_amount INTEGER DEFAULT 0,
         entry_type TEXT DEFAULT 'free',
         open_at TIMESTAMPTZ,
         close_at TIMESTAMPTZ,
@@ -138,6 +144,7 @@ const initDB = async () => {
         correct_count INTEGER DEFAULT 0,
         wrong_count INTEGER DEFAULT 0,
         total_marks INTEGER DEFAULT 0,
+        time_taken TEXT,
         submitted_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -166,12 +173,6 @@ const initDB = async () => {
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
 
-      CREATE TABLE IF NOT EXISTS settings (
-        key TEXT PRIMARY KEY,
-        value TEXT,
-        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-      );
-
       -- Performance Indexes
       CREATE INDEX IF NOT EXISTS idx_quizzes_category ON quizzes(category_id);
       CREATE INDEX IF NOT EXISTS idx_quizzes_zone ON quizzes(zone_id);
@@ -182,9 +183,6 @@ const initDB = async () => {
       CREATE INDEX IF NOT EXISTS idx_otp_requests_mobile ON otp_requests(mobile);
       CREATE INDEX IF NOT EXISTS idx_sub_answers_sub ON submission_answers(submission_id);
     `);
-    
-    // Asynchronously handle migrations and seeding without blocking
-    seedAndMigrate().catch(err => console.error('Background DB Error:', err));
     
     global.dbInitialized = true;
     console.log('✅ PostgreSQL (Neon) schema initialized.');
@@ -216,6 +214,13 @@ const seedAndMigrate = async () => {
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS total_score NUMERIC DEFAULT 0;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS correct_count INTEGER DEFAULT 0;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS wrong_count INTEGER DEFAULT 0;
+        ALTER TABLE submissions ADD COLUMN IF NOT EXISTS time_taken TEXT;
+        ALTER TABLE submissions ADD COLUMN IF NOT EXISTS won_amount NUMERIC DEFAULT 0;
+        ALTER TABLE submissions ADD COLUMN IF NOT EXISTS rank INTEGER;
+        ALTER TABLE submissions ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS coins NUMERIC DEFAULT 0;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0;
+        ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS prize_amount INTEGER DEFAULT 0;
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS banner_url TEXT;
     `);
 
@@ -244,17 +249,6 @@ const seedAndMigrate = async () => {
         ('admin-1', 'admin', $1);
       `, [hashedPassword]);
       console.log('Default admin created (admin/123).');
-    }
-
-    // Default Settings
-    const { rows: settingsRows } = await pool.query('SELECT COUNT(*) as count FROM settings');
-    if (parseInt(settingsRows[0].count) === 0) {
-      await pool.query(`
-        INSERT INTO settings (key, value) VALUES 
-        ('home_banner_url', 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=1200'),
-        ('quiz_room_banner_url', 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=1200');
-      `);
-      console.log('Default settings seeded.');
     }
   } catch (err) {
     console.warn('Seed/Migrate warning (non-fatal):', err.message);

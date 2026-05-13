@@ -16,6 +16,7 @@ router.post('/upload-quiz', adminController.uploadQuiz);
 router.post('/quizzes', adminController.createQuiz);
 router.get('/quizzes/stats', adminController.getQuizzesWithStats);
 router.get('/quizzes/:id/participants', adminController.getQuizParticipants);
+router.get('/submissions/:id/review', adminController.getSubmissionReviewAdmin);
 router.post('/quizzes/:id/declare-winner', adminController.declareWinner);
 router.get('/quizzes/:id/questions', adminController.getAdminQuizQuestions);
 router.delete('/quizzes/:id', adminController.deleteQuiz);

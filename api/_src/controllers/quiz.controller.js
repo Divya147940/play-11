@@ -1,4 +1,4 @@
-const { db } = require('../config/db');
+const { db, pool } = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 
 const getQuizzesByCategory = async (req, res) => {
@@ -116,7 +116,7 @@ const getQuizQuestions = async (req, res) => {
   const { id } = req.params;
   try {
     const { rows } = await db.query(`
-      SELECT q.id, q.quiz_id, q.question_text, q.marks,
+      SELECT q.id, q.quiz_id, q.question_text, q.hindi_question_text, q.marks,
       (
         SELECT json_agg(json_build_object(
           'id', qo.id,
@@ -140,18 +140,24 @@ const getQuizQuestions = async (req, res) => {
 
 const submitQuiz = async (req, res) => {
   const { id } = req.params;
-  const { answers } = req.body; 
+  const { answers, time_taken } = req.body; 
   const userId = req.user.userId;
+  console.log(`[DEBUG] Submitting quiz ${id} for user: ${userId}`);
+
+  const client = await pool.connect();
 
   try {
+    await client.query('BEGIN');
+
     // 1. Check if user already submitted this quiz
-    const { rows: existingSub } = await db.query('SELECT id FROM submissions WHERE user_id = $1 AND quiz_id = $2', [userId, id]);
+    const { rows: existingSub } = await client.query('SELECT id FROM submissions WHERE user_id = $1 AND quiz_id = $2', [userId, id]);
     if (existingSub.length > 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ success: false, error: 'You have already submitted this quiz.' });
     }
 
     // 2. Fetch the questions and their correct answers
-    const { rows: questions } = await db.query(`
+    const { rows: questions } = await client.query(`
       SELECT q.*, ca.answer_value 
       FROM questions q
       LEFT JOIN correct_answers ca ON q.id = ca.question_id
@@ -159,18 +165,21 @@ const submitQuiz = async (req, res) => {
     `, [id]);
     
     // 3. Fetch Quiz details for marks and timing
-    const { rows: quizRows } = await db.query('SELECT marks_per_q, negative_marks, open_at, close_at FROM quizzes WHERE id = $1', [id]);
+    const { rows: quizRows } = await client.query('SELECT marks_per_q, negative_marks, open_at, close_at FROM quizzes WHERE id = $1', [id]);
     const quiz = quizRows[0];
     
     if (!quiz) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ success: false, error: 'Quiz not found.' });
     }
 
     const now = new Date();
     if (new Date(quiz.open_at) > now) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ success: false, error: 'This quiz has not opened yet.' });
     }
     if (new Date(quiz.close_at) < now) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ success: false, error: 'This quiz has already closed.' });
     }
 
@@ -180,19 +189,36 @@ const submitQuiz = async (req, res) => {
     let totalQuestions = questions.length;
     let correctCount = 0;
     let wrongCount = 0;
-    let attemptedCount = 0;
     
+    // Calculate score and counts
+    console.log(`[SUBMISSION_DEBUG] Answers received:`, JSON.stringify(answers));
+    
+    questions.forEach(q => {
+      const selectedValue = answers[q.id];
+      const correctValue = q.answer_value;
+      
+      console.log(`[SUBMISSION_DEBUG] QID: ${q.id} | Selected: ${selectedValue} | Correct: ${correctValue}`);
+      
+      if (selectedValue !== undefined && selectedValue !== null) {
+        const isCorrect = String(selectedValue) === String(correctValue);
+        if (isCorrect) correctCount++;
+        else wrongCount++;
+      }
+    });
+
+    const score = (correctCount * marksPerQ) - (wrongCount * negativeMarks);
     const subId = uuidv4();
     
+    // 4. INSERT main submission record FIRST (Parent)
+    await client.query('INSERT INTO submissions (id, user_id, quiz_id, status, total_score, correct_count, wrong_count, time_taken, submitted_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)',
+      [subId, userId, id, 'completed', score, correctCount, wrongCount, time_taken || null]);
+
+    // 5. INSERT individual answers (Children)
     const submissionAnswersPromises = questions.map(q => {
       const selectedValue = answers[q.id];
       if (selectedValue !== undefined && selectedValue !== null) {
-        attemptedCount++;
         const isCorrect = String(selectedValue) === String(q.answer_value);
-        if (isCorrect) correctCount++;
-        else wrongCount++;
-        
-        return db.query('INSERT INTO submission_answers (id, submission_id, question_id, selected_value, is_correct) VALUES ($1, $2, $3, $4, $5)',
+        return client.query('INSERT INTO submission_answers (id, submission_id, question_id, selected_value, is_correct) VALUES ($1, $2, $3, $4, $5)',
           [uuidv4(), subId, q.id, String(selectedValue), isCorrect ? 1 : 0]);
       }
       return Promise.resolve();
@@ -200,13 +226,24 @@ const submitQuiz = async (req, res) => {
 
     await Promise.all(submissionAnswersPromises);
 
-    const score = (correctCount * marksPerQ) - (wrongCount * negativeMarks);
-    
-    await db.query('INSERT INTO submissions (id, user_id, quiz_id, status, total_score, correct_count, wrong_count, submitted_at) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)',
-      [subId, userId, id, 'completed', score, correctCount, wrongCount]);
+    // 6. Calculate Rank
+    const { rows: rankRows } = await client.query(`
+      SELECT COUNT(*) + 1 as rank
+      FROM submissions
+      WHERE quiz_id = $1 AND total_score > $2
+    `, [id, score]);
+
+    await client.query('COMMIT');
 
     res.json({ 
       success: true, 
+      submission: {
+        id: subId,
+        total_score: score,
+        correct_count: correctCount,
+        wrong_count: wrongCount,
+        rank: rankRows[0].rank
+      },
       result: {
         total: totalQuestions,
         correct: correctCount,
@@ -216,11 +253,14 @@ const submitQuiz = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
+    await client.query('ROLLBACK');
+    console.error('Submission Error:', error);
     if (error.code === '23505') {
       return res.status(400).json({ success: false, error: 'You have already submitted this quiz.' });
     }
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', message: error.message });
+  } finally {
+    client.release();
   }
 };
 
