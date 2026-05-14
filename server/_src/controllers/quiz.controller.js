@@ -97,7 +97,7 @@ const getJoinedQuizzes = async (req, res) => {
 
 const getQuizById = async (req, res) => {
   const { id } = req.params;
-  const userId = req.user ? req.user.userId : null;
+  const userId = req.user ? req.user.userId : req.headers['x-guest-id'];
   try {
     const { rows } = await db.query(`
       SELECT q.*, 
@@ -151,7 +151,14 @@ const getQuizQuestions = async (req, res) => {
 const submitQuiz = async (req, res) => {
   const { id } = req.params;
   const { answers, time_taken } = req.body; 
-  const userId = req.user.userId;
+  
+  // Support both logged in users and guests
+  const userId = req.user ? req.user.userId : req.headers['x-guest-id'];
+  
+  if (!userId) {
+    return res.status(401).json({ success: false, error: 'User identification missing. Please refresh or login.' });
+  }
+
   console.log(`[DEBUG] Submitting quiz ${id} for user: ${userId}`);
 
   const client = await pool.connect();
@@ -268,7 +275,13 @@ const submitQuiz = async (req, res) => {
     if (error.code === '23505') {
       return res.status(400).json({ success: false, error: 'You have already submitted this quiz.' });
     }
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: 'Internal server error', 
+      message: error.message,
+      detail: error.detail,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   } finally {
     client.release();
   }
@@ -276,7 +289,8 @@ const submitQuiz = async (req, res) => {
 
 const getResults = async (req, res) => {
   const { quizId } = req.params;
-  const userId = req.user.userId;
+  const userId = req.user ? req.user.userId : req.headers['x-guest-id'];
+  if (!userId) return res.status(401).json({ error: 'Identification required' });
   try {
     // 1. Fetch submission with user's rank
     const { rows: results } = await db.query(`
@@ -314,9 +328,11 @@ const getLeaderboard = async (req, res) => {
   try {
     // 1. Get Top 10 for specific quiz
     const { rows: leaderboard } = await db.query(`
-      SELECT s.total_score, u.name, u.id as user_id
+      SELECT s.total_score, 
+             COALESCE(u.name, 'Guest (' || LEFT(s.user_id, 8) || ')') as name, 
+             u.id as user_id
       FROM submissions s 
-      JOIN users u ON s.user_id = u.id 
+      LEFT JOIN users u ON s.user_id = u.id 
       WHERE s.quiz_id = $1 
       ORDER BY s.total_score DESC, s.submitted_at ASC LIMIT 10
     `, [quizId]);
@@ -351,14 +367,14 @@ const getGlobalLeaderboard = async (req, res) => {
     // Top 50 players by total accumulated score across all quizzes
     const { rows: leaderboard } = await db.query(`
       SELECT 
-        u.id as user_id,
-        u.name,
+        s.user_id,
+        COALESCE(u.name, 'Guest (' || LEFT(s.user_id, 8) || ')') as name,
         SUM(s.total_score) as total_score,
         COUNT(s.id) as quizzes_played,
         MAX(s.total_score) as best_score
       FROM submissions s
-      JOIN users u ON s.user_id = u.id
-      GROUP BY u.id, u.name
+      LEFT JOIN users u ON s.user_id = u.id
+      GROUP BY s.user_id, u.name
       ORDER BY total_score DESC, quizzes_played DESC
       LIMIT 50
     `);

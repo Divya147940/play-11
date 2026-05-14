@@ -186,8 +186,34 @@ const StudyQuestionPage = () => {
     <div className="study-question-page" style={{ minHeight: '100vh', background: '#0f172a', paddingBottom: '3rem' }}>
       <Header />
       
-      <div className="container" style={{ padding: '2rem 1rem', paddingTop: '85px' }}>
-        
+      <div className="container" style={{ padding: '0 1rem 2rem 1rem', paddingTop: '60px', maxWidth: '100%' }}>
+        {/* Quiz Banner - Moved to top for edge-to-edge look */}
+        {quizDetails?.effective_banner_url && (
+          <div style={{ 
+            width: 'calc(100% + 2rem)', 
+            marginLeft: '-1rem',
+            marginRight: '-1rem',
+            height: 'clamp(160px, 25vh, 300px)', 
+            borderRadius: '0', 
+            backgroundColor: '#0d1f3c', 
+            marginBottom: '2rem',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <img 
+              src={quizDetails.effective_banner_url} 
+              alt="Quiz Banner" 
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'fill', 
+                display: 'block' 
+              }} 
+            />
+          </div>
+        )}
+
         {/* Success Notification Bar */}
         {submittedSuccessfully && (
           <div style={{ 
@@ -218,7 +244,6 @@ const StudyQuestionPage = () => {
         {/* Top Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            {/* Removed Category Label */}
             <button 
               onClick={() => navigate('/home-choice')} 
               style={{ 
@@ -241,36 +266,6 @@ const StudyQuestionPage = () => {
             >
               <ChevronLeft size={18} /> Back to Arena
             </button>
-
-            {/* Quiz Banner */}
-            {quizDetails?.effective_banner_url && (
-              <div style={{ 
-                width: '100%', 
-                height: '180px', 
-                borderRadius: '1.25rem', 
-                backgroundColor: '#0d1f3c', 
-                marginBottom: '1.5rem',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                position: 'relative',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: 0, left: 0, right: 0, bottom: 0,
-                  background: `url("${quizDetails.effective_banner_url}") center/cover no-repeat`,
-                  filter: 'blur(15px) brightness(0.7)',
-                  transform: 'scale(1.1)',
-                  zIndex: 0
-                }}></div>
-                <div style={{
-                  position: 'relative',
-                  zIndex: 1,
-                  width: '100%',
-                  height: '100%',
-                  background: `url("${quizDetails.effective_banner_url}") center/contain no-repeat`,
-                }}></div>
-              </div>
-            )}
 
             <h1 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#f8fafc' }}>
               {quizDetails?.title || 'Check how quiz will feel after joining'}

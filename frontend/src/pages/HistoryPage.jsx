@@ -96,7 +96,7 @@ const HistoryPage = () => {
       paddingBottom: '8rem',
       background: 'linear-gradient(to bottom, #f8fafc, #ffffff)'
     }}>
-      <div className="container" style={{ paddingTop: '6rem' }}>
+      <div className="container" style={{ paddingTop: '8rem' }}>
         
         {/* Modern Header Section */}
         <div className="animate-fade-in" style={{ marginBottom: '3rem' }}>
@@ -128,30 +128,14 @@ const HistoryPage = () => {
                 Tracking your progress across <span style={{ fontWeight: 800, color: '#0f172a' }}>{filteredHistory.length}</span> {filter !== 'All' ? filter.toLowerCase() : ''} quiz sessions.
               </p>
             </div>
-            
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button 
-                onClick={fetchHistory}
-                className="hover-lift"
-                style={{ 
-                  background: 'white', border: '1px solid #e2e8f0', color: '#0f172a',
-                  padding: '12px 20px', borderRadius: '14px', fontSize: '0.9rem', 
-                  fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
-                }}
-              >
-                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-                Refresh Data
-              </button>
-            </div>
           </div>
         </div>
 
         {/* Global Stats Summary */}
-        <div className="animate-slide-up" style={{ 
+        <div className="animate-slide-up stats-summary-grid" style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-          gap: '1.5rem', 
+          gridTemplateColumns: 'repeat(3, 1fr)', 
+          gap: '1rem', 
           marginBottom: '3.5rem'
         }}>
           {[
@@ -163,7 +147,7 @@ const HistoryPage = () => {
               padding: '2rem', borderRadius: '24px', background: 'white', border: '1px solid #e2e8f0',
               display: 'flex', alignItems: 'center', gap: '1.5rem', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.02)'
             }}>
-              <div style={{ 
+              <div className="stat-icon" style={{ 
                 width: '60px', height: '60px', borderRadius: '18px', 
                 background: `${stat.color}10`, color: stat.color,
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -171,8 +155,8 @@ const HistoryPage = () => {
                 {stat.icon}
               </div>
               <div>
-                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</p>
-                <h3 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>{stat.value}</h3>
+                <p className="stat-label" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</p>
+                <h3 className="stat-value" style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>{stat.value}</h3>
               </div>
             </div>
           ))}
@@ -268,7 +252,7 @@ const HistoryPage = () => {
                       }}>
                         {item.type === 'Study' ? 'Practice' : 'Tournament'}
                       </span>
-                      <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>{item.date}</span>
+                      <span className="mobile-hidden" style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>{item.date}</span>
                     </div>
                     <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
                       {item.title}
@@ -342,17 +326,26 @@ const HistoryPage = () => {
                     Review
                   </button>
                   <button 
-                    onClick={() => navigate(`/leaderboard/${item.quizId}`)}
+                    onClick={() => {
+                      if (item.winnerId) {
+                        navigate(`/leaderboard/${item.quizId}`);
+                      } else {
+                        alert("Leaderboard will be available as soon as the result is officially declared. Stay tuned!");
+                      }
+                    }}
                     style={{ 
                       flex: 1, padding: '14px', borderRadius: '14px', 
-                      background: '#f97316', color: 'white', border: 'none',
+                      background: item.winnerId ? '#f97316' : 'rgba(15, 23, 42, 0.05)', 
+                      color: item.winnerId ? 'white' : '#64748b', 
+                      border: item.winnerId ? 'none' : '1px solid #e2e8f0',
                       fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                      transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.2)'
+                      transition: 'all 0.2s', 
+                      boxShadow: item.winnerId ? '0 4px 12px rgba(249, 115, 22, 0.2)' : 'none'
                     }}
                   >
                     <Trophy size={16} />
-                    Leaderboard
+                    {item.winnerId ? 'Leaderboard' : 'Awaiting Result'}
                   </button>
                 </div>
               </div>
@@ -430,7 +423,30 @@ const HistoryPage = () => {
         }
         @media (max-width: 768px) {
           h1 { font-size: 2.2rem !important; }
-          .container { padding-top: 4rem !important; }
+          .container { padding-top: 7.5rem !important; }
+          .stats-summary-grid {
+            gap: 0.5rem !important;
+          }
+          .stats-summary-grid > div {
+            padding: 1rem 0.5rem !important;
+            flex-direction: column !important;
+            text-align: center !important;
+            gap: 0.5rem !important;
+            border-radius: 16px !important;
+          }
+          .stats-summary-grid .stat-icon {
+            width: 40px !important;
+            height: 40px !important;
+          }
+          .stats-summary-grid .stat-label {
+            font-size: 0.6rem !important;
+          }
+          .stats-summary-grid .stat-value {
+            font-size: 1.1rem !important;
+          }
+          .mobile-hidden {
+            display: none !important;
+          }
         }
       `}</style>
     </div>

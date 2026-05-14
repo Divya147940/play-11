@@ -20,7 +20,11 @@ const getDashboardStats = async (req, res) => {
     const submissionCount = parseInt(submissionsRes.rows[0].count);
 
     const { rows: recentActivity } = await db.query(`
-      SELECT s.id, u.name, u.mobile, u.status as user_status, s.submitted_at, s.total_score 
+      SELECT s.id, 
+             COALESCE(u.name, 'Guest (' || LEFT(s.user_id, 8) || ')') as name, 
+             COALESCE(u.mobile, 'GUEST') as mobile, 
+             COALESCE(u.status, 'active') as user_status, 
+             s.submitted_at, s.total_score 
       FROM submissions s 
       LEFT JOIN users u ON s.user_id = u.id 
       ORDER BY s.submitted_at DESC LIMIT 5
@@ -183,9 +187,13 @@ const getQuizParticipants = async (req, res) => {
   const { id } = req.params;
   try {
     const { rows } = await db.query(`
-      SELECT s.*, u.name, u.mobile, u.status as user_status, q.total_questions
+      SELECT s.*, 
+             COALESCE(u.name, 'Guest (' || LEFT(s.user_id, 8) || ')') as name, 
+             COALESCE(u.mobile, 'GUEST') as mobile, 
+             COALESCE(u.status, 'active') as user_status, 
+             q.total_questions
       FROM submissions s
-      JOIN users u ON s.user_id = u.id
+      LEFT JOIN users u ON s.user_id = u.id
       JOIN quizzes q ON s.quiz_id = q.id
       WHERE s.quiz_id = $1
       ORDER BY s.total_score DESC, s.submitted_at ASC

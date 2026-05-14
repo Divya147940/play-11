@@ -213,7 +213,7 @@ const GameResultPage = () => {
               style={{
                 background: 'transparent',
                 border: '1px solid #334155',
-                color: '#f8fafc',
+                color: '#475569',
                 padding: '1rem 1.5rem',
                 borderRadius: '0.75rem',
                 fontWeight: 800,

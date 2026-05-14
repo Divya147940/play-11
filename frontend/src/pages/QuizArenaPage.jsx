@@ -75,7 +75,7 @@ const QuizArenaPage = () => {
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [globalBanner, setGlobalBanner] = useState('');
+  const [activeBanner, setActiveBanner] = useState('');
 
   const config = zoneConfig[zoneId] || zoneConfig['sport-zone'];
 
@@ -132,13 +132,27 @@ const QuizArenaPage = () => {
 
     fetchQuizzes();
 
-    // Fetch global banner
-    fetch('/api/settings/home_banner_url')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setGlobalBanner(data.value);
-      })
-      .catch(console.error);
+    // Fetch banners: Check zone-specific first, then global
+    const fetchBanners = async () => {
+      try {
+        // Try zone-specific banner first (e.g., banner_zone_study-zone)
+        const zoneRes = await fetch(`/api/settings/banner_zone_${zoneId}`);
+        const zoneData = await zoneRes.json();
+        
+        if (zoneData.success && zoneData.value) {
+          setActiveBanner(zoneData.value);
+        } else {
+          // Fallback to global home banner
+          const globalRes = await fetch('/api/settings/home_banner_url');
+          const globalData = await globalRes.json();
+          if (globalData.success) setActiveBanner(globalData.value);
+        }
+      } catch (err) {
+        console.error('Error fetching banners:', err);
+      }
+    };
+
+    fetchBanners();
 
     const interval = setInterval(fetchQuizzes, 3000);
     return () => clearInterval(interval);
@@ -148,38 +162,31 @@ const QuizArenaPage = () => {
     <div className="quiz-room-bg" style={{ minHeight: '100vh' }}>
       <div className="container" style={{ paddingTop: '4rem', paddingBottom: '6rem', paddingLeft: '3%', paddingRight: '3%' }}>
         
-        {/* Global Home Banner */}
-        {globalBanner && (
-          <div style={{ 
-            width: '100%', 
-            height: '140px', 
+        {/* Global or Zone-Specific Banner */}
+        {activeBanner && (
+          <div className="quiz-arena-banner-container" style={{ 
+            width: 'calc(100% + 6%)', 
+            marginLeft: '-3%',
+            marginRight: '-3%',
+            height: 'clamp(160px, 25vh, 300px)', 
             borderRadius: '0', 
             padding: '0', 
-            backgroundColor: '#0d1f3c', 
-            marginBottom: '1.5rem',
-            borderBottom: '1px solid #e2e8f0',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+            marginBottom: '2.5rem',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            borderBottom: '1px solid rgba(255,255,255,0.05)'
           }}>
-            {/* Blurred Background Layer */}
-            <div style={{
-              position: 'absolute',
-              top: 0, left: 0, right: 0, bottom: 0,
-              background: `url("${globalBanner}") center/100% 100% no-repeat`,
-              filter: 'blur(15px) brightness(0.6)',
-              transform: 'scale(1.2)',
-              zIndex: 0
-            }}></div>
-            
-            {/* Clear Contain Layer */}
-            <div style={{
-              position: 'relative',
-              zIndex: 1,
-              width: '100%',
-              height: '100%',
-              background: `url("${globalBanner}") center/100% 100% no-repeat`,
-            }}></div>
+            <img 
+              src={activeBanner} 
+              alt="Arena Banner" 
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'fill', 
+                display: 'block' 
+              }} 
+            />
           </div>
         )}
 

@@ -134,7 +134,9 @@ const GameQuestionPage = () => {
          }, 2000);
       } else {
          setIsSubmitting(false);
-         alert("Error submitting game quiz: " + (data.error || "Unknown error"));
+         const errMsg = data.message || data.error || "Unknown error";
+         const detail = data.detail ? ` (${data.detail})` : "";
+         alert("Error submitting game quiz: " + errMsg + detail);
       }
     } catch (err) {
       setIsSubmitting(false);
@@ -187,8 +189,35 @@ const GameQuestionPage = () => {
     <div className="game-question-page" style={{ minHeight: '100vh', background: '#0f172a', paddingBottom: '3rem' }}>
       <Header />
       
-      <div className="container" style={{ padding: '2rem 1rem', paddingTop: '85px' }}>
+      <div className="container" style={{ padding: '0 1rem 2rem 1rem', paddingTop: '60px', maxWidth: '100%' }}>
         
+        {/* Quiz Banner - Moved to top for edge-to-edge look */}
+        {quizDetails?.effective_banner_url && (
+          <div style={{ 
+            width: 'calc(100% + 2rem)', 
+            marginLeft: '-1rem',
+            marginRight: '-1rem',
+            height: 'clamp(160px, 25vh, 300px)', 
+            borderRadius: '0', 
+            backgroundColor: '#0d1f3c', 
+            marginBottom: '2rem',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <img 
+              src={quizDetails.effective_banner_url} 
+              alt="Quiz Banner" 
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'fill', 
+                display: 'block' 
+              }} 
+            />
+          </div>
+        )}
+
         {/* Success Notification Bar */}
         {submittedSuccessfully && (
           <div style={{ 
@@ -218,58 +247,7 @@ const GameQuestionPage = () => {
         
         {/* Top Header */}
         <div className="top-header-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem', position: 'relative' }}>
-          <button 
-            className="mobile-back-btn"
-            onClick={() => navigate('/home-choice')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: 'none',
-              color: '#f8fafc',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.9rem',
-              zIndex: 10
-            }}
-          >
-            <ChevronLeft size={18} /> <span className="back-text">Back</span>
-          </button>
-
           <div className="title-container" style={{ width: '100%' }}>
-            {/* Quiz Banner */}
-            {quizDetails?.effective_banner_url && (
-              <div style={{ 
-                width: '100%', 
-                height: '180px', 
-                borderRadius: '1.25rem', 
-                backgroundColor: '#0d1f3c', 
-                marginBottom: '1.5rem',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                position: 'relative',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  top: 0, left: 0, right: 0, bottom: 0,
-                  background: `url("${quizDetails.effective_banner_url}") center/cover no-repeat`,
-                  filter: 'blur(15px) brightness(0.7)',
-                  transform: 'scale(1.1)',
-                  zIndex: 0
-                }}></div>
-                <div style={{
-                  position: 'relative',
-                  zIndex: 1,
-                  width: '100%',
-                  height: '100%',
-                  background: `url("${quizDetails.effective_banner_url}") center/contain no-repeat`,
-                }}></div>
-              </div>
-            )}
-            
             <h1 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#f8fafc' }}>
               {quizDetails?.title || 'Check how quiz will feel after joining'}
             </h1>
@@ -288,8 +266,7 @@ const GameQuestionPage = () => {
               <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>ANSWERED</div>
               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f8fafc' }}>{answeredCount}/{questions.length}</div>
             </div>
-          </div>
-        </div>
+          </div>        </div>
 
         {/* Main Content Area */}
         <div className="main-content-flex" style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
@@ -481,12 +458,10 @@ const GameQuestionPage = () => {
               padding-top: 1rem;
             }
             .mobile-back-btn {
-              position: absolute;
-              left: 0;
-              top: 0.5rem;
+              margin-bottom: 1rem;
             }
             .back-text {
-              display: none;
+              display: inline-block;
             }
             .title-container {
               text-align: center !important;

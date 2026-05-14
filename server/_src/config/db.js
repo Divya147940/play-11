@@ -255,6 +255,7 @@ const seedAndMigrate = async () => {
         ALTER TABLE matches ADD COLUMN IF NOT EXISTS hindi_venue TEXT;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'completed';
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS total_score NUMERIC DEFAULT 0;
+        ALTER TABLE submissions ALTER COLUMN total_score TYPE NUMERIC USING total_score::NUMERIC;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS correct_count INTEGER DEFAULT 0;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS wrong_count INTEGER DEFAULT 0;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS time_taken TEXT;

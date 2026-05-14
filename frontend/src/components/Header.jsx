@@ -34,8 +34,8 @@ const Header = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className={`site-header ${scrolled ? 'scrolled' : ''}`}>
-      <div className="container" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <nav className="topbar">
+      <div className="topbar-inner">
         
         {/* Logo - QUZO Branding */}
         <div className="logo-boxes" onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -76,7 +76,6 @@ const Header = () => {
         <button 
           className="menu-toggle" 
           onClick={() => setIsOpen(!isOpen)}
-          style={{ display: 'block', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -88,11 +87,11 @@ const Header = () => {
           className="mobile-nav-overlay"
           style={{ 
             position: 'fixed', 
-            top: '70px', 
+            top: '66px', 
             left: 0, 
             right: 0, 
             bottom: 0, 
-            background: 'rgba(255, 255, 255, 0.98)', 
+            background: '#0d1f3c', 
             backdropFilter: 'blur(20px)',
             zIndex: 999,
             padding: '2rem'
@@ -104,17 +103,17 @@ const Header = () => {
                 key={item.path}
                 onClick={() => { navigate(item.path); setIsOpen(false); }}
                 style={{
-                  background: isActive(item.path) ? 'rgba(59, 130, 246, 0.05)' : 'transparent',
+                  background: isActive(item.path) ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
                   border: 'none',
-                  padding: '1rem',
-                  borderRadius: '1rem',
+                  padding: '1.25rem',
+                  borderRadius: '1.25rem',
                   textAlign: 'left',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '1rem',
-                  fontSize: '1rem',
+                  fontSize: '1.1rem',
                   fontWeight: 800,
-                  color: isActive(item.path) ? '#3b82f6' : '#0f172a'
+                  color: isActive(item.path) ? '#38bdf8' : 'white'
                 }}
               >
                  {item.icon}
@@ -122,24 +121,24 @@ const Header = () => {
               </button>
             ))}
             
-            <hr style={{ border: 'none', height: '1px', background: 'rgba(0,0,0,0.05)', margin: '0.5rem 0' }} />
+            <hr style={{ border: 'none', height: '1px', background: 'rgba(255,255,255,0.1)', margin: '1rem 0' }} />
             
             <button
               onClick={() => { navigate('/profile'); setIsOpen(false); }}
               style={{
-                background: 'rgba(0,0,0,0.03)',
+                background: 'rgba(255,255,255,0.05)',
                 border: 'none',
-                padding: '1rem',
-                borderRadius: '1rem',
+                padding: '1.25rem',
+                borderRadius: '1.25rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '1rem',
-                fontSize: '1rem',
+                fontSize: '1.1rem',
                 fontWeight: 800,
-                color: '#0f172a'
+                color: 'white'
               }}
             >
-               <User size={20} /> Profile
+               <User size={20} /> My Activity
             </button>
             
           </div>

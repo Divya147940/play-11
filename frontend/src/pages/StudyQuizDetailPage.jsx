@@ -32,30 +32,27 @@ const StudyQuizDetailPage = () => {
         {/* Quiz Banner */}
         {quiz.effective_banner_url && (
           <div style={{ 
-            width: '100%', 
-            height: '180px', 
-            borderRadius: '24px', 
+            width: 'calc(100% + 3rem)', 
+            marginLeft: '-1.5rem',
+            marginRight: '-1.5rem',
+            height: 'clamp(160px, 25vh, 240px)', 
+            borderRadius: '0', 
             backgroundColor: '#0d1f3c', 
             marginBottom: '2rem',
             boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
             position: 'relative',
             overflow: 'hidden'
           }}>
-            <div style={{
-              position: 'absolute',
-              top: 0, left: 0, right: 0, bottom: 0,
-              background: `url("${quiz.effective_banner_url}") center/cover no-repeat`,
-              filter: 'blur(10px) brightness(0.7)',
-              transform: 'scale(1.1)',
-              zIndex: 0
-            }}></div>
-            <div style={{
-              position: 'relative',
-              zIndex: 1,
-              width: '100%',
-              height: '100%',
-              background: `url("${quiz.effective_banner_url}") center/contain no-repeat`,
-            }}></div>
+            <img 
+              src={quiz.effective_banner_url} 
+              alt="Quiz Banner" 
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'fill', 
+                display: 'block' 
+              }} 
+            />
           </div>
         )}
 

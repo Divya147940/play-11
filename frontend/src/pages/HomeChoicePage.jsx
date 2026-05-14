@@ -150,71 +150,56 @@ const HomeChoicePage = () => {
       <div style={{ paddingTop: '70px', paddingBottom: '6rem' }}>
         
         {/* Hero Banner Section */}
-        <div className="quiz-banner-card animate-slide-up stagger-1" style={{ 
+        <div className="quiz-banner-container animate-slide-up stagger-1" style={{ 
           width: '100%', 
-          padding: '0', 
-          borderRadius: '0',
-          minHeight: '200px',
           position: 'relative',
-          marginBottom: '3rem',
+          marginBottom: '2rem',
           overflow: 'hidden',
-          background: 'radial-gradient(circle at top right, #1e3a8a, #0d1f3c)'
+          borderRadius: '0',
+          background: '#0d1f3c',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
         }}>
-            {/* Blurred Background Layer */}
-            {globalBanner && (
-              <div style={{
-                position: 'absolute',
-                top: 0, left: 0, right: 0, bottom: 0,
-                background: `url("${globalBanner}") center / cover no-repeat`,
-                filter: 'blur(20px) brightness(0.7)',
-                transform: 'scale(1.1)',
-                zIndex: 0
-              }}></div>
-            )}
-            
-            {/* Main Content Layer (Image) */}
-            {globalBanner && (
-              <div style={{ 
-                position: 'absolute', 
-                top: 0, left: 0, right: 0, bottom: 0,
-                background: `url("${globalBanner}") center / contain no-repeat`,
-                zIndex: 1
-              }}></div>
-            )}
-
-            <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', minHeight: '200px' }}>
-              {!globalBanner && <div className="quiz-banner-overlay" style={{ opacity: 0.1 }}></div>}
-              
-              {!globalBanner && (
-                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-                  <div className="banner-text-container" style={{ flex: 1, minWidth: '300px', paddingLeft: '5%' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '999px', marginBottom: '0.75rem', backdropFilter: 'blur(5px)' }}>
-                      <Sparkles size={14} color="#38bdf8" fill="#38bdf8" />
-                      <span style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>QUIZ LIVE FORMAT</span>
-                    </div>
-                    <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: 900, marginBottom: '1rem', lineHeight: 1.1 }}>
-                      Earn from what you learn
-                    </h2>
-                    <p style={{ fontSize: '1rem', opacity: 0.8, fontWeight: 500, lineHeight: 1.5 }}>
-                      Compete in real quiz battles, rank higher, win real prizes.
-                    </p>
-                  </div>
-                  
-                  <div className="banner-stats-container" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', paddingRight: '5%' }}>
-                    <div className="quiz-stat-box" style={{ padding: '0.5rem 1rem', minWidth: '80px', borderRadius: '1rem' }}>
-                      <p style={{ fontSize: '0.55rem', fontWeight: 800, opacity: 0.7, marginBottom: '0.2rem', textTransform: 'uppercase' }}>QUESTIONS</p>
-                      <p style={{ fontSize: '1.1rem', fontWeight: 900 }}>10</p>
-                    </div>
-                    <div className="quiz-stat-box" style={{ padding: '0.5rem 1rem', minWidth: '80px', borderRadius: '1rem', background: 'rgba(56, 189, 248, 0.15)', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
-                      <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#7dd3fc', marginBottom: '0.2rem', textTransform: 'uppercase' }}>DURATION</p>
-                      <p style={{ fontSize: '1.1rem', fontWeight: 900 }}>8 Min</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+          {globalBanner && (
+            <div style={{ 
+              width: '100%', 
+              height: 'clamp(200px, 30vh, 350px)', 
+              overflow: 'hidden' 
+            }}>
+              <img 
+                src={globalBanner} 
+                alt="Banner" 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'fill', 
+                  display: 'block'
+                }} 
+              />
             </div>
-          </div>
-        )}
+          )}
+          {!globalBanner && (
+            <div style={{ 
+              padding: '3rem 5%', 
+              background: 'radial-gradient(circle at top right, #1e3a8a, #0d1f3c)',
+              minHeight: '220px',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              <div className="banner-text-container">
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', padding: '6px 14px', borderRadius: '999px', marginBottom: '1rem', backdropFilter: 'blur(5px)' }}>
+                  <Sparkles size={16} color="#38bdf8" fill="#38bdf8" />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'white' }}>QUIZ LIVE FORMAT</span>
+                </div>
+                <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 900, marginBottom: '1rem', lineHeight: 1.1, color: 'white' }}>
+                  Earn from what you learn
+                </h2>
+                <p style={{ fontSize: '1.1rem', opacity: 0.8, fontWeight: 500, lineHeight: 1.5, color: 'white' }}>
+                  Compete in real quiz battles, rank higher, win real prizes.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Welcome Header */}
         <div className="container animate-slide-up" style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'flex-start', paddingLeft: '4%', paddingRight: '4%' }}>

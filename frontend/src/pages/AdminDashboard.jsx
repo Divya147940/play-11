@@ -5,7 +5,7 @@ import {
   AlertCircle, ChevronRight, Search,
   MoreVertical, CheckCircle2, Clock,
   ArrowUpRight, ArrowDownRight, Globe, Lock, Unlock, Edit, Trash2, Shield, Upload,
-  Plus, Save, Trash, Award, FileText, Image as ImageIcon, Loader2
+  Plus, Save, Trash, Award, FileText, Image as ImageIcon, Loader2, X
 } from 'lucide-react';
 import Papa from 'papaparse';
 import Tesseract from 'tesseract.js';
@@ -30,7 +30,17 @@ const AdminDashboard = () => {
   const [editId, setEditId] = useState(null);
   const [homeBannerUrl, setHomeBannerUrl] = useState('');
   const [quizRoomBannerUrl, setQuizRoomBannerUrl] = useState('');
+  const [studyZoneBannerUrl, setStudyZoneBannerUrl] = useState('');
+  const [sportZoneBannerUrl, setSportZoneBannerUrl] = useState('');
+  const [gameZoneBannerUrl, setGameZoneBannerUrl] = useState('');
+  const [movieZoneBannerUrl, setMovieZoneBannerUrl] = useState('');
+  const [newsZoneBannerUrl, setNewsZoneBannerUrl] = useState('');
+
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
+  const [showIngestionPreview, setShowIngestionPreview] = useState(false);
+  const [showPasteModal, setShowPasteModal] = useState(false);
+  const [pastedText, setPastedText] = useState('');
+  const [ingestedQuestions, setIngestedQuestions] = useState([]);
 
   // Keep server time updated
   useEffect(() => {
@@ -150,6 +160,22 @@ const AdminDashboard = () => {
       if (quizRoomData.success) {
         setQuizRoomBannerUrl(quizRoomData.value);
       }
+      
+      const studyData = await settingsService.getSetting('banner_zone_study-zone');
+      if (studyData.success) setStudyZoneBannerUrl(studyData.value);
+      
+      const sportData = await settingsService.getSetting('banner_zone_sport-zone');
+      if (sportData.success) setSportZoneBannerUrl(sportData.value);
+      
+      const gameData = await settingsService.getSetting('banner_zone_game-zone');
+      if (gameData.success) setGameZoneBannerUrl(gameData.value);
+      
+      const movieData = await settingsService.getSetting('banner_zone_movie-zone');
+      if (movieData.success) setMovieZoneBannerUrl(movieData.value);
+      
+      const newsData = await settingsService.getSetting('banner_zone_news-zone');
+      if (newsData.success) setNewsZoneBannerUrl(newsData.value);
+
     } catch (err) {
       console.error('Failed to fetch settings:', err);
     }
@@ -177,6 +203,12 @@ const AdminDashboard = () => {
       if (data.success) {
         if (key === 'home_banner_url') setHomeBannerUrl(finalValue);
         if (key === 'quiz_room_banner_url') setQuizRoomBannerUrl(finalValue);
+        if (key === 'banner_zone_study-zone') setStudyZoneBannerUrl(finalValue);
+        if (key === 'banner_zone_sport-zone') setSportZoneBannerUrl(finalValue);
+        if (key === 'banner_zone_game-zone') setGameZoneBannerUrl(finalValue);
+        if (key === 'banner_zone_movie-zone') setMovieZoneBannerUrl(finalValue);
+        if (key === 'banner_zone_news-zone') setNewsZoneBannerUrl(finalValue);
+
         alert(`${key.replace(/_/g, ' ')} updated successfully!`);
       }
     } catch (err) {
@@ -525,8 +557,8 @@ const AdminDashboard = () => {
               ],
               correctOptionIndex: parseInt(row[5]) || 0
             })).filter(q => q.text);
-            setNewQuiz(prev => ({ ...prev, questions, total_questions: questions.length }));
-            setActiveTab('Create Quiz');
+            setIngestedQuestions(questions);
+            setShowIngestionPreview(true);
             setIsParsing(false);
           }
         });
@@ -535,8 +567,8 @@ const AdminDashboard = () => {
         const reader = new FileReader();
         reader.onload = e => {
           const questions = parseTextToQuestions(e.target.result);
-          setNewQuiz(prev => ({ ...prev, questions, total_questions: questions.length }));
-          setActiveTab('Create Quiz');
+          setIngestedQuestions(questions);
+          setShowIngestionPreview(true);
           setIsParsing(false);
         };
         reader.readAsText(file);
@@ -547,9 +579,9 @@ const AdminDashboard = () => {
             if (m.status === 'recognizing text') setParseProgress(Math.floor(m.progress * 100));
           }
         });
-        const questions = parseTextToQuestions(result.data.text);
-        setNewQuiz(prev => ({ ...prev, questions, total_questions: questions.length }));
-        setActiveTab('Create Quiz');
+        const questions = await parseTextToQuestions(result.data.text);
+        setIngestedQuestions(questions);
+        setShowIngestionPreview(true);
         setIsParsing(false);
       }
     } catch (err) {
@@ -559,56 +591,84 @@ const AdminDashboard = () => {
     }
   };
 
+  const handlePasteSubmit = () => {
+    if (!pastedText.trim()) return;
+    const questions = parseTextToQuestions(pastedText);
+    if (questions.length === 0) {
+      alert("No questions found in the pasted text. Please check the format.");
+      return;
+    }
+    setIngestedQuestions(questions);
+    setShowPasteModal(false);
+    setPastedText('');
+    setShowIngestionPreview(true);
+  };
+
+  const confirmIngestion = () => {
+    setNewQuiz(prev => ({ 
+      ...prev, 
+      questions: ingestedQuestions, 
+      total_questions: ingestedQuestions.length 
+    }));
+    setShowIngestionPreview(false);
+    setActiveTab('Create Quiz');
+  };
+
   const parseTextToQuestions = (text) => {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l);
     const questions = [];
     let currentQ = null;
 
     lines.forEach(line => {
-      // Skip title/header lines if they match the quiz title
-      if (newQuiz.title && line.toLowerCase() === newQuiz.title.toLowerCase()) return;
-      if (newQuiz.hindiTitle && line === newQuiz.hindiTitle) return;
+      if (!line || line.length < 2) return;
+      
+      // Match "1. Text" or "Question 1" or "Q: Text"
+      const qMatch = line.match(/^(\d+)[\.\)]\s*(.*)/i) || 
+                     line.match(/^Question\s*\d+[:\s]*(.*)/i) ||
+                     line.match(/^Question\s*\d+/i) ||
+                     line.match(/^Q[:\s]*(.*)/i);
 
-      // New Question detection (starts with digit or Q:)
-      const qMatch = line.match(/^(\d+)[\.\)]\s*(.*)/i) || line.match(/^Q:\s*(.*)/i);
       if (qMatch) {
         if (currentQ) questions.push(currentQ);
+        let qText = qMatch[1] || "";
+        // If it was just "Question 1", the next line will be the text
         currentQ = {
-          text: qMatch[qMatch[2] ? 2 : 1].trim(),
+          text: qText.trim(),
           options: [],
           correctOptionIndex: 0
         };
       }
-      // Option detection (A/B/C/D)
       else if (/^[A-D][\.\)]/i.test(line) && currentQ) {
-        currentQ.options.push({ text: line.replace(/^[A-D][\.\)]/i, '').trim(), hindiText: '' });
+        const isCorrect = line.includes('✅');
+        const text = line.replace(/^[A-D][\.\)]/i, '').replace('✅', '').trim();
+        currentQ.options.push({ text, hindiText: '' });
+        if (isCorrect) currentQ.correctOptionIndex = currentQ.options.length - 1;
       }
-      // Answer detection
-      else if (/Ans:|Answer:/i.test(line) && currentQ) {
-        const ans = line.replace(/Ans:|Answer:/i, '').trim().toUpperCase();
+      else if (/^(Ans|Answer|Correct)[:\s]*([A-D])/i.test(line) && currentQ) {
+        const match = line.match(/^(Ans|Answer|Correct)[:\s]*([A-D])/i);
+        const ans = match[2].toUpperCase();
         const index = ['A', 'B', 'C', 'D'].indexOf(ans);
         if (index !== -1) currentQ.correctOptionIndex = index;
       }
-      // If it doesn't match anything but we have no current question, it might be the start
-      else if (!currentQ) {
-        currentQ = {
-          text: line,
-          options: [],
-          correctOptionIndex: 0
-        };
-      }
-      // Otherwise, append to current question text
       else if (currentQ && currentQ.options.length === 0) {
-        currentQ.text += " " + line;
+        // If we have a question but no options yet, this line is probably part of the question text
+        currentQ.text = (currentQ.text + " " + line).trim();
+      }
+      else if (/^\([a-d]\)/i.test(line) && currentQ) {
+        const isCorrect = line.includes('✅');
+        const text = line.replace(/^\([a-d]\)/i, '').replace('✅', '').trim();
+        currentQ.options.push({ text, hindiText: '' });
+        if (isCorrect) currentQ.correctOptionIndex = currentQ.options.length - 1;
       }
     });
 
     if (currentQ) questions.push(currentQ);
-
-    // Normalize options to 4
     return questions.map(q => {
-      while (q.options.length < 4) q.options.push({ text: '', hindiText: '' });
-      return q;
+      const normalizedOptions = [...q.options];
+      while (normalizedOptions.length < 4) {
+        normalizedOptions.push({ text: '', hindiText: '' });
+      }
+      return { ...q, options: normalizedOptions };
     });
   };
 
@@ -751,36 +811,50 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'Upload Quiz' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2.5rem' }}>
             {/* File Upload Section */}
-            <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div style={{ width: '48px', height: '48px', background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Upload size={24} color="#3b82f6" />
+            <div style={{ background: 'white', padding: '3rem', borderRadius: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '2.5rem' }}>
+                <div style={{ width: '56px', height: '56px', background: '#eff6ff', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 4px rgba(59, 130, 246, 0.1)' }}>
+                  <Upload size={28} color="#3b82f6" />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Bulk Ingestion</h3>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Upload CSV, TXT, or Image</p>
+                  <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a' }}>Bulk Ingestion</h3>
+                  <p style={{ fontSize: '1rem', color: '#64748b', fontWeight: 600 }}>Upload CSV, TXT, or Image</p>
                 </div>
               </div>
 
               <div
                 style={{
-                  border: '2px dashed #cbd5e1',
-                  borderRadius: '1rem',
-                  padding: '3rem 2rem',
+                  border: '3px dashed #e2e8f0',
+                  borderRadius: '1.5rem',
+                  padding: '5rem 2rem',
                   textAlign: 'center',
                   background: '#f8fafc',
                   cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
-                onDragOver={e => e.preventDefault()}
+                onDragOver={e => {
+                  e.preventDefault();
+                  e.currentTarget.style.borderColor = '#3b82f6';
+                  e.currentTarget.style.background = '#eff6ff';
+                }}
+                onDragLeave={e => {
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                  e.currentTarget.style.background = '#f8fafc';
+                }}
                 onDrop={async e => {
                   e.preventDefault();
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                  e.currentTarget.style.background = '#f8fafc';
                   const file = e.dataTransfer.files[0];
                   if (file) handleAutoIngest(file);
                 }}
                 onClick={() => document.getElementById('bulk-file-input').click()}
+                onMouseOver={e => e.currentTarget.style.borderColor = '#3b82f6'}
+                onMouseOut={e => e.currentTarget.style.borderColor = '#e2e8f0'}
               >
                 <input
                   id="bulk-file-input"
@@ -790,33 +864,69 @@ const AdminDashboard = () => {
                   style={{ display: 'none' }}
                 />
                 {isParsing ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                    <Loader2 size={40} className="animate-spin" color="#3b82f6" />
-                    <p style={{ fontWeight: 800, color: '#1e40af' }}>Parsing Content... {parseProgress}%</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                    <div style={{ position: 'relative', width: '80px', height: '80px' }}>
+                      <Loader2 size={80} className="animate-spin" color="#3b82f6" style={{ opacity: 0.2 }} />
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#3b82f6', fontSize: '1rem' }}>
+                        {parseProgress}%
+                      </div>
+                    </div>
+                    <p style={{ fontWeight: 800, color: '#1e40af', fontSize: '1.25rem' }}>Analyzing Content...</p>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: 500 }}>Please wait while we extract data</p>
                   </div>
                 ) : (
                   <>
-                    <div style={{ marginBottom: '1rem', color: '#94a3b8' }}>
-                      <ImageIcon size={48} style={{ marginBottom: '0.5rem' }} />
-                      <p style={{ fontWeight: 700 }}>Click or drag file here</p>
+                    <div style={{ marginBottom: '2rem', color: '#94a3b8' }}>
+                      <div style={{ width: '100px', height: '100px', background: 'white', borderRadius: '30px', margin: '0 auto 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+                        <ImageIcon size={48} color="#cbd5e1" />
+                      </div>
+                      <p style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.5rem' }}>Click or drag file here</p>
+                      <p style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 600 }}>Maximum file size: 10MB</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                      <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>CSV</span>
-                      <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>TXT</span>
-                      <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>PNG/JPG</span>
-                      <span style={{ fontSize: '0.7rem', padding: '4px 8px', background: '#e2e8f0', borderRadius: '4px', fontWeight: 800 }}>JSON</span>
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                      {['CSV', 'TXT', 'PNG/JPG', 'JSON'].map(ext => (
+                        <span 
+                          key={ext} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (ext === 'TXT') setShowPasteModal(true);
+                            else document.getElementById('bulk-file-input').click();
+                          }}
+                          style={{ 
+                            fontSize: '0.8rem', 
+                            padding: '6px 14px', 
+                            background: ext === 'TXT' ? '#eff6ff' : 'white', 
+                            color: ext === 'TXT' ? '#3b82f6' : '#475569', 
+                            borderRadius: '10px', 
+                            fontWeight: 800, 
+                            border: `1px solid ${ext === 'TXT' ? '#3b82f6' : '#e2e8f0'}`, 
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {ext === 'TXT' ? 'TXT (Paste/Upload)' : ext}
+                        </span>
+                      ))}
                     </div>
                   </>
                 )}
               </div>
 
-              <div style={{ marginTop: '2rem' }}>
-                <h4 style={{ fontSize: '0.85rem', fontWeight: 900, color: '#64748b', marginBottom: '1rem', textTransform: 'uppercase' }}>Instructions</h4>
-                <ul style={{ fontSize: '0.8rem', color: '#475569', paddingLeft: '1.25rem', display: 'grid', gap: '0.5rem' }}>
-                  <li><strong>CSV:</strong> Question, Option A, Option B, Option C, Option D, CorrectIndex(0-3)</li>
-                  <li><strong>TXT:</strong> Q: Question Text? A: Opt1, B: Opt2... Ans: A</li>
-                  <li><strong>Images:</strong> Clear screenshots of quiz questions work best.</li>
-                </ul>
+              <div style={{ marginTop: '3rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                   <div style={{ width: '4px', height: '16px', background: '#3b82f6', borderRadius: '2px' }}></div>
+                   <h4 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Instructions</h4>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                  <div style={{ padding: '1.25rem', background: '#f8fafc', borderRadius: '1.25rem', border: '1px solid #f1f5f9' }}>
+                    <p style={{ fontWeight: 800, fontSize: '0.85rem', color: '#3b82f6', marginBottom: '0.5rem' }}>CSV FORMAT</p>
+                    <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.5 }}>Question, Option A, Option B, Option C, Option D, CorrectIndex(0-3)</p>
+                  </div>
+                  <div style={{ padding: '1.25rem', background: '#f8fafc', borderRadius: '1.25rem', border: '1px solid #f1f5f9' }}>
+                    <p style={{ fontWeight: 800, fontSize: '0.85rem', color: '#3b82f6', marginBottom: '0.5rem' }}>TXT FORMAT</p>
+                    <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.5 }}>Q: Question?<br/>A: Opt1, B: Opt2...<br/>Ans: A</p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1425,6 +1535,55 @@ const AdminDashboard = () => {
                 )}
               </div>
             </div>
+
+            {/* Zone Specific Banners */}
+            <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
+                <div style={{ width: '48px', height: '48px', background: '#ecfdf5', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ImageIcon size={24} color="#10b981" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Zone Specific Banners</h3>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Custom banners for Study Arena, Game Zone, etc.</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gap: '2rem' }}>
+                {[
+                  { id: 'study-zone', label: 'Study Arena Banner', value: studyZoneBannerUrl, setter: setStudyZoneBannerUrl },
+                  { id: 'sport-zone', label: 'Sport Arena Banner', value: sportZoneBannerUrl, setter: setSportZoneBannerUrl },
+                  { id: 'game-zone', label: 'Game Zone Banner', value: gameZoneBannerUrl, setter: setGameZoneBannerUrl },
+                  { id: 'movie-zone', label: 'Movie Arena Banner', value: movieZoneBannerUrl, setter: setMovieZoneBannerUrl },
+                  { id: 'news-zone', label: 'News Arena Banner', value: newsZoneBannerUrl, setter: setNewsZoneBannerUrl }
+                ].map(zone => (
+                  <div key={zone.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '2rem' }}>
+                    <div className="form-group">
+                      <label>{zone.label}</label>
+                      <div style={{ display: 'flex', gap: '1rem' }}>
+                        <input
+                          className="admin-input"
+                          placeholder={`https://example.com/${zone.id}-banner.jpg`}
+                          value={zone.value}
+                          onChange={e => zone.setter(e.target.value)}
+                        />
+                        <button
+                          className="admin-primary-btn"
+                          style={{ padding: '0 2rem', background: '#10b981' }}
+                          onClick={() => handleUpdateSetting(`banner_zone_${zone.id}`, zone.value)}
+                        >
+                          Update
+                        </button>
+                      </div>
+                    </div>
+                    {zone.value && (
+                      <div style={{ marginTop: '1rem' }}>
+                        <img src={zone.value} alt="Preview" style={{ width: '100%', maxHeight: '120px', objectFit: 'contain', background: '#0d1f3c', borderRadius: '0.75rem' }} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -1625,8 +1784,78 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+        {/* Ingestion Preview Modal */}
+        {showIngestionPreview && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+            <div style={{ background: 'white', width: '100%', maxWidth: '900px', maxHeight: '90vh', borderRadius: '2rem', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a' }}>Review Ingested Content</h3>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>We found {ingestedQuestions.length} questions in your file</p>
+                </div>
+                <button onClick={() => setShowIngestionPreview(false)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {ingestedQuestions.map((q, idx) => (
+                    <div key={idx} style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
+                      <p style={{ fontWeight: 800, color: '#3b82f6', marginBottom: '0.5rem', fontSize: '0.8rem', textTransform: 'uppercase' }}>Question {idx + 1}</p>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem', color: '#1e293b' }}>{q.text}</h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        {q.options.map((opt, oIdx) => (
+                          <div key={oIdx} style={{ 
+                            padding: '0.75rem 1rem', borderRadius: '0.75rem', 
+                            background: q.correctOptionIndex === oIdx ? '#dcfce7' : 'white',
+                            border: `1px solid ${q.correctOptionIndex === oIdx ? '#22c55e' : '#e2e8f0'}`,
+                            fontSize: '0.9rem', fontWeight: 600,
+                            color: q.correctOptionIndex === oIdx ? '#15803d' : '#475569',
+                            display: 'flex', justifyContent: 'space-between'
+                          }}>
+                            <span>{opt.text || `Option ${oIdx + 1}`}</span>
+                            {q.correctOptionIndex === oIdx && <CheckCircle2 size={16} />}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '1rem', background: '#f8fafc' }}>
+                <button onClick={() => setShowIngestionPreview(false)} style={{ flex: 1, padding: '1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', background: 'white', fontWeight: 800, color: '#64748b', cursor: 'pointer' }}>Discard & Retry</button>
+                <button onClick={confirmIngestion} style={{ flex: 2, padding: '1rem', borderRadius: '1rem', border: 'none', background: '#0f172a', color: 'white', fontWeight: 900, cursor: 'pointer' }}>Confirm & Open Editor</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Paste Text Modal */}
+        {showPasteModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)', zIndex: 2100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+            <div style={{ background: 'white', width: '100%', maxWidth: '700px', borderRadius: '2rem', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontWeight: 900, color: '#0f172a' }}>Paste Quiz Content</h3>
+                <button onClick={() => setShowPasteModal(false)} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer' }}><X size={16} /></button>
+              </div>
+              <div style={{ padding: '2rem' }}>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem', fontWeight: 600 }}>Paste your questions below. Follow the format: <code style={{ color: '#3b82f6' }}>Q: text? A: opt1, B: opt2... Ans: A</code></p>
+                <textarea
+                  style={{ width: '100%', minHeight: '300px', padding: '1.5rem', borderRadius: '1rem', border: '2px solid #e2e8f0', fontFamily: 'monospace', fontSize: '0.9rem', outline: 'none', transition: 'border-color 0.2s' }}
+                  placeholder="Example:&#10;Q: What is React?&#10;A: Library, B: Framework, C: Language, D: Tool&#10;Ans: A"
+                  value={pastedText}
+                  onChange={e => setPastedText(e.target.value)}
+                  onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                />
+                <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
+                   <button onClick={() => document.getElementById('bulk-file-input').click()} style={{ flex: 1, padding: '1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', background: 'white', fontWeight: 800, color: '#3b82f6', cursor: 'pointer' }}>Upload Instead</button>
+                   <button onClick={handlePasteSubmit} style={{ flex: 2, padding: '1rem', borderRadius: '1rem', border: 'none', background: '#3b82f6', color: 'white', fontWeight: 900, cursor: 'pointer' }}>Process & Preview</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
     </div>
   );
 };

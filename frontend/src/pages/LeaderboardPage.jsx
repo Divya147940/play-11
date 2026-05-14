@@ -99,13 +99,15 @@ const LeaderboardPage = () => {
   return (
     <div className="lb-page">
       {/* Header */}
-      <div className="lb-header-wrap">
-        <button className="lb-back" onClick={() => navigate(-1)}>
-          <ArrowLeft size={18} />
-        </button>
-        <div className="lb-title-block">
-          <h1 className="lb-title">Leaderboard 🏆</h1>
-          <p className="lb-subtitle">{isGlobal ? 'ALL-TIME BEST' : (quizTitle || 'QUIZ CONTEST')}</p>
+      <div className="lb-header-container">
+        <div className="lb-header-top">
+          <button className="lb-back-btn" onClick={() => navigate(-1)}>
+            <ArrowLeft size={20} />
+          </button>
+          <div className="lb-title-block">
+            <h1 className="lb-title">Leaderboard 🏆</h1>
+            <p className="lb-subtitle">{isGlobal ? 'ALL-TIME BEST' : (quizTitle || 'QUIZ CONTEST')}</p>
+          </div>
         </div>
       </div>
 
@@ -160,33 +162,53 @@ const LeaderboardPage = () => {
           min-height: 100vh;
           background: #ffffff;
           font-family: 'Lexend', sans-serif;
-          padding: 20px 0 100px;
+          padding: 80px 0 100px;
+        }
+        @media (max-width: 768px) {
+          .lb-page { padding-top: 75px; }
         }
 
-        .lb-header-wrap {
-          position: relative;
-          padding: 20px;
-          text-align: center;
+        .lb-header-container {
+          padding: 20px 24px;
           margin-bottom: 20px;
         }
 
-        .lb-back {
-          position: absolute;
-          left: 20px; top: 22px;
-          width: 36px; height: 36px;
-          border-radius: 50%;
-          background: #f1f5f9;
+        .lb-header-top {
+          display: flex;
+          align-items: center;
+          gap: 1.25rem;
+        }
+
+        .lb-back-btn {
+          width: 42px;
+          height: 42px;
+          border-radius: 12px;
+          background: #f8fafc;
           border: 1px solid #e2e8f0;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; color: #0f172a;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #0f172a;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .lb-back-btn:hover {
+          background: #f1f5f9;
+          transform: translateX(-2px);
+        }
+
+        .lb-title-block {
+          text-align: left;
         }
 
         .lb-title {
-          font-size: 20px; font-weight: 800; color: #0f172a; margin: 0;
+          font-size: 22px; font-weight: 900; color: #0f172a; margin: 0;
+          letter-spacing: -0.02em;
         }
         .lb-subtitle {
-          font-size: 9px; font-weight: 800; color: #94a3b8;
-          text-transform: uppercase; letter-spacing: 0.08em; margin: 4px 0 0;
+          font-size: 10px; font-weight: 800; color: #94a3b8;
+          text-transform: uppercase; letter-spacing: 0.1em; margin: 2px 0 0;
         }
 
         .lb-podium-wrap {

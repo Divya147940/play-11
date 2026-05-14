@@ -291,30 +291,6 @@ export default function LandingPage() {
         <p>© 2026 QUZO. All rights reserved.</p>
       </footer>
 
-      <div className="sticky-bottom-nav">
-        <div className="bottom-nav-inner">
-          <div className="nav-item active" onClick={() => navigate("/")} style={{ cursor: 'pointer' }}>
-            <Home size={20} />
-            <span>Home</span>
-          </div>
-          <div className="nav-item">
-            <Trophy size={20} />
-            <span>Live</span>
-          </div>
-          <div className="nav-item">
-            <Wallet size={20} />
-            <span>Rewards</span>
-          </div>
-          <div className="nav-item">
-            <BarChart3 size={20} />
-            <span>Ranks</span>
-          </div>
-          <div className="nav-item" onClick={handleOpenLogin}>
-            <User size={20} />
-            <span>Profile</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
