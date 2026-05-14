@@ -491,6 +491,126 @@ const getSubmissionReviewAdmin = async (req, res) => {
   }
 };
 
+const getPendingTransactions = async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT t.*, u.name, u.mobile, u.email 
+      FROM transactions t
+      JOIN users u ON t.user_id = u.id
+      WHERE t.status = 'pending'
+      ORDER BY t.created_at DESC
+    `);
+    res.json({ success: true, transactions: rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const approveTransaction = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('BEGIN');
+    
+    // 1. Get transaction details
+    const { rows } = await db.query("SELECT * FROM transactions WHERE id = $1 AND status = 'pending'", [id]);
+    if (rows.length === 0) {
+      await db.query('ROLLBACK');
+      return res.status(404).json({ error: 'Pending transaction not found' });
+    }
+    const tx = rows[0];
+
+    // 2. If it's a deposit, add coins to user balance now
+    if (tx.category === 'deposit') {
+      await db.query("UPDATE users SET coins = coins + $1 WHERE id = $2", [tx.amount, tx.user_id]);
+    }
+    // Note: for withdrawal, coins were already deducted in wallet.controller.js
+
+    // 3. Update status to success
+    await db.query("UPDATE transactions SET status = 'success' WHERE id = $1", [id]);
+
+    await db.query('COMMIT');
+    res.json({ success: true, message: 'Transaction approved successfully' });
+  } catch (error) {
+    await db.query('ROLLBACK');
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const rejectTransaction = async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  try {
+    await db.query('BEGIN');
+
+    // 1. Get transaction details
+    const { rows } = await db.query("SELECT * FROM transactions WHERE id = $1 AND status = 'pending'", [id]);
+    if (rows.length === 0) {
+      await db.query('ROLLBACK');
+      return res.status(404).json({ error: 'Pending transaction not found' });
+    }
+    const tx = rows[0];
+
+    // 2. If it's a withdrawal, REFUND the coins
+    if (tx.category === 'withdraw') {
+      // amount is negative in tx table for withdrawal, so we SUBTRACT it to add back
+      await db.query("UPDATE users SET coins = coins - $1 WHERE id = $2", [tx.amount, tx.user_id]);
+    }
+
+    // 3. Update status to failed
+    await db.query("UPDATE transactions SET status = 'failed' WHERE id = $1", [id]);
+
+    await db.query('COMMIT');
+    res.json({ success: true, message: 'Transaction rejected and funds refunded (if applicable)' });
+  } catch (error) {
+    await db.query('ROLLBACK');
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getVouchersAdmin = async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM vouchers ORDER BY status ASC, title ASC');
+    res.json({ success: true, vouchers: rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const createVoucherAdmin = async (req, res) => {
+  const { title, code, discount_text, amount, type, color, expiry_days } = req.body;
+  const id = uuidv4();
+  try {
+    await db.query(
+      "INSERT INTO vouchers (id, title, code, discount_text, amount, type, color, expiry_days, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+      [id, title, code, discount_text, amount || 0, type, color || '#7c3aed', expiry_days || 30, 'active']
+    );
+    res.json({ success: true, id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const deleteVoucherAdmin = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query("DELETE FROM vouchers WHERE id = $1", [id]);
+    res.json({ success: true, message: 'Voucher deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const toggleVoucherStatusAdmin = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    await db.query("UPDATE vouchers SET status = $1 WHERE id = $2", [status, id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getUsers,
@@ -507,5 +627,12 @@ module.exports = {
   deleteMatch,
   updateQuiz,
   getAdminQuizQuestions,
+  getPendingTransactions,
+  approveTransaction,
+  rejectTransaction,
+  getVouchersAdmin,
+  createVoucherAdmin,
+  deleteVoucherAdmin,
+  toggleVoucherStatusAdmin,
   login
 };

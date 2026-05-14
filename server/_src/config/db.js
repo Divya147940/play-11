@@ -284,16 +284,16 @@ const seedAndMigrate = async () => {
       console.log('Database seeded with initial data.');
     }
 
-    const { rows: voucherRows } = await pool.query('SELECT COUNT(*) as count FROM vouchers');
-    if (parseInt(voucherRows[0].count) === 0) {
-      await pool.query(`
-        INSERT INTO vouchers (id, title, code, discount_text, amount, type, color) VALUES 
-        ('v-1', 'Welcome Bonus', 'WELCOME100', '₹100 Bonus', 100, 'bonus', '#7c3aed'),
-        ('v-2', 'First Quiz Free', 'FREEARENA', '100% OFF', 0, 'free_entry', '#0ea5e9'),
-        ('v-3', 'Mega Contest Pass', 'IPL2024', '₹50 Discount', 50, 'discount', '#f59e0b');
-      `);
-      console.log('Default vouchers seeded.');
-    }
+    // Seed real functional vouchers
+    await pool.query(`
+      INSERT INTO vouchers (id, title, code, discount_text, amount, type, color) VALUES 
+      ('v-1', 'Welcome Bonus', 'WELCOME100', '₹100 Bonus', 100, 'bonus', '#7c3aed'),
+      ('v-2', 'Cash Reward', 'FREE100', '₹100 Real Cash', 100, 'cash', '#10b981'),
+      ('v-3', 'Bonus Pack', 'BONUS200', '₹200 Bonus Cash', 200, 'bonus', '#f59e0b'),
+      ('v-4', 'Match Pass', 'IPL2024', '₹50 Discount', 50, 'cash', '#0ea5e9')
+      ON CONFLICT (code) DO NOTHING;
+    `);
+    console.log('Real functional vouchers verified/seeded.');
 
     const { rows: settingsRows } = await pool.query('SELECT COUNT(*) as count FROM settings');
     if (parseInt(settingsRows[0].count) === 0) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Wallet, Plus, ArrowUpRight, ArrowDownLeft, Landmark, History, X, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Wallet, Plus, ArrowUpRight, ArrowDownLeft, Landmark, History, X, CheckCircle2, ShieldCheck, Gift } from 'lucide-react';
 
 const BalancePage = () => {
   const navigate = useNavigate();
@@ -12,12 +12,7 @@ const BalancePage = () => {
   const [upiId, setUpiId] = useState('');
   const [step, setStep] = useState('input'); // input, processing, success
   
-  const [transactions, setTransactions] = useState([
-    { id: 1, title: 'Quiz Won: IPL Special', amount: '+500', type: 'credit', status: 'success', date: 'Today, 2:30 PM' },
-    { id: 2, title: 'Entry Fee: Banking Mock', amount: '-50', type: 'debit', status: 'success', date: 'Yesterday' },
-    { id: 3, title: 'Withdrawal: Bank Transfer', amount: '-1000', type: 'debit', status: 'pending', date: 'Yesterday' },
-    { id: 4, title: 'Bonus Received: Referral', amount: '+100', type: 'credit', status: 'success', date: '2 days ago' },
-  ]);
+  const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
     const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
@@ -208,6 +203,16 @@ const BalancePage = () => {
           >
             <Landmark size={20} /> Withdraw
           </button>
+          <button 
+            onClick={() => navigate('/vouchers')}
+            style={{ 
+              gridColumn: 'span 2',
+              background: '#f8fafc', color: '#7c3aed', border: '1px solid #7c3aed', padding: '1.25rem', borderRadius: '20px', fontWeight: 800, fontSize: '1rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', marginTop: '0.5rem'
+            }}
+          >
+            <Gift size={20} /> Have a Voucher? Redeem Now
+          </button>
         </div>
 
         {/* Transaction History */}
@@ -216,34 +221,40 @@ const BalancePage = () => {
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e1b4b', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <History size={20} color="#7c3aed" /> Recent Activity
             </h3>
-            <button style={{ background: 'none', border: 'none', color: '#0ea5e9', fontWeight: 700, cursor: 'pointer' }}>View All</button>
+            <button onClick={() => navigate('/history')} style={{ background: 'none', border: 'none', color: '#0ea5e9', fontWeight: 700, cursor: 'pointer' }}>View All</button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {transactions.map(tx => (
-              <div key={tx.id} style={{ 
-                background: 'white', padding: '1.25rem', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ 
-                    width: '48px', height: '48px', borderRadius: '14px', background: tx.type === 'credit' ? '#f0fdf4' : '#fff1f2',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                  }}>
-                    {tx.type === 'credit' ? <ArrowDownLeft size={24} color="#10b981" /> : <ArrowUpRight size={24} color="#f43f5e" />}
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <p style={{ fontWeight: 700, color: '#1e1b4b' }}>{tx.title}</p>
-                      {tx.status === 'pending' && (
-                        <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: '#fffbeb', color: '#b45309', borderRadius: '999px', fontWeight: 800, textTransform: 'uppercase' }}>Pending</span>
-                      )}
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 500 }}>{tx.date}</p>
-                  </div>
-                </div>
-                <p style={{ fontWeight: 800, fontSize: '1.1rem', color: tx.type === 'credit' ? '#10b981' : '#f43f5e' }}>{tx.amount}</p>
+            {transactions.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '24px', border: '1px solid #f1f5f9' }}>
+                <p style={{ color: '#94a3b8', fontWeight: 700 }}>No transactions yet. Start playing to see your history!</p>
               </div>
-            ))}
+            ) : (
+              transactions.map(tx => (
+                <div key={tx.id} style={{ 
+                  background: 'white', padding: '1.25rem', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ 
+                      width: '48px', height: '48px', borderRadius: '14px', background: tx.type === 'credit' ? '#f0fdf4' : '#fff1f2',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      {tx.type === 'credit' ? <ArrowDownLeft size={24} color="#10b981" /> : <ArrowUpRight size={24} color="#f43f5e" />}
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <p style={{ fontWeight: 700, color: '#1e1b4b' }}>{tx.title}</p>
+                        {tx.status === 'pending' && (
+                          <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: '#fffbeb', color: '#b45309', borderRadius: '999px', fontWeight: 800, textTransform: 'uppercase' }}>Pending</span>
+                        )}
+                      </div>
+                      <p style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 500 }}>{tx.date}</p>
+                    </div>
+                  </div>
+                  <p style={{ fontWeight: 800, fontSize: '1.1rem', color: tx.type === 'credit' ? '#10b981' : '#f43f5e' }}>{tx.amount}</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

@@ -48,14 +48,11 @@ exports.addMoney = async (req, res) => {
     // In a real app, you'd verify payment gateway response here
     // For now, we'll just mock the success
 
-    // Update user balance
-    await client.query('UPDATE users SET coins = coins + $1 WHERE id = $2', [amount, userId]);
-
-    // Record transaction
+    // For manual mode, we create a pending transaction first
     const txId = `tx-${uuidv4().substring(0, 8)}`;
     await client.query(
       'INSERT INTO transactions (id, user_id, title, amount, type, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [txId, userId, 'Added Money to Wallet', amount, 'credit', 'deposit', 'success']
+      [txId, userId, 'Deposit Request (Manual)', amount, 'credit', 'deposit', 'pending']
     );
 
     await client.query('COMMIT');

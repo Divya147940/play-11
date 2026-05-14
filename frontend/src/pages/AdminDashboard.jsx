@@ -5,7 +5,7 @@ import {
   AlertCircle, ChevronRight, Search,
   MoreVertical, CheckCircle2, Clock,
   ArrowUpRight, ArrowDownRight, Globe, Lock, Unlock, Edit, Trash2, Shield, Upload,
-  Plus, Save, Trash, Award, FileText, Image as ImageIcon, Loader2, X
+  Plus, Save, Trash, Award, FileText, Image as ImageIcon, Loader2, X, Landmark, Ticket, Clipboard
 } from 'lucide-react';
 import Papa from 'papaparse';
 import Tesseract from 'tesseract.js';
@@ -17,6 +17,17 @@ const AdminDashboard = () => {
   const [statsData, setStatsData] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
+  const [pendingTransactions, setPendingTransactions] = useState([]);
+  const [vouchers, setVouchers] = useState([]);
+  const [newVoucher, setNewVoucher] = useState({
+    title: '',
+    code: '',
+    discount_text: '',
+    amount: 0,
+    type: 'bonus',
+    color: '#7c3aed',
+    expiry_days: 30
+  });
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -35,10 +46,17 @@ const AdminDashboard = () => {
   const [gameZoneBannerUrl, setGameZoneBannerUrl] = useState('');
   const [movieZoneBannerUrl, setMovieZoneBannerUrl] = useState('');
   const [newsZoneBannerUrl, setNewsZoneBannerUrl] = useState('');
+  const [welcomeBonus, setWelcomeBonus] = useState('0');
+  const [referralReferrerBonus, setReferralReferrerBonus] = useState('0');
+  const [referralRefereeBonus, setReferralRefereeBonus] = useState('0');
+
 
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
   const [showIngestionPreview, setShowIngestionPreview] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
+  const [showImagePasteModal, setShowImagePasteModal] = useState(false);
+  const [showIngestOptions, setShowIngestOptions] = useState(false);
+  const [activeIngestFormat, setActiveIngestFormat] = useState('CSV');
   const [pastedText, setPastedText] = useState('');
   const [ingestedQuestions, setIngestedQuestions] = useState([]);
 
@@ -47,6 +65,55 @@ const AdminDashboard = () => {
     const timer = setInterval(() => setServerTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Global Paste Listener for easy ingestion
+  useEffect(() => {
+    const handleGlobalPaste = async (e) => {
+      // Only handle paste if we are on the 'Upload Quiz' tab and no other modal is blocking
+      if (activeTab !== 'Upload Quiz' || showIngestionPreview) return;
+
+      const items = e.clipboardData.items;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          handleAutoIngest(file);
+          setShowIngestOptions(false); 
+          setShowImagePasteModal(false);
+          return;
+        }
+      }
+      
+      // Also handle text paste if the target is not an input/textarea
+      const target = e.target;
+      if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+        const text = e.clipboardData.getData('text');
+        if (text) {
+          // Try JSON
+          try {
+            const json = JSON.parse(text);
+            if (json.questions || Array.isArray(json)) {
+              setIngestedQuestions(json.questions || json);
+              setShowIngestionPreview(true);
+              setShowIngestOptions(false);
+              setShowImagePasteModal(false);
+              return;
+            }
+          } catch (e) {}
+
+          const questions = parseTextToQuestions(text);
+          if (questions.length > 0) {
+            setIngestedQuestions(questions);
+            setShowIngestionPreview(true);
+            setShowIngestOptions(false);
+            setShowImagePasteModal(false);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => window.removeEventListener('paste', handleGlobalPaste);
+  }, [activeTab, showIngestionPreview]);
 
   // Create Quiz Form State
   const defaultQuestions = Array.from({ length: 10 }, () => ({
@@ -105,6 +172,14 @@ const AdminDashboard = () => {
       const stats = await statsRes.json();
       if (stats.success) setStatsData(stats.stats);
 
+      if (activeTab === 'Payments') {
+        const transRes = await fetch('/api/admin/transactions/pending', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const tData = await transRes.json();
+        if (tData.success) setPendingTransactions(tData.transactions);
+      }
+
       if (activeTab === 'Users') {
         const usersRes = await fetch('/api/admin/users', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -135,6 +210,14 @@ const AdminDashboard = () => {
         const matchRes = await fetch('/api/matches');
         const matchData = await matchRes.json();
         if (matchData.success) setMatches(matchData.matches || []);
+      }
+
+      if (activeTab === 'Vouchers') {
+        const vRes = await fetch('/api/admin/vouchers', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const vData = await vRes.json();
+        if (vData.success) setVouchers(vData.vouchers);
       }
     } catch (err) {
       console.error(err);
@@ -176,6 +259,15 @@ const AdminDashboard = () => {
       const newsData = await settingsService.getSetting('banner_zone_news-zone');
       if (newsData.success) setNewsZoneBannerUrl(newsData.value);
 
+      const welcomeData = await settingsService.getSetting('welcome_bonus');
+      if (welcomeData.success) setWelcomeBonus(welcomeData.value);
+
+      const refRefData = await settingsService.getSetting('referral_referrer_bonus');
+      if (refRefData.success) setReferralReferrerBonus(refRefData.value);
+
+      const refRefeData = await settingsService.getSetting('referral_referee_bonus');
+      if (refRefeData.success) setReferralRefereeBonus(refRefeData.value);
+
     } catch (err) {
       console.error('Failed to fetch settings:', err);
     }
@@ -208,6 +300,9 @@ const AdminDashboard = () => {
         if (key === 'banner_zone_game-zone') setGameZoneBannerUrl(finalValue);
         if (key === 'banner_zone_movie-zone') setMovieZoneBannerUrl(finalValue);
         if (key === 'banner_zone_news-zone') setNewsZoneBannerUrl(finalValue);
+        if (key === 'welcome_bonus') setWelcomeBonus(finalValue);
+        if (key === 'referral_referrer_bonus') setReferralReferrerBonus(finalValue);
+        if (key === 'referral_referee_bonus') setReferralRefereeBonus(finalValue);
 
         alert(`${key.replace(/_/g, ' ')} updated successfully!`);
       }
@@ -368,6 +463,80 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error(err);
       alert('Failed to delete quiz');
+    }
+  };
+
+  const handleCreateVoucher = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('play11_admin_session');
+      const res = await fetch('/api/admin/vouchers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newVoucher)
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Voucher created successfully!');
+        setNewVoucher({
+          title: '',
+          code: '',
+          discount_text: '',
+          amount: 0,
+          type: 'bonus',
+          color: '#7c3aed',
+          expiry_days: 30
+        });
+        fetchData();
+      } else {
+        alert('Error: ' + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteVoucher = async (id) => {
+    if (!window.confirm('Delete this voucher?')) return;
+    try {
+      const token = localStorage.getItem('play11_admin_session');
+      const res = await fetch(`/api/admin/vouchers/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleToggleVoucherStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    try {
+      const token = localStorage.getItem('play11_admin_session');
+      const res = await fetch(`/api/admin/vouchers/${id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -532,33 +701,64 @@ const AdminDashboard = () => {
     setParseProgress(0);
 
     const fileExt = file.name.split('.').pop().toLowerCase();
+    console.log(`Ingesting file: ${file.name} (Ext: ${fileExt})`);
 
     try {
       if (fileExt === 'json') {
         const reader = new FileReader();
         reader.onload = e => {
-          const json = JSON.parse(e.target.result);
-          setNewQuiz(prev => ({ ...prev, ...json }));
-          setActiveTab('Create Quiz');
+          try {
+            const json = JSON.parse(e.target.result);
+            if (json.questions) {
+              setIngestedQuestions(json.questions);
+              setShowIngestionPreview(true);
+            } else {
+              setNewQuiz(prev => ({ ...prev, ...json }));
+              setActiveTab('Create Quiz');
+              alert('JSON Data applied directly to form');
+            }
+          } catch (err) {
+            alert('Invalid JSON format');
+          }
           setIsParsing(false);
         };
         reader.readAsText(file);
       }
       else if (fileExt === 'csv') {
         Papa.parse(file, {
+          header: false,
+          skipEmptyLines: true,
           complete: (results) => {
-            const questions = results.data.slice(1).map(row => ({
-              text: row[0],
-              options: [
-                { text: row[1], hindiText: '' },
-                { text: row[2], hindiText: '' },
-                { text: row[3], hindiText: '' },
-                { text: row[4], hindiText: '' }
-              ],
-              correctOptionIndex: parseInt(row[5]) || 0
-            })).filter(q => q.text);
-            setIngestedQuestions(questions);
-            setShowIngestionPreview(true);
+            console.log('CSV Results:', results.data);
+            // Check if first row is header
+            const data = results.data;
+            const hasHeader = data[0][0]?.toLowerCase().includes('question') || data[0][0]?.toLowerCase().includes('q:');
+            const startIndex = hasHeader ? 1 : 0;
+
+            const questions = data.slice(startIndex).map(row => {
+              if (!row[0]) return null;
+              return {
+                text: row[0],
+                options: [
+                  { text: row[1] || '', hindiText: '' },
+                  { text: row[2] || '', hindiText: '' },
+                  { text: row[3] || '', hindiText: '' },
+                  { text: row[4] || '', hindiText: '' }
+                ],
+                correctOptionIndex: isNaN(parseInt(row[5])) ? 0 : parseInt(row[5])
+              };
+            }).filter(q => q && q.text);
+
+            if (questions.length > 0) {
+              setIngestedQuestions(questions);
+              setShowIngestionPreview(true);
+            } else {
+              alert('No questions found in CSV. Expected format: Question, OptA, OptB, OptC, OptD, CorrectIdx(0-3)');
+            }
+            setIsParsing(false);
+          },
+          error: (err) => {
+            alert('CSV Parsing Error: ' + err.message);
             setIsParsing(false);
           }
         });
@@ -567,21 +767,36 @@ const AdminDashboard = () => {
         const reader = new FileReader();
         reader.onload = e => {
           const questions = parseTextToQuestions(e.target.result);
-          setIngestedQuestions(questions);
-          setShowIngestionPreview(true);
+          if (questions.length > 0) {
+            setIngestedQuestions(questions);
+            setShowIngestionPreview(true);
+          } else {
+            alert('No questions detected in text file.');
+          }
           setIsParsing(false);
         };
         reader.readAsText(file);
       }
       else if (['png', 'jpg', 'jpeg'].includes(fileExt)) {
-        const result = await Tesseract.recognize(file, 'eng+hin', {
-          logger: m => {
-            if (m.status === 'recognizing text') setParseProgress(Math.floor(m.progress * 100));
+        try {
+          const result = await Tesseract.recognize(file, 'eng+hin', {
+            logger: m => {
+              if (m.status === 'recognizing text') setParseProgress(Math.floor(m.progress * 100));
+            }
+          });
+          const questions = parseTextToQuestions(result.data.text);
+          if (questions.length > 0) {
+            setIngestedQuestions(questions);
+            setShowIngestionPreview(true);
+          } else {
+            alert('No questions recognized in image. Try a clearer image or different format.');
           }
-        });
-        const questions = await parseTextToQuestions(result.data.text);
-        setIngestedQuestions(questions);
-        setShowIngestionPreview(true);
+        } catch (err) {
+          alert('OCR Error: ' + err.message);
+        }
+        setIsParsing(false);
+      } else {
+        alert('Unsupported file format: ' + fileExt);
         setIsParsing(false);
       }
     } catch (err) {
@@ -589,13 +804,72 @@ const AdminDashboard = () => {
       alert("Failed to parse file: " + err.message);
       setIsParsing(false);
     }
+
+    // Reset input so the same file can be selected again
+    const input = document.getElementById('bulk-file-input');
+    if (input) input.value = '';
   };
 
   const handlePasteSubmit = () => {
     if (!pastedText.trim()) return;
+    
+    // 1. Try JSON first
+    try {
+      const json = JSON.parse(pastedText);
+      if (json.questions && Array.isArray(json.questions)) {
+        setIngestedQuestions(json.questions);
+        setShowPasteModal(false);
+        setPastedText('');
+        setShowIngestionPreview(true);
+        return;
+      }
+      if (Array.isArray(json)) {
+        setIngestedQuestions(json);
+        setShowPasteModal(false);
+        setPastedText('');
+        setShowIngestionPreview(true);
+        return;
+      }
+    } catch (e) {
+      // Not JSON
+    }
+
+    // 2. Try CSV Parsing (if it contains commas or tabs)
+    if (pastedText.includes(',') || pastedText.includes('\t')) {
+       const results = Papa.parse(pastedText, { header: false, skipEmptyLines: true });
+       if (results.data && results.data.length > 0 && results.data[0].length > 1) {
+          const data = results.data;
+          const hasHeader = data[0][0]?.toLowerCase().includes('question') || data[0][0]?.toLowerCase().includes('q:');
+          const startIndex = hasHeader ? 1 : 0;
+
+          const questions = data.slice(startIndex).map(row => {
+            if (!row[0]) return null;
+            return {
+              text: row[0],
+              options: [
+                { text: row[1] || '', hindiText: '' },
+                { text: row[2] || '', hindiText: '' },
+                { text: row[3] || '', hindiText: '' },
+                { text: row[4] || '', hindiText: '' }
+              ],
+              correctOptionIndex: isNaN(parseInt(row[5])) ? 0 : parseInt(row[5])
+            };
+          }).filter(q => q && q.text);
+
+          if (questions.length > 0) {
+            setIngestedQuestions(questions);
+            setShowPasteModal(false);
+            setPastedText('');
+            setShowIngestionPreview(true);
+            return;
+          }
+       }
+    }
+
+    // 3. Fallback to Plain Text Parser
     const questions = parseTextToQuestions(pastedText);
     if (questions.length === 0) {
-      alert("No questions found in the pasted text. Please check the format.");
+      alert("No questions found. Please check the format (Plain Text, CSV, or JSON).");
       return;
     }
     setIngestedQuestions(questions);
@@ -620,56 +894,83 @@ const AdminDashboard = () => {
     let currentQ = null;
 
     lines.forEach(line => {
-      if (!line || line.length < 2) return;
-      
-      // Match "1. Text" or "Question 1" or "Q: Text"
-      const qMatch = line.match(/^(\d+)[\.\)]\s*(.*)/i) || 
-                     line.match(/^Question\s*\d+[:\s]*(.*)/i) ||
-                     line.match(/^Question\s*\d+/i) ||
-                     line.match(/^Q[:\s]*(.*)/i);
+      // 1. Detect Question Starters
+      const qNumMatch = line.match(/^(\d+)[\.\)]\s*(.*)/i);
+      const qWordMatch = line.match(/^Question\s*(\d+)[:\s]*(.*)/i);
+      const qMarkerMatch = line.match(/^Q[:\s]*(.*)/i);
 
-      if (qMatch) {
+      if (qNumMatch || qWordMatch || qMarkerMatch) {
         if (currentQ) questions.push(currentQ);
-        let qText = qMatch[1] || "";
-        // If it was just "Question 1", the next line will be the text
+        
+        let qText = "";
+        if (qNumMatch) qText = qNumMatch[2];
+        else if (qWordMatch) qText = qWordMatch[2];
+        else if (qMarkerMatch) qText = qMarkerMatch[1];
+
+        // Filter out noisy titles like "Quiz Questions"
+        if (qText.toLowerCase().includes('questions') && qText.length < 20) {
+          currentQ = null;
+          return;
+        }
+
         currentQ = {
           text: qText.trim(),
           options: [],
           correctOptionIndex: 0
         };
+        return;
       }
-      else if (/^[A-D][\.\)]/i.test(line) && currentQ) {
-        const isCorrect = line.includes('✅');
-        const text = line.replace(/^[A-D][\.\)]/i, '').replace('✅', '').trim();
-        currentQ.options.push({ text, hindiText: '' });
+
+      // 2. Detect Options (A, B, C, D or (a), (b)...)
+      const optMatch = line.match(/^([A-D]|[a-d])[\.\)]\s*(.*)/i) || line.match(/^\(([A-D]|[a-d])\)\s*(.*)/i);
+      if (optMatch && currentQ) {
+        const isCorrect = line.includes('✅') || /v\s*Correct/i.test(line) || /\(Correct\)/i.test(line);
+        const optText = optMatch[2].replace(/v\s*Correct/i, '').replace(/\(Correct\)/i, '').replace('✅', '').trim();
+        
+        currentQ.options.push({ text: optText, hindiText: '' });
         if (isCorrect) currentQ.correctOptionIndex = currentQ.options.length - 1;
+        return;
       }
-      else if (/^(Ans|Answer|Correct)[:\s]*([A-D])/i.test(line) && currentQ) {
-        const match = line.match(/^(Ans|Answer|Correct)[:\s]*([A-D])/i);
-        const ans = match[2].toUpperCase();
+
+      // 3. Detect Answer Keys (Ans: A)
+      const ansMatch = line.match(/^(Ans|Answer|Correct)[:\s]*([A-D])/i);
+      if (ansMatch && currentQ) {
+        const ans = ansMatch[2].toUpperCase();
         const index = ['A', 'B', 'C', 'D'].indexOf(ans);
         if (index !== -1) currentQ.correctOptionIndex = index;
+        return;
       }
-      else if (currentQ && currentQ.options.length === 0) {
-        // If we have a question but no options yet, this line is probably part of the question text
-        currentQ.text = (currentQ.text + " " + line).trim();
-      }
-      else if (/^\([a-d]\)/i.test(line) && currentQ) {
-        const isCorrect = line.includes('✅');
-        const text = line.replace(/^\([a-d]\)/i, '').replace('✅', '').trim();
-        currentQ.options.push({ text, hindiText: '' });
-        if (isCorrect) currentQ.correctOptionIndex = currentQ.options.length - 1;
+
+      // 4. Fallback: Multi-line question text or plain options
+      if (currentQ) {
+        if (currentQ.options.length === 0) {
+          // If no options yet, append to question text
+          currentQ.text = (currentQ.text + " " + line).trim();
+        } else if (currentQ.options.length < 4) {
+          // If we have some options but this line doesn't match A/B/C/D, 
+          // it might be a plain text option (OCR often misses the letter)
+          const isCorrect = line.includes('✅') || /v\s*Correct/i.test(line);
+          const optText = line.replace(/v\s*Correct/i, '').replace('✅', '').trim();
+          currentQ.options.push({ text: optText, hindiText: '' });
+          if (isCorrect) currentQ.correctOptionIndex = currentQ.options.length - 1;
+        }
       }
     });
 
     if (currentQ) questions.push(currentQ);
-    return questions.map(q => {
-      const normalizedOptions = [...q.options];
-      while (normalizedOptions.length < 4) {
-        normalizedOptions.push({ text: '', hindiText: '' });
-      }
-      return { ...q, options: normalizedOptions };
-    });
+    
+    // Final cleanup and normalization
+    return questions
+      .filter(q => q.text.length > 1) // Remove empty/junk questions
+      .map(q => {
+        const normalizedOptions = [...q.options];
+        while (normalizedOptions.length < 4) {
+          normalizedOptions.push({ text: '', hindiText: '' });
+        }
+        // If more than 4, take first 4
+        if (normalizedOptions.length > 4) normalizedOptions.length = 4;
+        return { ...q, options: normalizedOptions };
+      });
   };
 
   const SidebarItem = ({ icon, label }) => (
@@ -767,6 +1068,9 @@ const AdminDashboard = () => {
         <SidebarItem icon={<Trophy />} label="Quizzes" />
         <SidebarItem icon={<ImageIcon />} label="Banners" />
         <SidebarItem icon={<Users />} label="Users" />
+        <SidebarItem icon={<Ticket />} label="Vouchers" />
+        <SidebarItem icon={<Award />} label="Bonuses" />
+        <SidebarItem icon={<Landmark />} label="Payments" />
         <SidebarItem icon={<Settings />} label="Settings" />
       </div>
 
@@ -825,17 +1129,18 @@ const AdminDashboard = () => {
               </div>
 
               <div
-                style={{
-                  border: '3px dashed #e2e8f0',
-                  borderRadius: '1.5rem',
-                  padding: '5rem 2rem',
+                style={{ 
+                  background: '#f8fafc', 
+                  border: '2px dashed #e2e8f0', 
+                  borderRadius: '2rem', 
+                  padding: '3.5rem 2rem',
                   textAlign: 'center',
-                  background: '#f8fafc',
                   cursor: 'pointer',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transition: 'all 0.2s ease',
                   position: 'relative',
-                  overflow: 'hidden'
+                  outline: 'none'
                 }}
+                tabIndex="0"
                 onDragOver={e => {
                   e.preventDefault();
                   e.currentTarget.style.borderColor = '#3b82f6';
@@ -852,17 +1157,45 @@ const AdminDashboard = () => {
                   const file = e.dataTransfer.files[0];
                   if (file) handleAutoIngest(file);
                 }}
+                onPaste={async (e) => {
+                  const items = e.clipboardData.items;
+                  for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                      const file = items[i].getAsFile();
+                      handleAutoIngest(file);
+                      return;
+                    }
+                  }
+                  const text = e.clipboardData.getData('text');
+                  if (text) {
+                    // Try parsing as JSON first
+                    try {
+                      const json = JSON.parse(text);
+                      if (json.questions && Array.isArray(json.questions)) {
+                        setIngestedQuestions(json.questions);
+                        setShowIngestionPreview(true);
+                        return;
+                      }
+                      if (Array.isArray(json)) {
+                        setIngestedQuestions(json);
+                        setShowIngestionPreview(true);
+                        return;
+                      }
+                    } catch (err) {
+                      // Not JSON, continue to plain text
+                    }
+
+                    const questions = parseTextToQuestions(text);
+                    if (questions.length > 0) {
+                      setIngestedQuestions(questions);
+                      setShowIngestionPreview(true);
+                    }
+                  }
+                }}
                 onClick={() => document.getElementById('bulk-file-input').click()}
                 onMouseOver={e => e.currentTarget.style.borderColor = '#3b82f6'}
                 onMouseOut={e => e.currentTarget.style.borderColor = '#e2e8f0'}
               >
-                <input
-                  id="bulk-file-input"
-                  type="file"
-                  accept=".json,.csv,.txt,.png,.jpg,.jpeg"
-                  onChange={e => handleAutoIngest(e.target.files[0])}
-                  style={{ display: 'none' }}
-                />
                 {isParsing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
                     <div style={{ position: 'relative', width: '80px', height: '80px' }}>
@@ -880,37 +1213,54 @@ const AdminDashboard = () => {
                       <div style={{ width: '100px', height: '100px', background: 'white', borderRadius: '30px', margin: '0 auto 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}>
                         <ImageIcon size={48} color="#cbd5e1" />
                       </div>
-                      <p style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.5rem' }}>Click or drag file here</p>
-                      <p style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 600 }}>Maximum file size: 10MB</p>
+                      <p style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.5rem' }}>Click, Drag or Paste Image/Text</p>
+                      <p style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 600 }}>Supports CSV, JSON, PNG, JPG, TXT</p>
                     </div>
                     <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-                      {['CSV', 'TXT', 'PNG/JPG', 'JSON'].map(ext => (
+                      {[
+                        { label: 'CSV', id: 'csv' },
+                        { label: 'TXT (Paste/Upload)', id: 'txt' },
+                        { label: 'PNG/JPG', id: 'img' },
+                        { label: 'JSON', id: 'json' }
+                      ].map(btn => (
                         <span 
-                          key={ext} 
+                          key={btn.id} 
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (ext === 'TXT') setShowPasteModal(true);
-                            else document.getElementById('bulk-file-input').click();
+                            setActiveIngestFormat(btn.label);
+                            setShowIngestOptions(true);
                           }}
                           style={{ 
                             fontSize: '0.8rem', 
                             padding: '6px 14px', 
-                            background: ext === 'TXT' ? '#eff6ff' : 'white', 
-                            color: ext === 'TXT' ? '#3b82f6' : '#475569', 
+                            background: 'white', 
+                            color: '#475569', 
                             borderRadius: '10px', 
                             fontWeight: 800, 
-                            border: `1px solid ${ext === 'TXT' ? '#3b82f6' : '#e2e8f0'}`, 
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                            border: '1px solid #e2e8f0',
                             cursor: 'pointer'
                           }}
                         >
-                          {ext === 'TXT' ? 'TXT (Paste/Upload)' : ext}
+                          {btn.label}
                         </span>
                       ))}
                     </div>
                   </>
                 )}
               </div>
+              <input
+                id="bulk-file-input"
+                type="file"
+                accept={
+                  activeIngestFormat === 'CSV' ? '.csv' :
+                  activeIngestFormat === 'JSON' ? '.json' :
+                  activeIngestFormat === 'PNG/JPG' ? '.png,.jpg,.jpeg' :
+                  activeIngestFormat.includes('TXT') ? '.txt' :
+                  '.json,.csv,.txt,.png,.jpg,.jpeg'
+                }
+                onChange={e => handleAutoIngest(e.target.files[0])}
+                style={{ display: 'none' }}
+              />
 
               <div style={{ marginTop: '3rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
@@ -1026,7 +1376,7 @@ const AdminDashboard = () => {
                   <input className="admin-input" type="number" value={newQuiz.timer_minutes} onChange={e => setNewQuiz({ ...newQuiz, timer_minutes: parseInt(e.target.value) })} />
                 </div>
                 <div className="form-group">
-                  <label>ENTRY AMOUNT (₹)</label>
+                  <label>ENTRY AMOUNT (â‚¹)</label>
                   <input className="admin-input" type="number" value={newQuiz.entry_amount} onChange={e => setNewQuiz({ ...newQuiz, entry_amount: parseInt(e.target.value) })} />
                 </div>
                 <div className="form-group">
@@ -1049,7 +1399,7 @@ const AdminDashboard = () => {
                   <input className="admin-input" type="datetime-local" required value={newQuiz.close_at} onChange={e => setNewQuiz({ ...newQuiz, close_at: e.target.value })} />
                 </div>
                 <div className="form-group">
-                  <label>PRIZE AMOUNT (₹)</label>
+                  <label>PRIZE AMOUNT (â‚¹)</label>
                   <input className="admin-input" type="number" value={newQuiz.prize_amount} onChange={e => setNewQuiz({ ...newQuiz, prize_amount: parseInt(e.target.value) })} />
                 </div>
               </div>
@@ -1209,7 +1559,7 @@ const AdminDashboard = () => {
                     transition: 'all 0.2s'
                   }}
                 >
-                  −
+                  âˆ’
                 </button>
                 <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a', minWidth: '120px', textAlign: 'center' }}>
                   {newQuiz.questions.length} Question{newQuiz.questions.length !== 1 ? 's' : ''}
@@ -1266,7 +1616,7 @@ const AdminDashboard = () => {
                 <div>
                   <h4 style={{ fontWeight: 800 }}>{q.title}</h4>
                   <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                    {q.participants_count} Participants • {q.status.toUpperCase()} • {q.zone_id.toUpperCase()}
+                    {q.participants_count} Participants â€¢ {q.status.toUpperCase()} â€¢ {q.zone_id.toUpperCase()}
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -1311,7 +1661,7 @@ const AdminDashboard = () => {
 
         {activeTab === 'Quizzes' && selectedQuiz && (
           <div>
-            <button onClick={() => setSelectedQuiz(null)} style={{ marginBottom: '1.5rem', fontWeight: 800, color: '#3b82f6', border: 'none', background: 'none', cursor: 'pointer' }}>← Back to Quizzes</button>
+            <button onClick={() => setSelectedQuiz(null)} style={{ marginBottom: '1.5rem', fontWeight: 800, color: '#3b82f6', border: 'none', background: 'none', cursor: 'pointer' }}>â† Back to Quizzes</button>
             <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.5rem' }}>{selectedQuiz.title}</h3>
               <p style={{ marginBottom: '2rem', color: '#64748b' }}>Winner: {selectedQuiz.winner_id || 'Not Declared'}</p>
@@ -1352,7 +1702,7 @@ const AdminDashboard = () => {
                           )}
                           {selectedQuiz.winner_id === p.user_id && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontWeight: 900 }}>
-                              <Award size={16} /> WON 🎉
+                              <Award size={16} /> WON ðŸŽ‰
                             </div>
                           )}
                           {selectedQuiz.winner_id && selectedQuiz.winner_id !== p.user_id && (
@@ -1368,13 +1718,250 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {activeTab === 'Payments' && (
+          <div style={{ background: 'white', borderRadius: '1.5rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>Pending Payment Requests</h3>
+              <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Verify manual transfers before approving</p>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ textAlign: 'left', borderBottom: '2px solid #f1f5f9' }}>
+                  <th style={{ padding: '1.25rem' }}>User</th>
+                  <th style={{ padding: '1.25rem' }}>Type</th>
+                  <th style={{ padding: '1.25rem' }}>Amount</th>
+                  <th style={{ padding: '1.25rem' }}>UPI ID</th>
+                  <th style={{ padding: '1.25rem' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', fontWeight: 700 }}>
+                      <CheckCircle2 size={48} style={{ marginBottom: '1rem', opacity: 0.3 }} />
+                      <p>All caught up! No pending requests.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  pendingTransactions.map(tx => (
+                    <tr key={tx.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '1.25rem' }}>
+                        <p style={{ fontWeight: 800 }}>{tx.name || 'User'}</p>
+                        <p style={{ fontSize: '0.75rem', color: '#64748b' }}>{tx.mobile}</p>
+                      </td>
+                      <td style={{ padding: '1.25rem' }}>
+                        <span style={{ 
+                          padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 900,
+                          background: tx.category === 'deposit' ? '#eff6ff' : '#fff1f2',
+                          color: tx.category === 'deposit' ? '#3b82f6' : '#f43f5e'
+                        }}>
+                          {tx.category === 'deposit' ? 'DEPOSIT' : 'WITHDRAWAL'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '1.25rem', fontWeight: 900, fontSize: '1.1rem' }}>
+                        â‚¹{Math.abs(tx.amount)}
+                      </td>
+                      <td style={{ padding: '1.25rem' }}>
+                        <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontWeight: 800 }}>{tx.upi_id || 'N/A'}</code>
+                      </td>
+                      <td style={{ padding: '1.25rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            onClick={async () => {
+                              if (window.confirm(`Approve â‚¹${Math.abs(tx.amount)} ${tx.category}?`)) {
+                                const token = localStorage.getItem('play11_admin_session');
+                                const res = await fetch(`/api/admin/transactions/${tx.id}/approve`, {
+                                  method: 'POST',
+                                  headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                const data = await res.json();
+                                if (data.success) fetchData();
+                                else alert(data.error);
+                              }
+                            }}
+                            style={{ padding: '8px 16px', background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}
+                          >
+                            Approve
+                          </button>
+                          <button 
+                            onClick={async () => {
+                              if (window.confirm(`Reject this ${tx.category} request?`)) {
+                                const token = localStorage.getItem('play11_admin_session');
+                                const res = await fetch(`/api/admin/transactions/${tx.id}/reject`, {
+                                  method: 'POST',
+                                  headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                const data = await res.json();
+                                if (data.success) fetchData();
+                                else alert(data.error);
+                              }
+                            }}
+                            style={{ padding: '8px 16px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {activeTab === 'Vouchers' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Create Voucher Form */}
+            <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
+                <div style={{ width: '48px', height: '48px', background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ticket size={24} color="#3b82f6" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Create New Voucher</h3>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Generate codes for users to redeem</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleCreateVoucher} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                <div className="form-group">
+                  <label>Voucher Title</label>
+                  <input 
+                    className="admin-input" 
+                    placeholder="e.g. Welcome Bonus" 
+                    value={newVoucher.title}
+                    onChange={e => setNewVoucher({...newVoucher, title: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Voucher Code</label>
+                  <input 
+                    className="admin-input" 
+                    placeholder="e.g. WELCOME100" 
+                    value={newVoucher.code}
+                    onChange={e => setNewVoucher({...newVoucher, code: e.target.value.toUpperCase()})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Display Text</label>
+                  <input 
+                    className="admin-input" 
+                    placeholder="e.g. â‚¹100 Bonus Cash" 
+                    value={newVoucher.discount_text}
+                    onChange={e => setNewVoucher({...newVoucher, discount_text: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Amount (â‚¹)</label>
+                  <input 
+                    className="admin-input" 
+                    type="number"
+                    value={newVoucher.amount}
+                    onChange={e => setNewVoucher({...newVoucher, amount: parseFloat(e.target.value)})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Type</label>
+                  <select 
+                    className="admin-input"
+                    value={newVoucher.type}
+                    onChange={e => setNewVoucher({...newVoucher, type: e.target.value})}
+                  >
+                    <option value="bonus">Bonus Cash</option>
+                    <option value="cash">Real Cash (Deposit)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Color (Hex)</label>
+                  <input 
+                    className="admin-input" 
+                    type="color"
+                    value={newVoucher.color}
+                    onChange={e => setNewVoucher({...newVoucher, color: e.target.value})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Expiry (Days)</label>
+                  <input 
+                    className="admin-input" 
+                    type="number"
+                    value={newVoucher.expiry_days}
+                    onChange={e => setNewVoucher({...newVoucher, expiry_days: parseInt(e.target.value)})}
+                    required
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                  <button type="submit" className="admin-primary-btn" style={{ width: '100%', padding: '12px', background: '#3b82f6' }} disabled={loading}>
+                    {loading ? <Loader2 className="animate-spin" /> : 'Create Voucher'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Vouchers List */}
+            <div style={{ background: 'white', borderRadius: '1.5rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ background: '#f8fafc' }}>
+                  <tr style={{ textAlign: 'left' }}>
+                    <th style={{ padding: '1.25rem' }}>Code</th>
+                    <th style={{ padding: '1.25rem' }}>Reward</th>
+                    <th style={{ padding: '1.25rem' }}>Type</th>
+                    <th style={{ padding: '1.25rem' }}>Status</th>
+                    <th style={{ padding: '1.25rem' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vouchers.map(v => (
+                    <tr key={v.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '1.25rem' }}>
+                        <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontWeight: 900, color: v.color }}>{v.code}</code>
+                        <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>{v.title}</p>
+                      </td>
+                      <td style={{ padding: '1.25rem', fontWeight: 800 }}>{v.discount_text}</td>
+                      <td style={{ padding: '1.25rem' }}>
+                        <span style={{ textTransform: 'uppercase', fontSize: '0.7rem', fontWeight: 900, color: '#64748b' }}>{v.type}</span>
+                      </td>
+                      <td style={{ padding: '1.25rem' }}>
+                        <button 
+                          onClick={() => handleToggleVoucherStatus(v.id, v.status)}
+                          style={{
+                            padding: '4px 12px', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 900, border: 'none', cursor: 'pointer',
+                            background: v.status === 'active' ? '#dcfce7' : '#fee2e2',
+                            color: v.status === 'active' ? '#15803d' : '#b91c1c'
+                          }}
+                        >
+                          {v.status.toUpperCase()}
+                        </button>
+                      </td>
+                      <td style={{ padding: '1.25rem' }}>
+                        <button onClick={() => handleDeleteVoucher(v.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}>
+                          <Trash2 size={20} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'Users' && (
+
           <div style={{ background: 'white', borderRadius: '1.5rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead style={{ background: '#f8fafc' }}>
                 <tr style={{ textAlign: 'left' }}>
                   <th style={{ padding: '1.25rem' }}>Name</th>
                   <th style={{ padding: '1.25rem' }}>Mobile</th>
+                  <th style={{ padding: '1.25rem' }}>Referral Code</th>
+                  <th style={{ padding: '1.25rem' }}>Bonus</th>
+                  <th style={{ padding: '1.25rem' }}>Wallet</th>
                   <th style={{ padding: '1.25rem' }}>Status</th>
                 </tr>
               </thead>
@@ -1383,6 +1970,11 @@ const AdminDashboard = () => {
                   <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '1.25rem', fontWeight: 700 }}>{u.name || 'N/A'}</td>
                     <td style={{ padding: '1.25rem' }}>{u.mobile}</td>
+                    <td style={{ padding: '1.25rem' }}>
+                      <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontWeight: 800, color: '#3b82f6' }}>{u.referral_code || '---'}</code>
+                    </td>
+                    <td style={{ padding: '1.25rem', fontWeight: 800, color: '#10b981' }}>₹{u.bonus || 0}</td>
+                    <td style={{ padding: '1.25rem', fontWeight: 800, color: '#0f172a' }}>₹{u.wallet || 0}</td>
                     <td style={{ padding: '1.25rem' }}>
                       <span style={{
                         padding: '4px 12px',
@@ -1587,6 +2179,64 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {activeTab === 'Bonuses' && (
+          <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
+              <div style={{ width: '48px', height: '48px', background: '#fef3c7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Award size={24} color="#d97706" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Bonus & Referral System</h3>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Configure automated rewards for users</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+              {[
+                { key: 'welcome_bonus', label: 'Welcome Bonus Amount (₹)', description: 'Credited to every new user immediately after OTP verification.', value: welcomeBonus, setter: setWelcomeBonus },
+                { key: 'referral_referrer_bonus', label: 'Referrer Reward (₹)', description: 'Credited to the person whose referral code was used.', value: referralReferrerBonus, setter: setReferralReferrerBonus },
+                { key: 'referral_referee_bonus', label: 'Referee Join Bonus (₹)', description: 'Additional bonus for the new user if they join via a valid code.', value: referralRefereeBonus, setter: setReferralRefereeBonus }
+              ].map(setting => (
+                <div key={setting.key} style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '1.25rem', border: '1px solid #e2e8f0' }}>
+                  <div className="form-group">
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569' }}>{setting.label}</label>
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                      <input
+                        className="admin-input"
+                        type="number"
+                        placeholder="e.g. 100"
+                        value={setting.value}
+                        onChange={e => setting.setter(e.target.value)}
+                        style={{ background: 'white' }}
+                      />
+                      <button
+                        className="admin-primary-btn"
+                        style={{ padding: '0 1.5rem', background: '#3b82f6' }}
+                        onClick={() => handleUpdateSetting(setting.key, setting.value)}
+                        disabled={isUpdatingSettings}
+                      >
+                        {isUpdatingSettings ? <Loader2 className="animate-spin" size={16} /> : 'Save'}
+                      </button>
+                    </div>
+                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '1rem', lineHeight: 1.5 }}>{setting.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: '3rem', padding: '1.5rem', background: '#eff6ff', borderRadius: '1rem', border: '1px solid #dbeafe' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                 <AlertCircle size={18} color="#3b82f6" />
+                 <h4 style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e40af' }}>System Information</h4>
+               </div>
+               <p style={{ fontSize: '0.8rem', color: '#1e40af', opacity: 0.8, lineHeight: 1.6 }}>
+                 These settings are applied globally. Any changes will take effect for all future registrations. 
+                 Bonuses are credited as "Bonus Cash" and can be tracked in the user's transaction history.
+               </p>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'Settings' && (
           <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
@@ -1599,7 +2249,14 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <p style={{ color: '#64748b', fontWeight: 600 }}>Banners have been moved to the <strong style={{ color: '#3b82f6', cursor: 'pointer' }} onClick={() => setActiveTab('Banners')}>Banners Section</strong>.</p>
+            <div style={{ display: 'grid', gap: '1.5rem' }}>
+               <div style={{ padding: '2rem', border: '2px dashed #e2e8f0', borderRadius: '1rem', textAlign: 'center' }}>
+                  <p style={{ color: '#64748b', fontWeight: 600 }}>Banners have been moved to the <strong style={{ color: '#3b82f6', cursor: 'pointer' }} onClick={() => setActiveTab('Banners')}>Banners Section</strong>.</p>
+               </div>
+               <div style={{ padding: '2rem', border: '2px dashed #e2e8f0', borderRadius: '1rem', textAlign: 'center' }}>
+                  <p style={{ color: '#64748b', fontWeight: 600 }}>Bonus & Referral settings have been moved to the <strong style={{ color: '#3b82f6', cursor: 'pointer' }} onClick={() => setActiveTab('Bonuses')}>Bonuses Section</strong>.</p>
+               </div>
+            </div>
           </div>
         )}
 
@@ -1762,7 +2419,7 @@ const AdminDashboard = () => {
 
                             {isResultDeclared && !optionsToDisplay.some(opt => String(correctIdx) === String(opt.value)) && (
                               <div style={{ marginTop: '1.5rem', padding: '1.25rem', background: '#f0fdf4', borderRadius: '1.25rem', border: '1px solid #10b981', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#10b981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem' }}>✓</div>
+                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#10b981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem' }}>âœ“</div>
                                 <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#166534' }}>
                                   CORRECT ANSWER (IN DATABASE): {ans.options?.find(o => normalizeIndex(o.value) === correctIdx)?.text || 'N/A'}
                                 </span>
@@ -1771,7 +2428,7 @@ const AdminDashboard = () => {
 
                             {!ans.selected_value && (
                               <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#fffbeb', borderRadius: '1.5rem', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#b45309' }}>⚠️ QUESTION WAS SKIPPED BY USER</span>
+                                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#b45309' }}>âš ï¸ QUESTION WAS SKIPPED BY USER</span>
                               </div>
                             )}
                           </div>
@@ -1834,14 +2491,14 @@ const AdminDashboard = () => {
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)', zIndex: 2100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
             <div style={{ background: 'white', width: '100%', maxWidth: '700px', borderRadius: '2rem', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
               <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontWeight: 900, color: '#0f172a' }}>Paste Quiz Content</h3>
+                <h3 style={{ fontWeight: 900, color: '#0f172a' }}>Paste Questions or JSON</h3>
                 <button onClick={() => setShowPasteModal(false)} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer' }}><X size={16} /></button>
               </div>
               <div style={{ padding: '2rem' }}>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem', fontWeight: 600 }}>Paste your questions below. Follow the format: <code style={{ color: '#3b82f6' }}>Q: text? A: opt1, B: opt2... Ans: A</code></p>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem', fontWeight: 600 }}>Paste your questions (Plain Text or JSON array) below.</p>
                 <textarea
                   style={{ width: '100%', minHeight: '300px', padding: '1.5rem', borderRadius: '1rem', border: '2px solid #e2e8f0', fontFamily: 'monospace', fontSize: '0.9rem', outline: 'none', transition: 'border-color 0.2s' }}
-                  placeholder="Example:&#10;Q: What is React?&#10;A: Library, B: Framework, C: Language, D: Tool&#10;Ans: A"
+                  placeholder={'Example JSON: [{"text":"Q1","options":[{"text":"A"}]}] \n\nOR Plain Text: \nQ: Question?\nA: Opt1, B: Opt2... \nAns: A'}
                   value={pastedText}
                   onChange={e => setPastedText(e.target.value)}
                   onFocus={e => e.target.style.borderColor = '#3b82f6'}
@@ -1850,6 +2507,96 @@ const AdminDashboard = () => {
                 <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
                    <button onClick={() => document.getElementById('bulk-file-input').click()} style={{ flex: 1, padding: '1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', background: 'white', fontWeight: 800, color: '#3b82f6', cursor: 'pointer' }}>Upload Instead</button>
                    <button onClick={handlePasteSubmit} style={{ flex: 2, padding: '1rem', borderRadius: '1rem', border: 'none', background: '#3b82f6', color: 'white', fontWeight: 900, cursor: 'pointer' }}>Process & Preview</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {showIngestOptions && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)', zIndex: 2100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+            <div style={{ background: 'white', width: '100%', maxWidth: '600px', borderRadius: '2rem', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontWeight: 900, color: '#0f172a' }}>{activeIngestFormat} Ingestion Options</h3>
+                <button onClick={() => setShowIngestOptions(false)} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer' }}><X size={16} /></button>
+              </div>
+              <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+                <div 
+                  onClick={() => { setShowIngestOptions(false); setShowPasteModal(true); }}
+                  style={{ padding: '1.5rem', borderRadius: '1.25rem', border: '2px solid #e2e8f0', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '1rem' }}
+                  onMouseOver={e => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#f0f9ff'; }}
+                  onMouseOut={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = 'white'; }}
+                >
+                  <div style={{ width: '48px', height: '48px', background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Clipboard size={24} color="#3b82f6" />
+                  </div>
+                  <div>
+                    <h4 style={{ fontWeight: 800, color: '#1e293b' }}>
+                      {activeIngestFormat === 'PNG/JPG' ? 'Paste Image Content' : `Paste ${activeIngestFormat} Text`}
+                    </h4>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Copy and paste the raw content manually</p>
+                  </div>
+                </div>
+
+                <div 
+                  onClick={() => { setShowIngestOptions(false); document.getElementById('bulk-file-input').click(); }}
+                  style={{ padding: '1.5rem', borderRadius: '1.25rem', border: '2px solid #e2e8f0', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '1rem' }}
+                  onMouseOver={e => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#f0f9ff'; }}
+                  onMouseOut={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = 'white'; }}
+                >
+                  <div style={{ width: '48px', height: '48px', background: '#ecfdf5', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Upload size={24} color="#10b981" />
+                  </div>
+                  <div>
+                    <h4 style={{ fontWeight: 800, color: '#1e293b' }}>Upload {activeIngestFormat} File</h4>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Browse your computer for the file</p>
+                  </div>
+                </div>
+
+                <div 
+                  onClick={() => { setShowIngestOptions(false); setShowImagePasteModal(true); }}
+                  style={{ 
+                    padding: '1.5rem', borderRadius: '1.25rem', border: '2px dashed #3b82f6', 
+                    background: activeIngestFormat === 'PNG/JPG' ? '#dbeafe' : '#eff6ff', 
+                    cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '1rem' 
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.background = '#dbeafe'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = activeIngestFormat === 'PNG/JPG' ? '#dbeafe' : '#eff6ff'; }}
+                >
+                  <div style={{ width: '48px', height: '48px', background: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ImageIcon size={24} color="#3b82f6" />
+                  </div>
+                  <div>
+                    <h4 style={{ fontWeight: 800, color: '#1e293b' }}>Direct Image Paste</h4>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Click to open paste area or press <strong>Ctrl+V</strong> anywhere!</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {showImagePasteModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)', zIndex: 2200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+            <div style={{ background: 'white', width: '100%', maxWidth: '600px', borderRadius: '2rem', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontWeight: 900, color: '#0f172a' }}>Paste Image Area</h3>
+                <button onClick={() => setShowImagePasteModal(false)} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer' }}><X size={16} /></button>
+              </div>
+              <div style={{ padding: '3rem 2rem', textAlign: 'center' }}>
+                <div 
+                  style={{ 
+                    width: '120px', height: '120px', background: '#eff6ff', borderRadius: '40px', 
+                    margin: '0 auto 2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: '3px dashed #3b82f6', color: '#3b82f6'
+                  }}
+                >
+                  <ImageIcon size={48} />
+                </div>
+                <h2 style={{ fontWeight: 900, color: '#1e293b', marginBottom: '1rem' }}>Ready to Paste!</h2>
+                <p style={{ color: '#64748b', fontSize: '1.1rem', marginBottom: '2rem', lineHeight: 1.6 }}>
+                  Copy any quiz image and press <strong style={{ color: '#3b82f6', background: '#eff6ff', padding: '4px 10px', borderRadius: '8px' }}>Ctrl + V</strong> here to start extraction.
+                </p>
+                <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '1rem', border: '1px solid #e2e8f0', fontSize: '0.9rem', color: '#94a3b8', fontWeight: 600 }}>
+                  Supports PNG, JPG, JPEG from Clipboard
                 </div>
               </div>
             </div>

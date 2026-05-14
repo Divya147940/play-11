@@ -51,16 +51,26 @@ exports.redeemVoucher = async (req, res) => {
     }
 
     // 3. Apply the reward based on type
-    if (voucher.type === 'bonus') {
-      await client.query('UPDATE users SET bonus = bonus + $1 WHERE id = $2', [voucher.amount, userId]);
-      
-      // Record transaction
-      const txId = `tx-${uuidv4().substring(0, 8)}`;
-      await client.query(
-        'INSERT INTO transactions (id, user_id, title, amount, type, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [txId, userId, `Voucher Redeemed: ${voucher.title}`, voucher.amount, 'credit', 'bonus', 'success']
-      );
+    let walletUpdateQuery = '';
+    let category = 'bonus';
+    
+    if (voucher.type === 'cash') {
+      walletUpdateQuery = 'UPDATE users SET coins = coins + $1 WHERE id = $2';
+      category = 'deposit';
+    } else {
+      // Default to bonus
+      walletUpdateQuery = 'UPDATE users SET bonus = bonus + $1 WHERE id = $2';
+      category = 'bonus';
     }
+
+    await client.query(walletUpdateQuery, [voucher.amount, userId]);
+    
+    // Record transaction
+    const txId = `tx-${uuidv4().substring(0, 8)}`;
+    await client.query(
+      'INSERT INTO transactions (id, user_id, title, amount, type, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [txId, userId, `Voucher Redeemed: ${voucher.code}`, voucher.amount, 'credit', category, 'success']
+    );
 
     // 4. Update user_vouchers record
     if (userVoucherRows.length > 0) {
