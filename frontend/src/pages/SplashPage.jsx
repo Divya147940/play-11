@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trophy, ArrowRight, Sparkles } from 'lucide-react';
-import logo from '../assets/logo-play11.png';
+// logo import removed to prevent error
 
 const SplashPage = () => {
   const navigate = useNavigate();
@@ -24,16 +24,18 @@ const SplashPage = () => {
       <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
         
         <div className="animate-slide-up" style={{ marginBottom: '3rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <img 
-            src={logo} 
-            alt="Play11 Logo" 
-            style={{ 
-              width: '280px', 
-              height: 'auto', 
-              objectFit: 'contain',
-              filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.05))'
-            }} 
-          />
+          <div style={{ 
+            fontSize: '3.5rem', 
+            fontWeight: 950, 
+            color: 'white', 
+            background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)',
+            padding: '10px 30px',
+            borderRadius: '20px',
+            boxShadow: '0 10px 30px rgba(14, 165, 233, 0.3)',
+            fontFamily: "'Lexend', sans-serif"
+          }}>
+            PLAY<span style={{ color: '#fbbf24' }}>11</span>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
              <Sparkles size={16} color="hsl(var(--primary))" fill="currentColor" />
              <p style={{ 

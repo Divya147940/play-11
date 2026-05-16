@@ -4,7 +4,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
-  connectionTimeoutMillis: 10000, // How long to wait for a connection before timing out
+  connectionTimeoutMillis: 15000, // Increased to 15s to handle Neon cold starts
   ssl: {
     rejectUnauthorized: false // Required for Neon
   }
@@ -173,6 +173,7 @@ const initDB = async () => {
         category TEXT NOT NULL, -- 'deposit', 'withdraw', 'win', 'entry_fee', 'bonus'
         status TEXT DEFAULT 'success', -- 'success', 'pending', 'failed'
         upi_id TEXT,
+        qr_code TEXT,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -236,6 +237,7 @@ const seedAndMigrate = async () => {
     await pool.query(`
         ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus NUMERIC DEFAULT 0;
         ALTER TABLE transactions ADD COLUMN IF NOT EXISTS upi_id TEXT;
+        ALTER TABLE transactions ADD COLUMN IF NOT EXISTS qr_code TEXT;
         ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS amount NUMERIC DEFAULT 0;
         ALTER TABLE user_vouchers ADD COLUMN IF NOT EXISTS redeemed_at TIMESTAMPTZ;
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS marks_per_q INTEGER DEFAULT 2;

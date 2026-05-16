@@ -21,7 +21,7 @@ exports.getTransactions = async (req, res) => {
   try {
     const userId = req.user.userId;
     const { rows } = await db.query(
-      'SELECT id, title, amount, type, category, status, created_at FROM transactions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20',
+      'SELECT id, title, amount, type, category, status, created_at, reference_id FROM transactions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20',
       [userId]
     );
 
@@ -71,14 +71,14 @@ exports.withdrawMoney = async (req, res) => {
   const client = await pool.connect();
   try {
     const userId = req.user.userId;
-    const { amount, upiId } = req.body;
-
+    const { amount, upiId, qrCode } = req.body;
+    
     if (!amount || isNaN(amount) || amount <= 0) {
       return res.status(400).json({ success: false, message: 'Invalid amount' });
     }
 
-    if (!upiId) {
-      return res.status(400).json({ success: false, message: 'UPI ID is required' });
+    if (!upiId && !qrCode) {
+      return res.status(400).json({ success: false, message: 'UPI ID or QR Code is required' });
     }
 
     await client.query('BEGIN');
@@ -95,8 +95,8 @@ exports.withdrawMoney = async (req, res) => {
     // Record transaction as pending (real withdrawals are manual/delayed)
     const txId = `tx-${uuidv4().substring(0, 8)}`;
     await client.query(
-      'INSERT INTO transactions (id, user_id, title, amount, type, category, status, upi_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-      [txId, userId, 'Withdrawal to UPI', -amount, 'debit', 'withdraw', 'pending', upiId]
+      'INSERT INTO transactions (id, user_id, title, amount, type, category, status, upi_id, qr_code) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+      [txId, userId, 'Withdrawal Request', -amount, 'debit', 'withdraw', 'pending', upiId || null, qrCode || null]
     );
 
     await client.query('COMMIT');

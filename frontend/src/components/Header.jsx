@@ -61,7 +61,7 @@ const Header = () => {
           
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
               <button 
-                onClick={() => navigate('/profile')}
+                onClick={() => navigate('/history')}
                 className="user-profile-btn"
               >
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #38bdf8, #1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -124,7 +124,7 @@ const Header = () => {
             <hr style={{ border: 'none', height: '1px', background: 'rgba(255,255,255,0.1)', margin: '1rem 0' }} />
             
             <button
-              onClick={() => { navigate('/profile'); setIsOpen(false); }}
+              onClick={() => { navigate('/history'); setIsOpen(false); }}
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 border: 'none',

@@ -31,7 +31,7 @@ const AdminLoginPage = () => {
       } else {
         const text = await res.text();
         console.error('Non-JSON response:', text);
-        alert('Server Error: The server returned an unexpected response. This might be due to a database connection issue on Vercel.');
+        alert('Server Error: The server is currently unable to process your request. Please ensure the backend is running and connected to the database.');
       }
     } catch (err) {
       console.error('Login error:', err);

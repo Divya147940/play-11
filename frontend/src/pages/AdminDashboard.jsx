@@ -3,7 +3,7 @@ import {
   BarChart3, Users, BookOpen, Trophy,
   Settings, LayoutDashboard, PlusCircle,
   AlertCircle, ChevronRight, Search,
-  MoreVertical, CheckCircle2, Clock,
+  MoreVertical, CheckCircle2, Clock, ArrowRight,
   ArrowUpRight, ArrowDownRight, Globe, Lock, Unlock, Edit, Trash2, Shield, Upload,
   Plus, Save, Trash, Award, FileText, Image as ImageIcon, Loader2, X, Landmark, Ticket, Clipboard
 } from 'lucide-react';
@@ -177,7 +177,13 @@ const AdminDashboard = () => {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const tData = await transRes.json();
-        if (tData.success) setPendingTransactions(tData.transactions);
+        console.log('[AdminDashboard] Pending Transactions Fetch Result:', tData);
+        if (tData.success) {
+          setPendingTransactions(tData.transactions || []);
+        } else {
+          console.error('[AdminDashboard] Failed to fetch transactions:', tData.error);
+          alert('Fetch Error: ' + (tData.error || 'Unknown error'));
+        }
       }
 
       if (activeTab === 'Users') {
@@ -201,7 +207,12 @@ const AdminDashboard = () => {
           return;
         }
         const qData = await quizRes.json();
-        if (qData.success) setQuizzes(qData.quizzes);
+        console.log('[AdminDashboard] Quizzes Stats Received:', qData);
+        if (qData.success) {
+          setQuizzes(qData.quizzes || []);
+        } else {
+          setQuizzes([]);
+        }
 
         const catRes = await fetch('/api/categories/all');
         const catData = await catRes.json();
@@ -1076,26 +1087,49 @@ const AdminDashboard = () => {
 
       {/* Content */}
       <div style={{ flex: 1, padding: '2.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 900 }}>{activeTab}</h1>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <h2 style={{ fontSize: '2rem', fontWeight: 950, letterSpacing: '-0.02em', color: '#0f172a' }}>{activeTab}</h2>
+            <button 
+              onClick={() => setActiveTab('Overview')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '8px 16px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '10px',
+                color: '#64748b',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={e => e.currentTarget.style.background = '#f1f5f9'}
+              onMouseOut={e => e.currentTarget.style.background = '#f8fafc'}
+            >
+              <ArrowRight style={{ transform: 'rotate(180deg)' }} size={16} /> Back to Dashboard
+            </button>
+          </div>
           <button
             onClick={() => {
               localStorage.removeItem('play11_admin_session');
               window.location.href = '/admin/login';
             }}
             style={{
-              padding: '0.6rem 1.2rem',
+              padding: '0.75rem 1.5rem',
               background: '#fee2e2',
               color: '#ef4444',
               border: 'none',
-              borderRadius: '0.75rem',
+              borderRadius: '12px',
               fontWeight: 800,
               cursor: 'pointer'
             }}
           >
             Logout
           </button>
-        </div>
+        </header>
 
         {activeTab === 'Overview' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
@@ -1376,8 +1410,16 @@ const AdminDashboard = () => {
                   <input className="admin-input" type="number" value={newQuiz.timer_minutes} onChange={e => setNewQuiz({ ...newQuiz, timer_minutes: parseInt(e.target.value) })} />
                 </div>
                 <div className="form-group">
-                  <label>ENTRY AMOUNT (â‚¹)</label>
+                  <label>ENTRY AMOUNT (₹)</label>
                   <input className="admin-input" type="number" value={newQuiz.entry_amount} onChange={e => setNewQuiz({ ...newQuiz, entry_amount: parseInt(e.target.value) })} />
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {[0, 10, 20, 50, 100].map(amt => (
+                      <button key={amt} type="button" onClick={() => setNewQuiz({ ...newQuiz, entry_amount: amt })} 
+                        style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '6px', background: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer', fontWeight: 700 }}>
+                        ₹{amt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>ASSOCIATED MATCH (OPTIONAL)</label>
@@ -1399,8 +1441,16 @@ const AdminDashboard = () => {
                   <input className="admin-input" type="datetime-local" required value={newQuiz.close_at} onChange={e => setNewQuiz({ ...newQuiz, close_at: e.target.value })} />
                 </div>
                 <div className="form-group">
-                  <label>PRIZE AMOUNT (â‚¹)</label>
+                  <label>PRIZE AMOUNT (₹)</label>
                   <input className="admin-input" type="number" value={newQuiz.prize_amount} onChange={e => setNewQuiz({ ...newQuiz, prize_amount: parseInt(e.target.value) })} />
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {[0, 50, 100, 200, 500, 1000].map(amt => (
+                      <button key={amt} type="button" onClick={() => setNewQuiz({ ...newQuiz, prize_amount: amt })} 
+                        style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '6px', background: '#f0fdf4', border: '1px solid #dcfce7', color: '#16a34a', cursor: 'pointer', fontWeight: 700 }}>
+                        ₹{amt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -1611,12 +1661,20 @@ const AdminDashboard = () => {
 
         {activeTab === 'Quizzes' && !selectedQuiz && (
           <div style={{ display: 'grid', gap: '1rem' }}>
-            {quizzes.map(q => (
-              <div key={q.id} style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontWeight: 800 }}>Loading quizzes...</div>
+            ) : quizzes.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '5rem', background: 'white', borderRadius: '1.5rem', border: '1px dashed #e2e8f0' }}>
+                <p style={{ color: '#94a3b8', fontSize: '1.1rem', fontWeight: 700 }}>No quizzes found in the database.</p>
+                <button onClick={fetchData} className="admin-secondary-btn" style={{ marginTop: '1rem' }}>Refresh List</button>
+              </div>
+            ) : (
+              quizzes.map(q => (
+                <div key={q.id} style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h4 style={{ fontWeight: 800 }}>{q.title}</h4>
+                  <h4 style={{ fontWeight: 800 }}>{q.title || 'Untitled Quiz'}</h4>
                   <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                    {q.participants_count} Participants â€¢ {q.status.toUpperCase()} â€¢ {q.zone_id.toUpperCase()}
+                    {q.participants_count || 0} Participants • {(q.status || 'unknown').toUpperCase()} • {(q.zone_id || 'general').toUpperCase()}
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -1655,13 +1713,13 @@ const AdminDashboard = () => {
                   </button>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         )}
 
         {activeTab === 'Quizzes' && selectedQuiz && (
           <div>
-            <button onClick={() => setSelectedQuiz(null)} style={{ marginBottom: '1.5rem', fontWeight: 800, color: '#3b82f6', border: 'none', background: 'none', cursor: 'pointer' }}>â† Back to Quizzes</button>
+            <button onClick={() => setSelectedQuiz(null)} style={{ marginBottom: '1.5rem', fontWeight: 800, color: '#3b82f6', border: 'none', background: 'none', cursor: 'pointer' }}>â† Back to Quiz List</button>
             <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.5rem' }}>{selectedQuiz.title}</h3>
               <p style={{ marginBottom: '2rem', color: '#64748b' }}>Winner: {selectedQuiz.winner_id || 'Not Declared'}</p>
@@ -1720,9 +1778,17 @@ const AdminDashboard = () => {
 
         {activeTab === 'Payments' && (
           <div style={{ background: 'white', borderRadius: '1.5rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>Pending Payment Requests</h3>
-              <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Verify manual transfers before approving</p>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>Pending Payment Requests</h3>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Verify manual transfers before approving</p>
+              </div>
+              <button 
+                onClick={fetchData}
+                style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Loader2 size={16} className={loading ? "animate-spin" : ""} /> Refresh
+              </button>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -1731,15 +1797,16 @@ const AdminDashboard = () => {
                   <th style={{ padding: '1.25rem' }}>Type</th>
                   <th style={{ padding: '1.25rem' }}>Amount</th>
                   <th style={{ padding: '1.25rem' }}>UPI ID</th>
+                  <th style={{ padding: '1.25rem' }}>Status</th>
                   <th style={{ padding: '1.25rem' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {pendingTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan="5" style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', fontWeight: 700 }}>
+                    <td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', fontWeight: 700 }}>
                       <CheckCircle2 size={48} style={{ marginBottom: '1rem', opacity: 0.3 }} />
-                      <p>All caught up! No pending requests.</p>
+                      <p>All caught up! No transactions found.</p>
                     </td>
                   </tr>
                 ) : (
@@ -1747,59 +1814,87 @@ const AdminDashboard = () => {
                     <tr key={tx.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '1.25rem' }}>
                         <p style={{ fontWeight: 800 }}>{tx.name || 'User'}</p>
-                        <p style={{ fontSize: '0.75rem', color: '#64748b' }}>{tx.mobile}</p>
+                        <p style={{ fontSize: '0.75rem', color: '#64748b' }}>{tx.mobile || 'N/A'}</p>
                       </td>
                       <td style={{ padding: '1.25rem' }}>
                         <span style={{ 
-                          padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 900,
-                          background: tx.category === 'deposit' ? '#eff6ff' : '#fff1f2',
-                          color: tx.category === 'deposit' ? '#3b82f6' : '#f43f5e'
+                          padding: '6px 12px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 900,
+                          background: tx.category === 'deposit' ? '#dcfce7' : '#fee2e2',
+                          color: tx.category === 'deposit' ? '#15803d' : '#b91c1c',
+                          display: 'inline-flex', alignItems: 'center', gap: '4px'
                         }}>
+                          {tx.category === 'deposit' ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                           {tx.category === 'deposit' ? 'DEPOSIT' : 'WITHDRAWAL'}
                         </span>
                       </td>
-                      <td style={{ padding: '1.25rem', fontWeight: 900, fontSize: '1.1rem' }}>
-                        â‚¹{Math.abs(tx.amount)}
+                      <td style={{ padding: '1.25rem', fontWeight: 900, fontSize: '1.2rem', color: tx.category === 'deposit' ? '#10b981' : '#f43f5e' }}>
+                        {tx.category === 'deposit' ? '+' : '-'}₹{Math.abs(tx.amount)}
                       </td>
                       <td style={{ padding: '1.25rem' }}>
                         <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontWeight: 800 }}>{tx.upi_id || 'N/A'}</code>
+                        {tx.qr_code && (
+                          <button 
+                            onClick={() => {
+                              const win = window.open("");
+                              win.document.write(`<img src="${tx.qr_code}" style="max-width:100%" />`);
+                            }}
+                            style={{ display: 'block', marginTop: '5px', fontSize: '0.65rem', color: '#3b82f6', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 800 }}
+                          >
+                            View QR 📸
+                          </button>
+                        )}
+                      </td>
+                      <td style={{ padding: '1.25rem' }}>
+                        <span style={{ 
+                          padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 900,
+                          background: tx.status === 'pending' ? '#fef3c7' : tx.status === 'success' ? '#dcfce7' : '#fee2e2',
+                          color: tx.status === 'pending' ? '#92400e' : tx.status === 'success' ? '#15803d' : '#b91c1c'
+                        }}>
+                          {tx.status.toUpperCase()}
+                        </span>
                       </td>
                       <td style={{ padding: '1.25rem' }}>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button 
-                            onClick={async () => {
-                              if (window.confirm(`Approve â‚¹${Math.abs(tx.amount)} ${tx.category}?`)) {
-                                const token = localStorage.getItem('play11_admin_session');
-                                const res = await fetch(`/api/admin/transactions/${tx.id}/approve`, {
-                                  method: 'POST',
-                                  headers: { 'Authorization': `Bearer ${token}` }
-                                });
-                                const data = await res.json();
-                                if (data.success) fetchData();
-                                else alert(data.error);
-                              }
-                            }}
-                            style={{ padding: '8px 16px', background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}
-                          >
-                            Approve
-                          </button>
-                          <button 
-                            onClick={async () => {
-                              if (window.confirm(`Reject this ${tx.category} request?`)) {
-                                const token = localStorage.getItem('play11_admin_session');
-                                const res = await fetch(`/api/admin/transactions/${tx.id}/reject`, {
-                                  method: 'POST',
-                                  headers: { 'Authorization': `Bearer ${token}` }
-                                });
-                                const data = await res.json();
-                                if (data.success) fetchData();
-                                else alert(data.error);
-                              }
-                            }}
-                            style={{ padding: '8px 16px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}
-                          >
-                            Reject
-                          </button>
+                          {tx.status === 'pending' ? (
+                            <>
+                              <button 
+                                onClick={async () => {
+                                  if (window.confirm(`Approve â‚¹${Math.abs(tx.amount)}?`)) {
+                                    const token = localStorage.getItem('play11_admin_session');
+                                    const res = await fetch(`/api/admin/transactions/${tx.id}/approve`, {
+                                      method: 'POST',
+                                      headers: { 'Authorization': `Bearer ${token}` }
+                                    });
+                                    const data = await res.json();
+                                    if (data.success) fetchData();
+                                    else alert(data.error);
+                                  }
+                                }}
+                                style={{ padding: '8px 12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 800, cursor: 'pointer', fontSize: '0.75rem' }}
+                              >
+                                Approve
+                              </button>
+                              <button 
+                                onClick={async () => {
+                                  if (window.confirm(`Reject â‚¹${Math.abs(tx.amount)}?`)) {
+                                    const token = localStorage.getItem('play11_admin_session');
+                                    const res = await fetch(`/api/admin/transactions/${tx.id}/reject`, {
+                                      method: 'POST',
+                                      headers: { 'Authorization': `Bearer ${token}` }
+                                    });
+                                    const data = await res.json();
+                                    if (data.success) fetchData();
+                                    else alert(data.error);
+                                  }
+                                }}
+                                style={{ padding: '8px 12px', background: '#f43f5e', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 800, cursor: 'pointer', fontSize: '0.75rem' }}
+                              >
+                                Reject
+                              </button>
+                            </>
+                          ) : (
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700 }}>Processed</span>
+                          )}
                         </div>
                       </td>
                     </tr>

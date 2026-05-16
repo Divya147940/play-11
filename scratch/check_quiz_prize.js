@@ -8,8 +8,8 @@ const pool = new Pool({
 
 async function check() {
   try {
-    const { rows } = await pool.query('SELECT id, title, status, open_at, close_at FROM quizzes ORDER BY open_at DESC LIMIT 5');
-    console.log('Recent Quizzes:');
+    const { rows } = await pool.query("SELECT id, title, prize_amount, winner_id, status FROM quizzes WHERE id = 'bcf1973d-1a70-4133-9613-3807e3f8371c'");
+    console.log('Quiz Details:');
     console.log(JSON.stringify(rows, null, 2));
     process.exit(0);
   } catch (err) {

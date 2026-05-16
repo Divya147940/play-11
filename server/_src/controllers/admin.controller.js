@@ -378,18 +378,22 @@ const updateQuiz = async (req, res) => {
   try {
     await db.query('BEGIN');
     
-    // 1. Update Quiz metadata
+    // 1. Reset all previous submissions so users can play the updated version
+    await db.query('DELETE FROM submissions WHERE quiz_id = $1', [id]);
+
+    // 2. Update Quiz metadata and Reset status to active
     await db.query(
       `UPDATE quizzes SET 
         zone_id = $1, category_id = $2, match_id = $3, title = $4, hindi_title = $5, 
         description = $6, hindi_description = $7, total_questions = $8, timer_minutes = $9, 
-        entry_amount = $10, prize_amount = $11, open_at = $12, close_at = $13, marks_per_q = $14, banner_url = $15
+        entry_amount = $10, prize_amount = $11, open_at = $12, close_at = $13, marks_per_q = $14, banner_url = $15,
+        status = 'active', winner_id = NULL
       WHERE id = $16`,
       [zone_id, category_id, match_id || null, title, hindiTitle || null, description, hindiDescription || null, total_questions, timer_minutes, entry_amount || 0, prize_amount || 0, open_at, close_at, marks_per_q || 2, banner_url || null, id]
     );
 
     if (questions && Array.isArray(questions)) {
-      // 2. Delete existing questions (options and correct answers will be deleted via CASCADE)
+      // 3. Delete existing questions (options and correct answers will be deleted via CASCADE)
       await db.query("DELETE FROM questions WHERE quiz_id = $1", [id]);
 
       // 3. Re-insert all questions/options (copied logic from createQuiz)
@@ -492,14 +496,19 @@ const getSubmissionReviewAdmin = async (req, res) => {
 };
 
 const getPendingTransactions = async (req, res) => {
+  console.log('[AdminAPI] getPendingTransactions called by:', req.user.userId);
   try {
     const { rows } = await db.query(`
-      SELECT t.*, u.name, u.mobile, u.email 
+      SELECT t.*, 
+             COALESCE(u.name, 'Admin/Guest') as name, 
+             COALESCE(u.mobile, 'N/A') as mobile
       FROM transactions t
-      JOIN users u ON t.user_id = u.id
+      LEFT JOIN users u ON t.user_id = u.id
       WHERE t.status = 'pending'
       ORDER BY t.created_at DESC
     `);
+    console.log('[AdminAPI] DEBUG - Raw Rows:', rows.length);
+    console.log('[AdminAPI] Found transactions count:', rows.length);
     res.json({ success: true, transactions: rows });
   } catch (error) {
     res.status(500).json({ error: error.message });

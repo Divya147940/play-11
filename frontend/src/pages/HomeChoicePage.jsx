@@ -230,50 +230,43 @@ const HomeChoicePage = () => {
         ) : selectedTab === 'All Rooms' ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }} className="mobile-grid-2">
             {quizRooms.map((room, idx) => (
-              <div key={room.id} className={`quiz-card-premium animate-slide-up stagger-${(idx % 4) + 1}`} style={{ padding: '0.75rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <div style={{ flex: 1, position: 'relative' }}>
-                    {/* Status Badge */}
-                    <div style={{ 
-                      position: 'absolute',
-                      top: '0',
-                      right: '0',
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
-                      gap: '0.3rem', 
-                      background: getLiveCount(room.id) > 0 ? '#fee2e2' : '#f1f5f9', 
-                      color: getLiveCount(room.id) > 0 ? '#ef4444' : '#64748b', 
-                      padding: '2px 8px', 
-                      borderRadius: '6px', 
-                      fontSize: '0.5rem', 
-                      fontWeight: 900, 
-                      textTransform: 'uppercase',
-                      zIndex: 1
-                    }}>
-                        <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: getLiveCount(room.id) > 0 ? '#ef4444' : '#94a3b8' }}></div>
-                        {getLiveCount(room.id) > 0 ? 'LIVE' : 'OFF'}
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
-                      <div className="quiz-icon-container" style={{ width: '48px', height: '48px', borderRadius: '12px', marginBottom: '0.75rem' }}>
-                        <img src={room.icon} alt={room.title} style={{ width: '60%' }} />
-                      </div>
-                      <h3 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.25rem', textAlign: 'center' }}>{room.title}</h3>
-                      <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#64748b', textAlign: 'center' }}>Prize <strong>{room.prize}</strong></div>
-                    </div>
+              <div key={room.id} className={`quiz-card-premium animate-slide-up stagger-${(idx % 4) + 1}`} 
+                style={{ 
+                  padding: '1.5rem', 
+                  background: 'white',
+                  borderRadius: '28px',
+                  border: '2px solid #f1f5f9',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s, border-color 0.2s',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                }}
+                onClick={() => navigate(room.path)}
+                onMouseOver={e => {
+                  e.currentTarget.style.transform = 'translateY(-5px)';
+                  e.currentTarget.style.borderColor = '#cbd5e1';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.borderColor = '#f1f5f9';
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', alignItems: 'center' }}>
+                  <div className="quiz-icon-container" style={{ width: '70px', height: '70px', borderRadius: '20px', marginBottom: '1.25rem', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }}>
+                    <img src={room.icon} alt={room.title} style={{ width: '60%' }} />
                   </div>
-
-                  <div style={{ marginTop: 'auto' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-                      <p style={{ fontSize: '0.45rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.1rem' }}>{getUpcomingTime(room.id) ? 'NEXT' : 'TIME'}</p>
-                      <p style={{ fontSize: '0.85rem', fontWeight: 900, color: '#4f46e5', fontFamily: 'monospace' }}>{getUpcomingTime(room.id) || room.time}</p>
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 950, color: '#0f172a', marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>{room.title}</h3>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', marginBottom: '1.5rem', lineHeight: '1.5', fontWeight: 500 }}>{room.desc}</p>
+                  
+                  <div style={{ marginTop: 'auto', width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '10px 16px', borderRadius: '16px', marginBottom: '1.25rem', border: '1px solid #f1f5f9' }}>
+                       <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#475569' }}>WIN UPTO {room.prize}</span>
+                       <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }}></div>
+                         {getLiveCount(room.id)} LIVE
+                       </span>
                     </div>
-
-                    <button 
-                      className={`quiz-join-btn ${room.btnColor}`} 
-                      onClick={() => navigate(room.path)}
-                    >
-                      Join
+                    <button className={`quiz-join-btn ${room.btnColor}`} style={{ width: '100%', padding: '1rem', borderRadius: '16px', fontWeight: 900, fontSize: '1rem' }}>
+                      Enter {room.title.split(' ')[0]} Room <ArrowRight size={18} style={{ marginLeft: '8px' }} />
                     </button>
                   </div>
                 </div>

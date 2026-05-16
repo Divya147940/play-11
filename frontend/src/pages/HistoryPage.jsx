@@ -260,16 +260,16 @@ const HistoryPage = () => {
                   </div>
                   
                   {item.winnerId ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                        <span style={{ fontSize: '0.6rem', fontWeight: 900, color: '#10b981', background: '#dcfce7', padding: '4px 8px', borderRadius: '6px' }}>RESULT DECLARED</span>
-                       {item.won !== '-' && (
+                       {item.winnerId === item.userId && (
                           <div style={{ 
                             background: 'linear-gradient(135deg, #10b981, #059669)', 
                             color: 'white', padding: '10px 18px', borderRadius: '16px',
                             display: 'flex', alignItems: 'center', gap: '0.5rem',
-                            fontWeight: 900, fontSize: '1.1rem', boxShadow: '0 8px 16px -4px rgba(16, 185, 129, 0.4)'
+                            fontWeight: 900, fontSize: '1.2rem', boxShadow: '0 8px 16px -4px rgba(16, 185, 129, 0.4)'
                           }}>
-                            <Trophy size={16} fill="currentColor" /> {item.won}
+                            <Trophy size={18} fill="currentColor" /> {item.won !== '-' ? item.won : '₹0'}
                           </div>
                        )}
                     </div>

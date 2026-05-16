@@ -1,15 +1,14 @@
-const { Pool } = require('pg');
 require('dotenv').config();
+const { Pool } = require('pg');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-async function check() {
+async function checkAll() {
   try {
-    const { rows } = await pool.query('SELECT id, title, status, open_at, close_at FROM quizzes ORDER BY open_at DESC LIMIT 5');
-    console.log('Recent Quizzes:');
+    const { rows } = await pool.query("SELECT * FROM transactions ORDER BY created_at DESC LIMIT 5");
     console.log(JSON.stringify(rows, null, 2));
     process.exit(0);
   } catch (err) {
@@ -17,4 +16,5 @@ async function check() {
     process.exit(1);
   }
 }
-check();
+
+checkAll();

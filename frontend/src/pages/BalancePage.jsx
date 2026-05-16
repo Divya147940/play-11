@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Wallet, Plus, ArrowUpRight, ArrowDownLeft, Landmark, History, X, CheckCircle2, ShieldCheck, Gift } from 'lucide-react';
+import { ArrowLeft, Wallet, Plus, ArrowUpRight, ArrowDownLeft, Landmark, History, X, CheckCircle2, ShieldCheck, Gift, Search, Trophy, Image as ImageIcon } from 'lucide-react';
 
 const BalancePage = () => {
   const navigate = useNavigate();
@@ -13,6 +13,9 @@ const BalancePage = () => {
   const [step, setStep] = useState('input'); // input, processing, success
   
   const [transactions, setTransactions] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
@@ -49,6 +52,7 @@ const BalancePage = () => {
           setTransactions(data.transactions.map(tx => ({
             ...tx,
             amount: (tx.type === 'credit' ? '+' : '') + tx.amount,
+            isWin: tx.category === 'win',
             date: new Date(tx.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
           })));
         }
@@ -57,16 +61,16 @@ const BalancePage = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleAction = async (type) => {
+  const handleAction = async (type, qrCode = null) => {
     if (!amount || isNaN(amount) || Number(amount) <= 0) {
       alert('Please enter a valid amount');
       return;
     }
-    if (type === 'withdraw' && !upiId.includes('@')) {
-      alert('Please enter a valid UPI ID');
+    if (type === 'withdraw' && !upiId.includes('@') && !qrCode) {
+      alert('Please enter a valid UPI ID or Upload QR Code');
       return;
     }
-
+    
     const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
     let token;
     try {
@@ -86,7 +90,7 @@ const BalancePage = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ amount: Number(amount), upiId })
+        body: JSON.stringify({ amount: Number(amount), upiId, qrCode })
       });
       
       const data = await res.json();
@@ -114,6 +118,7 @@ const BalancePage = () => {
     setAmount('');
     setUpiId('');
     setStep('input');
+    window.qrCodeData = null;
   };
 
   return (
@@ -217,20 +222,89 @@ const BalancePage = () => {
 
         {/* Transaction History */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e1b4b', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <History size={20} color="#7c3aed" /> Recent Activity
-            </h3>
-            <button onClick={() => navigate('/history')} style={{ background: 'none', border: 'none', color: '#0ea5e9', fontWeight: 700, cursor: 'pointer' }}>View All</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e1b4b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <History size={20} color="#7c3aed" /> Recent Activity
+              </h3>
+              <button onClick={() => navigate('/history')} style={{ background: 'none', border: 'none', color: '#0ea5e9', fontWeight: 700, cursor: 'pointer' }}>View All</button>
+            </div>
+            
+            {/* Search & Date Filter Bar */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ position: 'relative' }}>
+                <Search style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Search quiz name..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{ width: '100%', padding: '12px 12px 12px 45px', borderRadius: '14px', border: '1.5px solid #e2e8f0', background: 'white', fontSize: '0.9rem', fontWeight: 600, outline: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginLeft: '5px' }}>FROM DATE</label>
+                  <input 
+                    type="date" 
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: 'white', fontSize: '0.8rem', fontWeight: 700 }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginLeft: '5px' }}>TO DATE</label>
+                  <input 
+                    type="date" 
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', background: 'white', fontSize: '0.8rem', fontWeight: 700 }}
+                  />
+                </div>
+                <button 
+                  onClick={() => { setStartDate(''); setEndDate(''); setSearchTerm(''); }}
+                  style={{ alignSelf: 'flex-end', padding: '10px', borderRadius: '10px', background: '#f1f5f9', border: 'none', color: '#64748b', cursor: 'pointer' }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {transactions.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '24px', border: '1px solid #f1f5f9' }}>
-                <p style={{ color: '#94a3b8', fontWeight: 700 }}>No transactions yet. Start playing to see your history!</p>
-              </div>
-            ) : (
-              transactions.map(tx => (
+            {(() => {
+              const filtered = transactions.filter(tx => {
+                // Search filter
+                const matchesSearch = tx.title.toLowerCase().includes(searchTerm.toLowerCase());
+                
+                // Time filter
+                const txDate = new Date(tx.created_at);
+                txDate.setHours(0,0,0,0);
+                
+                let matchesTime = true;
+                if (startDate) {
+                  const start = new Date(startDate);
+                  start.setHours(0,0,0,0);
+                  if (txDate < start) matchesTime = false;
+                }
+                if (endDate) {
+                  const end = new Date(endDate);
+                  end.setHours(23,59,59,999);
+                  if (txDate > end) matchesTime = false;
+                }
+                
+                return matchesSearch && matchesTime;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div style={{ textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '24px', border: '1px solid #f1f5f9' }}>
+                    <p style={{ color: '#94a3b8', fontWeight: 700 }}>No transactions found for this period.</p>
+                  </div>
+                );
+              }
+
+              return filtered.map(tx => (
                 <div key={tx.id} style={{ 
                   background: 'white', padding: '1.25rem', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                 }}>
@@ -242,19 +316,55 @@ const BalancePage = () => {
                       {tx.type === 'credit' ? <ArrowDownLeft size={24} color="#10b981" /> : <ArrowUpRight size={24} color="#f43f5e" />}
                     </div>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <p style={{ fontWeight: 700, color: '#1e1b4b' }}>{tx.title}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <p 
+                          onClick={() => {
+                            if (tx.reference_id) {
+                              navigate(`/game-quiz-detail/${tx.reference_id}`);
+                            }
+                          }}
+                          style={{ 
+                            fontWeight: 800, 
+                            color: tx.reference_id ? '#3b82f6' : '#1e1b4b', 
+                            fontSize: '1rem',
+                            cursor: tx.reference_id ? 'pointer' : 'default',
+                            textDecoration: tx.reference_id ? 'underline' : 'none'
+                          }}
+                        >
+                          {tx.title}
+                        </p>
+                        {tx.isWin && (
+                          <span style={{ fontSize: '0.65rem', padding: '2px 10px', background: '#dcfce7', color: '#166534', borderRadius: '999px', fontWeight: 900, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Trophy size={10} /> WON
+                          </span>
+                        )}
                         {tx.status === 'pending' && (
                           <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: '#fffbeb', color: '#b45309', borderRadius: '999px', fontWeight: 800, textTransform: 'uppercase' }}>Pending</span>
                         )}
                       </div>
-                      <p style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 500 }}>{tx.date}</p>
+                      <p style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700, marginTop: '2px' }}>📅 {tx.date}</p>
                     </div>
                   </div>
-                  <p style={{ fontWeight: 800, fontSize: '1.1rem', color: tx.type === 'credit' ? '#10b981' : '#f43f5e' }}>{tx.amount}</p>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontWeight: 900, fontSize: '1.2rem', color: tx.type === 'credit' ? '#10b981' : '#f43f5e' }}>{tx.amount}</p>
+                    {tx.isWin && (
+                      <button 
+                        onClick={() => {
+                          if (tx.reference_id) {
+                            navigate(`/game-quiz-detail/${tx.reference_id}`);
+                          } else {
+                            navigate('/home-choice');
+                          }
+                        }}
+                        style={{ background: '#f0f9ff', border: 'none', color: '#0ea5e9', fontSize: '0.7rem', fontWeight: 900, cursor: 'pointer', padding: '4px 10px', borderRadius: '8px', marginTop: '6px' }}
+                      >
+                        REPLAY →
+                      </button>
+                    )}
+                  </div>
                 </div>
-              ))
-            )}
+              ));
+            })()}
           </div>
         </div>
 
@@ -285,15 +395,56 @@ const BalancePage = () => {
                     </div>
 
                     {showWithdrawModal && (
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>UPI ID</label>
-                        <input 
-                          type="text" 
-                          value={upiId} 
-                          onChange={(e) => setUpiId(e.target.value)}
-                          placeholder="yourname@upi"
-                          style={{ width: '100%', padding: '1.25rem', borderRadius: '16px', border: '1.5px solid #e2e8f0', fontSize: '1.1rem', fontWeight: 700, outline: 'none', background: '#f8fafc' }}
-                        />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>UPI ID</label>
+                          <input 
+                            type="text" 
+                            value={upiId} 
+                            onChange={(e) => setUpiId(e.target.value)}
+                            placeholder="yourname@upi"
+                            style={{ width: '100%', padding: '1.25rem', borderRadius: '16px', border: '1.5px solid #e2e8f0', fontSize: '1.1rem', fontWeight: 700, outline: 'none', background: '#f8fafc' }}
+                          />
+                        </div>
+
+                        <div style={{ textAlign: 'center' }}>
+                          <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', marginBottom: '1rem', textTransform: 'uppercase' }}>OR UPLOAD QR SCANNER</p>
+                          <input 
+                            type="file" 
+                            id="qr-upload" 
+                            accept="image/*" 
+                            hidden 
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  // This is the base64 string
+                                  const base64String = reader.result;
+                                  // We can store this in a temporary state or just alert
+                                  window.qrCodeData = base64String;
+                                  alert('QR Code uploaded successfully!');
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                          <label 
+                            htmlFor="qr-upload"
+                            style={{ 
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', 
+                              padding: '1.5rem', border: '2px dashed #cbd5e1', borderRadius: '20px', cursor: 'pointer',
+                              background: '#f8fafc', transition: 'all 0.2s'
+                            }}
+                          >
+                            <ImageIcon size={32} color="#64748b" />
+                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>Click to Upload QR Image</span>
+                          </label>
+                          {window.qrCodeData && (
+                            <p style={{ marginTop: '10px', fontSize: '0.7rem', color: '#10b981', fontWeight: 800 }}>âœ… QR Image Attached</p>
+                          )}
+                        </div>
+
                         <p style={{ marginTop: '8px', fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '5px' }}>
                           <ShieldCheck size={14} color="#10b981" /> Verified withdrawal destination
                         </p>
@@ -302,12 +453,15 @@ const BalancePage = () => {
 
                     <div style={{ display: 'flex', gap: '10px' }}>
                       {[50, 100, 500, 1000].map(v => (
-                        <button key={v} onClick={() => setAmount(v)} style={{ flex: 1, padding: '8px', borderRadius: '10px', background: '#f1f5f9', border: 'none', fontWeight: 800, color: '#1e1b4b', cursor: 'pointer', fontSize: '0.8rem' }}>+₹{v}</button>
+                        <button key={v} onClick={() => setAmount(v)} style={{ flex: 1, padding: '8px', borderRadius: '10px', background: '#f1f5f9', border: 'none', fontWeight: 800, color: '#1e1b4b', cursor: 'pointer', fontSize: '0.8rem' }}>+â‚¹{v}</button>
                       ))}
                     </div>
 
                     <button 
-                      onClick={() => handleAction(showAddModal ? 'add' : 'withdraw')}
+                      onClick={() => {
+                        const qrCode = window.qrCodeData;
+                        handleAction(showAddModal ? 'add' : 'withdraw', qrCode);
+                      }}
                       style={{ width: '100%', padding: '1.25rem', borderRadius: '18px', background: '#0d1f3c', color: 'white', border: 'none', fontWeight: 900, fontSize: '1.1rem', cursor: 'pointer', marginTop: '1rem' }}
                     >
                       {showAddModal ? 'Proceed to Pay' : 'Verify & Withdraw'}
@@ -326,8 +480,12 @@ const BalancePage = () => {
                 {step === 'success' && (
                   <div style={{ textAlign: 'center', padding: '1rem 0' }}>
                     <CheckCircle2 size={64} color="#10b981" style={{ margin: '0 auto 1.5rem' }} />
-                    <h4 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1e1b4b' }}>Transaction Successful!</h4>
-                    <p style={{ color: '#64748b', marginTop: '12px', fontSize: '1rem', fontWeight: 600 }}>₹{amount} has been {showAddModal ? 'added to' : 'debited from'} your wallet.</p>
+                    <h4 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1e1b4b' }}>{showAddModal ? 'Transaction Successful!' : 'Withdrawal Request Sent!'}</h4>
+                    <p style={{ color: '#64748b', marginTop: '12px', fontSize: '1rem', fontWeight: 600 }}>
+                      {showAddModal 
+                        ? `₹${amount} has been added to your wallet.` 
+                        : `₹${amount} withdrawal request is pending admin approval.`}
+                    </p>
                     <button 
                       onClick={resetModal}
                       style={{ width: '100%', padding: '1.25rem', borderRadius: '18px', background: '#1e1b4b', color: 'white', border: 'none', fontWeight: 900, fontSize: '1.1rem', cursor: 'pointer', marginTop: '2rem' }}
