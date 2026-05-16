@@ -24,5 +24,15 @@ router.put('/quizzes/:id', adminController.updateQuiz);
 router.post('/matches', adminController.addMatch);
 router.patch('/matches/:id', adminController.updateMatch);
 router.delete('/matches/:id', adminController.deleteMatch);
+router.get('/transactions/pending', adminController.getPendingTransactions);
+router.post('/transactions/:id/approve', adminController.approveTransaction);
+router.post('/transactions/:id/reject', adminController.rejectTransaction);
+
+// Voucher management
+router.get('/vouchers', adminController.getVouchersAdmin);
+router.post('/vouchers', adminController.createVoucherAdmin);
+router.delete('/vouchers/:id', adminController.deleteVoucherAdmin);
+router.patch('/vouchers/:id/status', adminController.toggleVoucherStatusAdmin);
 
 module.exports = router;
+

@@ -20,7 +20,11 @@ const getDashboardStats = async (req, res) => {
     const submissionCount = parseInt(submissionsRes.rows[0].count);
 
     const { rows: recentActivity } = await db.query(`
-      SELECT s.id, u.name, u.mobile, u.status as user_status, s.submitted_at, s.total_score 
+      SELECT s.id, 
+             COALESCE(u.name, 'Guest (' || LEFT(s.user_id, 8) || ')') as name, 
+             COALESCE(u.mobile, 'GUEST') as mobile, 
+             COALESCE(u.status, 'active') as user_status, 
+             s.submitted_at, s.total_score 
       FROM submissions s 
       LEFT JOIN users u ON s.user_id = u.id 
       ORDER BY s.submitted_at DESC LIMIT 5
@@ -183,9 +187,13 @@ const getQuizParticipants = async (req, res) => {
   const { id } = req.params;
   try {
     const { rows } = await db.query(`
-      SELECT s.*, u.name, u.mobile, u.status as user_status, q.total_questions
+      SELECT s.*, 
+             COALESCE(u.name, 'Guest (' || LEFT(s.user_id, 8) || ')') as name, 
+             COALESCE(u.mobile, 'GUEST') as mobile, 
+             COALESCE(u.status, 'active') as user_status, 
+             q.total_questions
       FROM submissions s
-      JOIN users u ON s.user_id = u.id
+      LEFT JOIN users u ON s.user_id = u.id
       JOIN quizzes q ON s.quiz_id = q.id
       WHERE s.quiz_id = $1
       ORDER BY s.total_score DESC, s.submitted_at ASC
@@ -219,6 +227,13 @@ const declareWinner = async (req, res) => {
     if (prizeAmount > 0) {
       await db.query("UPDATE users SET coins = coins + $1 WHERE id = $2", [prizeAmount, winner_id]);
       await db.query("UPDATE submissions SET won_amount = $1 WHERE quiz_id = $2 AND user_id = $3", [prizeAmount, id, winner_id]);
+      
+      // 4. Record Transaction
+      const txId = `tx-${uuidv4().substring(0, 8)}`;
+      await db.query(
+        'INSERT INTO transactions (id, user_id, title, amount, type, category, status, reference_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+        [txId, winner_id, `Quiz Won: ${(quizRows[0]?.title || 'Contest')}`, prizeAmount, 'credit', 'win', 'success', id]
+      );
     }
 
     await db.query('COMMIT');
@@ -356,25 +371,29 @@ const updateQuiz = async (req, res) => {
   const { id } = req.params;
   const { 
     zone_id, category_id, match_id, title, hindiTitle, description, hindiDescription, 
-    total_questions, timer_minutes, entry_amount,
+    total_questions, timer_minutes, entry_amount, prize_amount,
     open_at, close_at, marks_per_q, banner_url, questions 
   } = req.body;
   
   try {
     await db.query('BEGIN');
     
-    // 1. Update Quiz metadata
+    // 1. Reset all previous submissions so users can play the updated version
+    await db.query('DELETE FROM submissions WHERE quiz_id = $1', [id]);
+
+    // 2. Update Quiz metadata and Reset status to active
     await db.query(
       `UPDATE quizzes SET 
         zone_id = $1, category_id = $2, match_id = $3, title = $4, hindi_title = $5, 
         description = $6, hindi_description = $7, total_questions = $8, timer_minutes = $9, 
-        entry_amount = $10, prize_amount = $11, open_at = $12, close_at = $13, marks_per_q = $14, banner_url = $15
+        entry_amount = $10, prize_amount = $11, open_at = $12, close_at = $13, marks_per_q = $14, banner_url = $15,
+        status = 'active', winner_id = NULL
       WHERE id = $16`,
       [zone_id, category_id, match_id || null, title, hindiTitle || null, description, hindiDescription || null, total_questions, timer_minutes, entry_amount || 0, prize_amount || 0, open_at, close_at, marks_per_q || 2, banner_url || null, id]
     );
 
     if (questions && Array.isArray(questions)) {
-      // 2. Delete existing questions (options and correct answers will be deleted via CASCADE)
+      // 3. Delete existing questions (options and correct answers will be deleted via CASCADE)
       await db.query("DELETE FROM questions WHERE quiz_id = $1", [id]);
 
       // 3. Re-insert all questions/options (copied logic from createQuiz)
@@ -476,6 +495,140 @@ const getSubmissionReviewAdmin = async (req, res) => {
   }
 };
 
+const getPendingTransactions = async (req, res) => {
+  console.log('[AdminAPI] getPendingTransactions called by:', req.user.userId);
+  try {
+    const { rows } = await db.query(`
+      SELECT t.*, 
+             COALESCE(u.name, 'Admin/Guest') as name, 
+             COALESCE(u.mobile, 'N/A') as mobile,
+             (
+               SELECT q.title 
+               FROM transactions t2 
+               JOIN quizzes q ON t2.reference_id = q.id::text
+               WHERE t2.user_id = t.user_id 
+                 AND t2.category = 'winning' 
+               ORDER BY t2.created_at DESC 
+               LIMIT 1
+             ) as last_won_quiz
+      FROM transactions t
+      LEFT JOIN users u ON t.user_id = u.id
+      WHERE t.status = 'pending'
+      ORDER BY t.created_at DESC
+    `);
+    console.log('[AdminAPI] DEBUG - Raw Rows:', rows.length);
+    console.log('[AdminAPI] Found transactions count:', rows.length);
+    res.json({ success: true, transactions: rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const approveTransaction = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('BEGIN');
+    
+    // 1. Get transaction details
+    const { rows } = await db.query("SELECT * FROM transactions WHERE id = $1 AND status = 'pending'", [id]);
+    if (rows.length === 0) {
+      await db.query('ROLLBACK');
+      return res.status(404).json({ error: 'Pending transaction not found' });
+    }
+    const tx = rows[0];
+
+    // 2. If it's a deposit, add coins to user balance now
+    if (tx.category === 'deposit') {
+      await db.query("UPDATE users SET coins = coins + $1 WHERE id = $2", [tx.amount, tx.user_id]);
+    }
+    // Note: for withdrawal, coins were already deducted in wallet.controller.js
+
+    // 3. Update status to success
+    await db.query("UPDATE transactions SET status = 'success' WHERE id = $1", [id]);
+
+    await db.query('COMMIT');
+    res.json({ success: true, message: 'Transaction approved successfully' });
+  } catch (error) {
+    await db.query('ROLLBACK');
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const rejectTransaction = async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  try {
+    await db.query('BEGIN');
+
+    // 1. Get transaction details
+    const { rows } = await db.query("SELECT * FROM transactions WHERE id = $1 AND status = 'pending'", [id]);
+    if (rows.length === 0) {
+      await db.query('ROLLBACK');
+      return res.status(404).json({ error: 'Pending transaction not found' });
+    }
+    const tx = rows[0];
+
+    // 2. If it's a withdrawal, REFUND the coins
+    if (tx.category === 'withdraw') {
+      // amount is negative in tx table for withdrawal, so we SUBTRACT it to add back
+      await db.query("UPDATE users SET coins = coins - $1 WHERE id = $2", [tx.amount, tx.user_id]);
+    }
+
+    // 3. Update status to failed
+    await db.query("UPDATE transactions SET status = 'failed' WHERE id = $1", [id]);
+
+    await db.query('COMMIT');
+    res.json({ success: true, message: 'Transaction rejected and funds refunded (if applicable)' });
+  } catch (error) {
+    await db.query('ROLLBACK');
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getVouchersAdmin = async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM vouchers ORDER BY status ASC, title ASC');
+    res.json({ success: true, vouchers: rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const createVoucherAdmin = async (req, res) => {
+  const { title, code, discount_text, amount, type, color, expiry_days } = req.body;
+  const id = uuidv4();
+  try {
+    await db.query(
+      "INSERT INTO vouchers (id, title, code, discount_text, amount, type, color, expiry_days, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+      [id, title, code, discount_text, amount || 0, type, color || '#7c3aed', expiry_days || 30, 'active']
+    );
+    res.json({ success: true, id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const deleteVoucherAdmin = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query("DELETE FROM vouchers WHERE id = $1", [id]);
+    res.json({ success: true, message: 'Voucher deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const toggleVoucherStatusAdmin = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    await db.query("UPDATE vouchers SET status = $1 WHERE id = $2", [status, id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getUsers,
@@ -492,5 +645,12 @@ module.exports = {
   deleteMatch,
   updateQuiz,
   getAdminQuizQuestions,
+  getPendingTransactions,
+  approveTransaction,
+  rejectTransaction,
+  getVouchersAdmin,
+  createVoucherAdmin,
+  deleteVoucherAdmin,
+  toggleVoucherStatusAdmin,
   login
 };

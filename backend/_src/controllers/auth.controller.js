@@ -97,7 +97,62 @@ const verifyOtp = async (req, res) => {
     if (!user) {
       console.log(`👤 Creating new user for mobile: ${verifiedMobile}`);
       const userId = uuidv4();
-      await db.query('INSERT INTO users (id, mobile) VALUES ($1, $2)', [userId, verifiedMobile]);
+      const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      // Get Welcome Bonus and Referral settings
+      const { rows: settingRows } = await db.query(
+        "SELECT key, value FROM settings WHERE key IN ('welcome_bonus', 'referral_referrer_bonus', 'referral_referee_bonus')"
+      );
+      const settings = Object.fromEntries(settingRows.map(r => [r.key, parseFloat(r.value)]));
+      
+      const welcomeBonus = settings['welcome_bonus'] || 0;
+      const referralCodeInput = req.body.referral_code;
+      
+      let referredBy = null;
+      let refereeBonus = 0;
+
+      // Check if referred by someone
+      if (referralCodeInput) {
+        const { rows: referrerRows } = await db.query("SELECT id FROM users WHERE referral_code = $1", [referralCodeInput.toUpperCase()]);
+        if (referrerRows.length > 0) {
+          referredBy = referrerRows[0].id;
+          refereeBonus = settings['referral_referee_bonus'] || 0;
+        }
+      }
+
+      const totalInitialBonus = welcomeBonus + refereeBonus;
+
+      await db.query(
+        'INSERT INTO users (id, mobile, referral_code, referred_by, bonus) VALUES ($1, $2, $3, $4, $5)', 
+        [userId, verifiedMobile, referralCode, referredBy, totalInitialBonus]
+      );
+
+      // Record Transactions for Bonus
+      if (welcomeBonus > 0) {
+        await db.query(
+          'INSERT INTO transactions (id, user_id, title, amount, type, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [uuidv4(), userId, 'Welcome Bonus', welcomeBonus, 'credit', 'bonus', 'success']
+        );
+      }
+      if (refereeBonus > 0) {
+        await db.query(
+          'INSERT INTO transactions (id, user_id, title, amount, type, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [uuidv4(), userId, 'Referral Bonus (Joined)', refereeBonus, 'credit', 'bonus', 'success']
+        );
+      }
+
+      // Give bonus to Referrer
+      if (referredBy) {
+        const referrerBonus = settings['referral_referrer_bonus'] || 0;
+        if (referrerBonus > 0) {
+          await db.query('UPDATE users SET bonus = bonus + $1 WHERE id = $2', [referrerBonus, referredBy]);
+          await db.query(
+            'INSERT INTO transactions (id, user_id, title, amount, type, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [uuidv4(), referredBy, 'Referral Bonus (Friend Joined)', referrerBonus, 'credit', 'bonus', 'success']
+          );
+        }
+      }
+
       const { rows: newUserRows } = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
       user = newUserRows[0];
       isNewUser = true;
@@ -239,9 +294,9 @@ const getSubmissionReview = async (req, res) => {
 const getBalance = async (req, res) => {
   const userId = req.user.userId;
   try {
-    const { rows } = await db.query('SELECT coins, points FROM users WHERE id = $1', [userId]);
+    const { rows } = await db.query('SELECT coins, points, bonus FROM users WHERE id = $1', [userId]);
     if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    res.json({ success: true, balance: { coins: rows[0].coins || 0, points: rows[0].points || 0, bonus: 0 } });
+    res.json({ success: true, balance: { coins: rows[0].coins || 0, points: rows[0].points || 0, bonus: rows[0].bonus || 0 } });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

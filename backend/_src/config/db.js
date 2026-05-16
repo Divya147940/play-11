@@ -4,7 +4,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
-  connectionTimeoutMillis: 10000, // How long to wait for a connection before timing out
+  connectionTimeoutMillis: 15000, // Increased to 15s to handle Neon cold starts
   ssl: {
     rejectUnauthorized: false // Required for Neon
   }
@@ -33,16 +33,7 @@ const initDB = async () => {
       );
     `);
 
-    // Ensure migrations always run to catch schema updates (ALTER TABLE IF NOT EXISTS is safe)
-    seedAndMigrate().catch(err => console.error('Background DB Error:', err));
-
-    if (checkTable.rows[0].exists) {
-      console.log('✅ Database already initialized, migration check started in background.');
-      global.dbInitialized = true;
-      return;
-    }
-
-    console.log('🔄 Initializing database schema (First time setup)...');
+    console.log('🔄 Ensuring database schema is up to date...');
     
     // Run essential table creations in a single batch
     await pool.query(`
@@ -182,6 +173,7 @@ const initDB = async () => {
         category TEXT NOT NULL, -- 'deposit', 'withdraw', 'win', 'entry_fee', 'bonus'
         status TEXT DEFAULT 'success', -- 'success', 'pending', 'failed'
         upi_id TEXT,
+        qr_code TEXT,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -215,14 +207,25 @@ const initDB = async () => {
       );
 
       -- Performance Indexes
+      CREATE INDEX IF NOT EXISTS idx_quizzes_category ON quizzes(category_id);
+      CREATE INDEX IF NOT EXISTS idx_quizzes_zone ON quizzes(zone_id);
+      CREATE INDEX IF NOT EXISTS idx_quizzes_match ON quizzes(match_id);
+      CREATE INDEX IF NOT EXISTS idx_questions_quiz ON questions(quiz_id);
+      CREATE INDEX IF NOT EXISTS idx_submissions_user ON submissions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_submissions_quiz ON submissions(quiz_id);
+      CREATE INDEX IF NOT EXISTS idx_otp_requests_mobile ON otp_requests(mobile);
+      CREATE INDEX IF NOT EXISTS idx_sub_answers_sub ON submission_answers(submission_id);
       CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
       CREATE INDEX IF NOT EXISTS idx_user_vouchers_user ON user_vouchers(user_id);
       CREATE INDEX IF NOT EXISTS idx_vouchers_code ON vouchers(code);
       CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key);
     `);
     
+    // 2. Run migrations for existing tables and seeds
+    await seedAndMigrate();
+    
     global.dbInitialized = true;
-    console.log('✅ PostgreSQL (Neon) schema initialized.');
+    console.log('✅ PostgreSQL (Neon) schema initialized and migrated.');
   } catch (error) {
     console.error('❌ CRITICAL: Error initializing essential database tables:', error);
   }
@@ -234,6 +237,7 @@ const seedAndMigrate = async () => {
     await pool.query(`
         ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus NUMERIC DEFAULT 0;
         ALTER TABLE transactions ADD COLUMN IF NOT EXISTS upi_id TEXT;
+        ALTER TABLE transactions ADD COLUMN IF NOT EXISTS qr_code TEXT;
         ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS amount NUMERIC DEFAULT 0;
         ALTER TABLE user_vouchers ADD COLUMN IF NOT EXISTS redeemed_at TIMESTAMPTZ;
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS marks_per_q INTEGER DEFAULT 2;
@@ -253,6 +257,7 @@ const seedAndMigrate = async () => {
         ALTER TABLE matches ADD COLUMN IF NOT EXISTS hindi_venue TEXT;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'completed';
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS total_score NUMERIC DEFAULT 0;
+        ALTER TABLE submissions ALTER COLUMN total_score TYPE NUMERIC USING total_score::NUMERIC;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS correct_count INTEGER DEFAULT 0;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS wrong_count INTEGER DEFAULT 0;
         ALTER TABLE submissions ADD COLUMN IF NOT EXISTS time_taken TEXT;
@@ -281,16 +286,16 @@ const seedAndMigrate = async () => {
       console.log('Database seeded with initial data.');
     }
 
-    const { rows: voucherRows } = await pool.query('SELECT COUNT(*) as count FROM vouchers');
-    if (parseInt(voucherRows[0].count) === 0) {
-      await pool.query(`
-        INSERT INTO vouchers (id, title, code, discount_text, amount, type, color) VALUES 
-        ('v-1', 'Welcome Bonus', 'WELCOME100', '₹100 Bonus', 100, 'bonus', '#7c3aed'),
-        ('v-2', 'First Quiz Free', 'FREEARENA', '100% OFF', 0, 'free_entry', '#0ea5e9'),
-        ('v-3', 'Mega Contest Pass', 'IPL2024', '₹50 Discount', 50, 'discount', '#f59e0b');
-      `);
-      console.log('Default vouchers seeded.');
-    }
+    // Seed real functional vouchers
+    await pool.query(`
+      INSERT INTO vouchers (id, title, code, discount_text, amount, type, color) VALUES 
+      ('v-1', 'Welcome Bonus', 'WELCOME100', '₹100 Bonus', 100, 'bonus', '#7c3aed'),
+      ('v-2', 'Cash Reward', 'FREE100', '₹100 Real Cash', 100, 'cash', '#10b981'),
+      ('v-3', 'Bonus Pack', 'BONUS200', '₹200 Bonus Cash', 200, 'bonus', '#f59e0b'),
+      ('v-4', 'Match Pass', 'IPL2024', '₹50 Discount', 50, 'cash', '#0ea5e9')
+      ON CONFLICT (code) DO NOTHING;
+    `);
+    console.log('Real functional vouchers verified/seeded.');
 
     const { rows: settingsRows } = await pool.query('SELECT COUNT(*) as count FROM settings');
     if (parseInt(settingsRows[0].count) === 0) {
