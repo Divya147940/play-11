@@ -501,7 +501,16 @@ const getPendingTransactions = async (req, res) => {
     const { rows } = await db.query(`
       SELECT t.*, 
              COALESCE(u.name, 'Admin/Guest') as name, 
-             COALESCE(u.mobile, 'N/A') as mobile
+             COALESCE(u.mobile, 'N/A') as mobile,
+             (
+               SELECT q.title 
+               FROM transactions t2 
+               JOIN quizzes q ON t2.reference_id = q.id::text
+               WHERE t2.user_id = t.user_id 
+                 AND t2.category = 'winning' 
+               ORDER BY t2.created_at DESC 
+               LIMIT 1
+             ) as last_won_quiz
       FROM transactions t
       LEFT JOIN users u ON t.user_id = u.id
       WHERE t.status = 'pending'

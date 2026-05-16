@@ -1815,6 +1815,11 @@ const AdminDashboard = () => {
                       <td style={{ padding: '1.25rem' }}>
                         <p style={{ fontWeight: 800 }}>{tx.name || 'User'}</p>
                         <p style={{ fontSize: '0.75rem', color: '#64748b' }}>{tx.mobile || 'N/A'}</p>
+                        {tx.last_won_quiz && (
+                          <div style={{ marginTop: '4px', fontSize: '0.7rem', background: '#f0f9ff', color: '#0369a1', padding: '2px 6px', borderRadius: '4px', display: 'inline-block', fontWeight: 700 }}>
+                            🏆 Won: {tx.last_won_quiz}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '1.25rem' }}>
                         <span style={{ 
