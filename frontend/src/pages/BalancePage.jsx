@@ -453,7 +453,7 @@ const BalancePage = () => {
 
                     <div style={{ display: 'flex', gap: '10px' }}>
                       {[50, 100, 500, 1000].map(v => (
-                        <button key={v} onClick={() => setAmount(v)} style={{ flex: 1, padding: '8px', borderRadius: '10px', background: '#f1f5f9', border: 'none', fontWeight: 800, color: '#1e1b4b', cursor: 'pointer', fontSize: '0.8rem' }}>+â‚¹{v}</button>
+                        <button key={v} onClick={() => setAmount(v)} style={{ flex: 1, padding: '8px', borderRadius: '10px', background: '#f1f5f9', border: 'none', fontWeight: 800, color: '#1e1b4b', cursor: 'pointer', fontSize: '0.8rem' }}>+₹{v}</button>
                       ))}
                     </div>
 

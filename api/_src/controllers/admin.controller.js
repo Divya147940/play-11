@@ -595,12 +595,12 @@ const getVouchersAdmin = async (req, res) => {
 };
 
 const createVoucherAdmin = async (req, res) => {
-  const { title, code, discount_text, amount, type, color, expiry_days } = req.body;
+  const { title, code, discount_text, amount, type, color, expiry_days, expires_at } = req.body;
   const id = uuidv4();
   try {
     await db.query(
-      "INSERT INTO vouchers (id, title, code, discount_text, amount, type, color, expiry_days, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-      [id, title, code, discount_text, amount || 0, type, color || '#7c3aed', expiry_days || 30, 'active']
+      "INSERT INTO vouchers (id, title, code, discount_text, amount, type, color, expiry_days, status, expires_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+      [id, title, code, discount_text, amount || 0, type, color || '#7c3aed', expiry_days || 30, 'active', expires_at || null]
     );
     res.json({ success: true, id });
   } catch (error) {
