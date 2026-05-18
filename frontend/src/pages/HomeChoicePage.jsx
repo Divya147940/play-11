@@ -1,14 +1,8 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, BookOpen, Trophy, Clapperboard, Newspaper } from 'lucide-react';
 import UpcomingQuizzes from '../components/UpcomingQuizzes';
 import { quizService, settingsService } from '../services/api';
-
-// Import Assets
-import studyIcon from '../assets/study-icon.png';
-import sportsIcon from '../assets/sports-icon.png';
-import movieIcon from '../assets/movie-icon.png';
-import newsIcon from '../assets/news-icon.png';
 
 const HomeChoicePage = () => {
   const navigate = useNavigate();
@@ -20,7 +14,9 @@ const HomeChoicePage = () => {
       id: 'study-zone',
       title: 'Study Zone',
       desc: 'SSC, GK, reasoning, news and exam-style questions for serious aspirants.',
-      icon: studyIcon,
+      icon: BookOpen,
+      iconBg: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+      iconShadow: 'rgba(59, 130, 246, 0.3)',
       prize: '₹500',
       entry: '₹10',
       players: '154',
@@ -32,7 +28,9 @@ const HomeChoicePage = () => {
       id: 'sport-zone',
       title: 'Sport Zone',
       desc: 'Cricket, IPL, match awareness and sports knowledge battle.',
-      icon: sportsIcon,
+      icon: Trophy,
+      iconBg: 'linear-gradient(135deg, #10b981, #047857)',
+      iconShadow: 'rgba(16, 185, 129, 0.3)',
       prize: '₹500',
       entry: '₹10',
       players: '255',
@@ -44,7 +42,9 @@ const HomeChoicePage = () => {
       id: 'movie-zone',
       title: 'Movie Quiz',
       desc: 'Bollywood, Hollywood, actors, songs, dialogues and cinema trivia.',
-      icon: movieIcon,
+      icon: Clapperboard,
+      iconBg: 'linear-gradient(135deg, #f97316, #c2410c)',
+      iconShadow: 'rgba(249, 115, 22, 0.3)',
       prize: '₹500',
       entry: '₹10',
       players: '172',
@@ -56,7 +56,9 @@ const HomeChoicePage = () => {
       id: 'news-zone',
       title: 'Daily News Quiz',
       desc: 'News, current affairs, India, world affairs and daily awareness.',
-      icon: newsIcon,
+      icon: Newspaper,
+      iconBg: 'linear-gradient(135deg, #06b6d4, #0891b2)',
+      iconShadow: 'rgba(6, 182, 212, 0.3)',
       prize: '₹500',
       entry: '₹10',
       players: '188',
@@ -243,7 +245,21 @@ const HomeChoicePage = () => {
                 onClick={() => navigate(room.path)}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <img src={room.icon} alt={room.title} style={{ width: '48px', height: '48px', marginBottom: '10px', objectFit: 'contain' }} />
+                  <div style={{ 
+                    width: '60px', 
+                    height: '60px', 
+                    borderRadius: '18px', 
+                    background: room.iconBg, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    marginBottom: '14px',
+                    boxShadow: `0 8px 24px ${room.iconShadow}`,
+                    color: 'white',
+                    transition: 'transform 0.3s ease'
+                  }} className="room-icon-wrapper">
+                    <room.icon size={28} strokeWidth={2.2} />
+                  </div>
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.6rem', fontWeight: 700, color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase' }}>
                        <span>WIN UPTO {room.prize}</span>
