@@ -2,6 +2,70 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Ticket, Gift, Clock, CheckCircle2, Copy, Search, X, Sparkles, AlertCircle } from 'lucide-react';
 
+const VoucherTimer = ({ expiryDays, expiresAt, status }) => {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    if (status === 'used') return;
+    if (status === 'expired') {
+      setTimeLeft('Expired');
+      return;
+    }
+    
+    const calculateTime = () => {
+      if (expiresAt) {
+        const diff = new Date(expiresAt) - new Date();
+        if (diff <= 0) {
+          return 'Expired';
+        }
+        
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / 1000 / 60) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+        
+        if (days > 0) {
+          return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+        return `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+      } else {
+        return `Expires in ${expiryDays} days`;
+      }
+    };
+
+    setTimeLeft(calculateTime());
+    
+    if (!expiresAt) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTime());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [expiresAt, expiryDays, status]);
+
+  if (status === 'used') return null;
+
+  const isLiveTimer = !!expiresAt && timeLeft !== 'Expired';
+
+  return (
+    <span style={{ 
+      fontSize: '0.75rem', 
+      fontWeight: 800, 
+      color: timeLeft === 'Expired' ? '#f43f5e' : (isLiveTimer ? '#db2777' : '#94a3b8'), 
+      background: timeLeft === 'Expired' ? '#fff1f2' : (isLiveTimer ? '#fdf2f8' : 'transparent'),
+      padding: isLiveTimer || timeLeft === 'Expired' ? '4px 10px' : '0',
+      borderRadius: '8px',
+      fontFamily: isLiveTimer ? 'monospace' : 'inherit',
+      letterSpacing: isLiveTimer ? '0.5px' : 'normal',
+      display: 'inline-flex',
+      alignItems: 'center'
+    }}>
+      {isLiveTimer ? `Ends in ${timeLeft}` : timeLeft}
+    </span>
+  );
+};
+
 const VouchersPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -12,13 +76,14 @@ const VouchersPage = () => {
 
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterDate, setFilterDate] = useState('');
 
   useEffect(() => {
     fetchVouchers();
   }, []);
 
   const fetchVouchers = async () => {
-    const sessionRaw = localStorage.getItem('play11_session');
+    const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
     if (!sessionRaw) {
       setLoading(false);
       return;
@@ -38,12 +103,25 @@ const VouchersPage = () => {
       });
       const data = await res.json();
       if (data.success) {
-        setVouchers(data.vouchers.map(v => ({
-          ...v,
-          expiry: v.user_status === 'expired' ? 'Expired' : `Expires in ${v.expiry_days} days`,
-          status: v.user_status || 'active',
-          discount: v.discount_text
-        })));
+        setVouchers(data.vouchers.map(v => {
+          const isExpired = v.user_status === 'expired' || (v.expires_at && new Date(v.expires_at) < new Date());
+          
+          let displayDiscount = v.discount_text;
+          if (v.type === 'cash') {
+            displayDiscount = `₹${v.discount_text} Real Cash`;
+          } else if (v.type === 'bonus') {
+            displayDiscount = `₹${v.discount_text} Bonus Cash`;
+          } else if (v.type === 'free_quiz') {
+            displayDiscount = `FREE Quiz Entry (₹${v.discount_text})`;
+          }
+
+          return {
+            ...v,
+            status: isExpired ? 'expired' : (v.user_status || 'active'),
+            expiry: isExpired ? 'Expired' : (v.expires_at ? '' : `Expires in ${v.expiry_days} days`),
+            discount: displayDiscount
+          };
+        }));
       }
     } catch (error) {
       console.error('Fetch Vouchers Error:', error);
@@ -66,10 +144,10 @@ const VouchersPage = () => {
   };
 
   const handleRedeem = async (manualCode = null) => {
-    const codeToRedeem = manualCode || selectedVoucher?.code;
+    const codeToRedeem = (typeof manualCode === 'string' ? manualCode : null) || selectedVoucher?.code;
     if (!codeToRedeem) return;
 
-    const sessionRaw = localStorage.getItem('play11_session');
+    const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
     let token;
     try {
       const session = JSON.parse(sessionRaw);
@@ -105,10 +183,18 @@ const VouchersPage = () => {
     }
   };
 
-  const filteredVouchers = vouchers.filter(v => 
-    v.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    v.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredVouchers = vouchers.filter(v => {
+    const matchesSearch = v.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          v.code.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!filterDate) return matchesSearch;
+
+    const dateToCheck = v.acquired_at || v.created_at;
+    if (!dateToCheck) return false;
+
+    const d1 = new Date(dateToCheck).toLocaleDateString('en-CA');
+    return matchesSearch && d1 === filterDate;
+  });
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', paddingBottom: '100px', fontFamily: "'Outfit', sans-serif" }}>
@@ -143,6 +229,63 @@ const VouchersPage = () => {
           </button>
         </div>
 
+        {/* Date Filter Selector */}
+        <div style={{ 
+          background: 'white', 
+          borderRadius: '24px', 
+          padding: '1.25rem 1.5rem', 
+          border: '1px solid #f1f5f9', 
+          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)', 
+          maxWidth: '500px', 
+          margin: '-1rem auto 2rem auto',
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Date Setter:</span>
+            <input 
+              type="date"
+              value={filterDate}
+              onChange={e => setFilterDate(e.target.value)}
+              style={{ 
+                flex: 1,
+                padding: '8px 12px', 
+                borderRadius: '12px', 
+                border: '1.5px solid #e2e8f0', 
+                outline: 'none', 
+                fontSize: '0.85rem', 
+                fontWeight: 700,
+                color: '#1e1b4b',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+                background: '#f8fafc'
+              }}
+            />
+          </div>
+          {filterDate && (
+            <button 
+              onClick={() => setFilterDate('')}
+              style={{ 
+                padding: '8px 14px', 
+                borderRadius: '12px', 
+                background: '#fee2e2', 
+                border: 'none', 
+                color: '#ef4444', 
+                fontWeight: 800, 
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              CLEAR
+            </button>
+          )}
+        </div>
+
         {/* Vouchers List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {filteredVouchers.map(v => (
@@ -151,25 +294,49 @@ const VouchersPage = () => {
               onClick={() => openRedeem(v)}
               style={{ 
                 background: 'white', borderRadius: '24px', padding: '1.5rem', border: '1px solid #f1f5f9', display: 'flex', gap: '1.5rem', position: 'relative', overflow: 'hidden', 
-                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', cursor: v.status === 'expired' ? 'default' : 'pointer', opacity: v.status === 'expired' ? 0.7 : 1, transition: 'all 0.3s ease'
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', cursor: (v.status === 'expired' || v.status === 'used') ? 'default' : 'pointer', opacity: v.status === 'expired' ? 0.7 : (v.status === 'used' ? 0.9 : 1), transition: 'all 0.3s ease'
               }}
             >
               <div style={{ position: 'absolute', left: '-12px', top: '50%', transform: 'translateY(-50%)', width: '24px', height: '24px', borderRadius: '50%', background: '#f8fafc', border: '1px solid #f1f5f9' }}></div>
               <div style={{ position: 'absolute', right: '-12px', top: '50%', transform: 'translateY(-50%)', width: '24px', height: '24px', borderRadius: '50%', background: '#f8fafc', border: '1px solid #f1f5f9' }}></div>
 
-              <div style={{ width: '80px', height: '80px', borderRadius: '18px', background: `${v.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {v.status === 'expired' ? <AlertCircle size={32} color="#94a3b8" /> : <Gift size={32} color={v.color} />}
+              <div style={{ width: '80px', height: '80px', borderRadius: '18px', background: v.status === 'used' ? '#e6f4ea' : `${v.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {v.status === 'expired' ? <AlertCircle size={32} color="#94a3b8" /> : (v.status === 'used' ? <CheckCircle2 size={32} color="#10b981" /> : <Gift size={32} color={v.color} />)}
               </div>
 
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                  <p style={{ fontSize: '0.8rem', color: v.color, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{v.type}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: v.status === 'expired' ? '#f43f5e' : '#94a3b8' }}>
-                    <Clock size={14} />
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{v.expiry}</span>
-                  </div>
+                  <p style={{ fontSize: '0.8rem', color: v.status === 'used' ? '#10b981' : v.color, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{v.type}</p>
+                  
+                  {v.status === 'used' ? (
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '4px', 
+                      color: '#10b981', 
+                      background: '#e6f4ea', 
+                      padding: '4px 10px', 
+                      borderRadius: '8px',
+                      fontSize: '0.7rem', 
+                      fontWeight: 900,
+                      letterSpacing: '0.05em'
+                    }}>
+                      <CheckCircle2 size={12} color="#10b981" />
+                      <span>REDEEMED</span>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: v.status === 'expired' ? '#f43f5e' : '#94a3b8' }}>
+                      <Clock size={14} />
+                      <VoucherTimer expiryDays={v.expiry_days} expiresAt={v.expires_at} status={v.status} />
+                    </div>
+                  )}
                 </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1e1b4b', marginBottom: '12px' }}>{v.discount}</h3>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#475569', marginBottom: '6px', textTransform: 'capitalize' }}>{v.title}</h4>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#1e1b4b', marginBottom: '6px' }}>{v.discount}</h3>
+                <p style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700, margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Ticket size={12} color="#64748b" />
+                  <span>Received on: {new Date(v.acquired_at || v.created_at || new Date()).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                </p>
                 
                 <div style={{ background: '#f8fafc', padding: '10px 16px', borderRadius: '12px', border: '1.5px dashed #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 800, color: '#0d1f3c', letterSpacing: '2px' }}>{v.code}</span>
@@ -207,7 +374,7 @@ const VouchersPage = () => {
                     <p style={{ color: '#64748b', marginTop: '8px', fontWeight: 500 }}>Would you like to redeem this voucher for your account?</p>
                     
                     <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <button onClick={handleRedeem} style={{ width: '100%', padding: '1.25rem', borderRadius: '18px', background: '#0d1f3c', color: 'white', border: 'none', fontWeight: 900, fontSize: '1.1rem', cursor: 'pointer' }}>
+                      <button onClick={() => handleRedeem()} style={{ width: '100%', padding: '1.25rem', borderRadius: '18px', background: '#0d1f3c', color: 'white', border: 'none', fontWeight: 900, fontSize: '1.1rem', cursor: 'pointer' }}>
                         Confirm Redemption
                       </button>
                       <button onClick={() => setShowRedeemModal(false)} style={{ width: '100%', padding: '1rem', borderRadius: '18px', background: 'transparent', color: '#64748b', border: 'none', fontWeight: 700, cursor: 'pointer' }}>

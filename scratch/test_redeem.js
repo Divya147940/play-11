@@ -1,53 +1,42 @@
-const { db } = require('../config/db');
+const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
+require('dotenv').config();
 
-exports.getVouchers = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    
-    // Get active vouchers from master list and join with user status
-    const { rows } = await db.query(`
-      SELECT v.*, uv.status as user_status, uv.redeemed_at, uv.expires_at as user_expires_at, uv.created_at as acquired_at
-      FROM vouchers v
-      LEFT JOIN user_vouchers uv ON v.id = uv.voucher_id AND uv.user_id = $1
-      WHERE v.status = 'active'
-    `, [userId]);
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
-    res.json({ success: true, vouchers: rows });
-  } catch (error) {
-    console.error('Get Vouchers Error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-};
-
-exports.redeemVoucher = async (req, res) => {
-  const { pool } = require('../config/db');
+async function testRedeem() {
   const client = await pool.connect();
   try {
-    const userId = req.user.userId;
-    const { code } = req.body;
+    const userId = 'admin-1';
+    const code = 'WUYYU';
 
-    if (!code) {
-      return res.status(400).json({ success: false, message: 'Voucher code is required' });
-    }
-
+    console.log(`Simulating voucher redemption of code "${code}" for user "${userId}"...`);
     await client.query('BEGIN');
 
     // 1. Find the voucher
     const { rows: voucherRows } = await client.query("SELECT * FROM vouchers WHERE code = $1 AND status = 'active'", [code]);
     if (voucherRows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Invalid or expired voucher code' });
+      console.log('❌ Voucher not found or not active');
+      await client.query('ROLLBACK');
+      return;
     }
     const voucher = voucherRows[0];
+    console.log("Voucher details fetched:", voucher);
 
     // 2. Check if user already used it
     const { rows: userVoucherRows } = await client.query(
       'SELECT * FROM user_vouchers WHERE user_id = $1 AND voucher_id = $2',
       [userId, voucher.id]
     );
+    console.log(`User voucher records found: ${userVoucherRows.length}`);
 
     if (userVoucherRows.length > 0 && userVoucherRows[0].status === 'used') {
-      return res.status(400).json({ success: false, message: 'You have already redeemed this voucher' });
+      console.log('❌ Already redeemed');
+      await client.query('ROLLBACK');
+      return;
     }
 
     // 3. Apply the reward based on type
@@ -58,15 +47,18 @@ exports.redeemVoucher = async (req, res) => {
       walletUpdateQuery = 'UPDATE users SET coins = coins + $1 WHERE id = $2';
       category = 'deposit';
     } else {
-      // Default to bonus
       walletUpdateQuery = 'UPDATE users SET bonus = bonus + $1 WHERE id = $2';
       category = 'bonus';
     }
 
+    console.log(`Running update query: ${walletUpdateQuery} with amount ${voucher.amount}`);
     await client.query(walletUpdateQuery, [voucher.amount, userId]);
     
     // Record transaction
     const txId = `tx-${uuidv4().substring(0, 8)}`;
+    console.log(`Inserting transaction ${txId}...`);
+    
+    // Check if references users or what columns are in transactions table
     await client.query(
       'INSERT INTO transactions (id, user_id, title, amount, type, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
       [txId, userId, `Voucher Redeemed: ${voucher.code}`, voucher.amount, 'credit', category, 'success']
@@ -74,11 +66,13 @@ exports.redeemVoucher = async (req, res) => {
 
     // 4. Update user_vouchers record
     if (userVoucherRows.length > 0) {
+      console.log("Updating existing user_voucher record...");
       await client.query(
         "UPDATE user_vouchers SET status = 'used', redeemed_at = CURRENT_TIMESTAMP WHERE id = $1",
         [userVoucherRows[0].id]
       );
     } else {
+      console.log("Inserting new user_voucher record...");
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + (voucher.expiry_days || 30));
       
@@ -89,12 +83,14 @@ exports.redeemVoucher = async (req, res) => {
     }
 
     await client.query('COMMIT');
-    res.json({ success: true, message: `Voucher "${voucher.code}" redeemed successfully!` });
+    console.log("✅ Simulation successful! Transaction committed!");
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Redeem Voucher Error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    console.error('❌ SIMULATION ERROR:', error);
   } finally {
     client.release();
+    pool.end();
   }
-};
+}
+
+testRedeem();

@@ -26,8 +26,10 @@ const AdminDashboard = () => {
     amount: 0,
     type: 'bonus',
     color: '#7c3aed',
-    expiry_days: 30
+    expiry_days: 30,
+    expires_at: ''
   });
+  const [expiryType, setExpiryType] = useState('days');
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -482,13 +484,19 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('play11_admin_session');
+      const requestBody = {
+        ...newVoucher,
+        expiry_days: expiryType === 'days' ? Number(newVoucher.expiry_days) : null,
+        expires_at: expiryType === 'date' ? newVoucher.expires_at : null
+      };
+      
       const res = await fetch('/api/admin/vouchers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(newVoucher)
+        body: JSON.stringify(requestBody)
       });
       const data = await res.json();
       if (data.success) {
@@ -500,8 +508,10 @@ const AdminDashboard = () => {
           amount: 0,
           type: 'bonus',
           color: '#7c3aed',
-          expiry_days: 30
+          expiry_days: 30,
+          expires_at: ''
         });
+        setExpiryType('days');
         fetchData();
       } else {
         alert('Error: ' + data.error);
@@ -1864,7 +1874,7 @@ const AdminDashboard = () => {
                             <>
                               <button 
                                 onClick={async () => {
-                                  if (window.confirm(`Approve â‚¹${Math.abs(tx.amount)}?`)) {
+                                  if (window.confirm(`Approve ₹${Math.abs(tx.amount)}?`)) {
                                     const token = localStorage.getItem('play11_admin_session');
                                     const res = await fetch(`/api/admin/transactions/${tx.id}/approve`, {
                                       method: 'POST',
@@ -1881,7 +1891,7 @@ const AdminDashboard = () => {
                               </button>
                               <button 
                                 onClick={async () => {
-                                  if (window.confirm(`Reject â‚¹${Math.abs(tx.amount)}?`)) {
+                                  if (window.confirm(`Reject ₹${Math.abs(tx.amount)}?`)) {
                                     const token = localStorage.getItem('play11_admin_session');
                                     const res = await fetch(`/api/admin/transactions/${tx.id}/reject`, {
                                       method: 'POST',
@@ -1949,14 +1959,14 @@ const AdminDashboard = () => {
                   <label>Display Text</label>
                   <input 
                     className="admin-input" 
-                    placeholder="e.g. â‚¹100 Bonus Cash" 
+                    placeholder="e.g. ₹100 Bonus Cash" 
                     value={newVoucher.discount_text}
                     onChange={e => setNewVoucher({...newVoucher, discount_text: e.target.value})}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label>Amount (â‚¹)</label>
+                  <label>Amount (₹)</label>
                   <input 
                     className="admin-input" 
                     type="number"
@@ -1981,19 +1991,77 @@ const AdminDashboard = () => {
                   <input 
                     className="admin-input" 
                     type="color"
+                    style={{ padding: '0.2rem', height: '48px', cursor: 'pointer' }}
                     value={newVoucher.color}
                     onChange={e => setNewVoucher({...newVoucher, color: e.target.value})}
                   />
                 </div>
-                <div className="form-group">
-                  <label>Expiry (Days)</label>
-                  <input 
-                    className="admin-input" 
-                    type="number"
-                    value={newVoucher.expiry_days}
-                    onChange={e => setNewVoucher({...newVoucher, expiry_days: parseInt(e.target.value)})}
-                    required
-                  />
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <label style={{ fontWeight: 700, color: '#475569', marginBottom: '8px', display: 'block' }}>Expiry Setting</label>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                    <button 
+                      type="button"
+                      onClick={() => setExpiryType('days')}
+                      style={{ 
+                        flex: 1, 
+                        padding: '10px 14px', 
+                        borderRadius: '12px', 
+                        border: expiryType === 'days' ? '2px solid #3b82f6' : '1px solid #e2e8f0', 
+                        background: expiryType === 'days' ? '#eff6ff' : 'white', 
+                        color: expiryType === 'days' ? '#1d4ed8' : '#64748b', 
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      🕒 Expire in X Days
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setExpiryType('date')}
+                      style={{ 
+                        flex: 1, 
+                        padding: '10px 14px', 
+                        borderRadius: '12px', 
+                        border: expiryType === 'date' ? '2px solid #3b82f6' : '1px solid #e2e8f0', 
+                        background: expiryType === 'date' ? '#eff6ff' : 'white', 
+                        color: expiryType === 'date' ? '#1d4ed8' : '#64748b', 
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      📅 Specific Expiry Date & Time
+                    </button>
+                  </div>
+
+                  {expiryType === 'days' ? (
+                    <div>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '6px', display: 'block' }}>Enter Expiry Days</label>
+                      <input 
+                        className="admin-input" 
+                        type="number"
+                        value={newVoucher.expiry_days}
+                        onChange={e => setNewVoucher({...newVoucher, expiry_days: parseInt(e.target.value) || 0})}
+                        required
+                        placeholder="e.g. 30"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '6px', display: 'block' }}>Select Specific Date & Time</label>
+                      <input 
+                        className="admin-input" 
+                        type="datetime-local"
+                        value={newVoucher.expires_at}
+                        onChange={e => setNewVoucher({...newVoucher, expires_at: e.target.value})}
+                        required
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                   <button type="submit" className="admin-primary-btn" style={{ width: '100%', padding: '12px', background: '#3b82f6' }} disabled={loading}>

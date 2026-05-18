@@ -186,7 +186,9 @@ const initDB = async () => {
         type TEXT NOT NULL, -- 'bonus', 'discount', 'free_entry'
         color TEXT DEFAULT '#7c3aed',
         expiry_days INTEGER DEFAULT 30,
-        status TEXT DEFAULT 'active'
+        status TEXT DEFAULT 'active',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMPTZ
       );
 
       CREATE TABLE IF NOT EXISTS user_vouchers (
@@ -268,6 +270,8 @@ const seedAndMigrate = async () => {
         ALTER TABLE users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0;
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS prize_amount INTEGER DEFAULT 0;
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS banner_url TEXT;
+        ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
+        ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
     `);
 
     // Clean up old visitor logs (keep only last 30 days)
