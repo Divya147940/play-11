@@ -16,7 +16,7 @@ const MatchQuizRoom = () => {
   const [isFinished, setIsFinished] = useState(false);
   const [language, setLanguage] = useState('English'); // 'English' or 'Hindi'
   const [submissionResult, setSubmissionResult] = useState(null);
-  const [globalBanner, setGlobalBanner] = useState('');
+  const [globalBanner, setGlobalBanner] = useState(localStorage.getItem('play11_quiz_room_banner') || localStorage.getItem('play11_home_banner') || '');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,6 +44,11 @@ const MatchQuizRoom = () => {
             if (homeBannerData.success) bannerUrl = homeBannerData.value;
           }
           setGlobalBanner(bannerUrl);
+          if (bannerUrl) {
+            localStorage.setItem('play11_quiz_room_banner', bannerUrl);
+          } else {
+            localStorage.removeItem('play11_quiz_room_banner');
+          }
         });
       } catch (err) {
         console.error(err);
