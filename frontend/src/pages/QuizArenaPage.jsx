@@ -75,7 +75,7 @@ const QuizArenaPage = () => {
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeBanner, setActiveBanner] = useState('');
+  const [activeBanner, setActiveBanner] = useState(localStorage.getItem(`play11_arena_banner_${zoneId}`) || localStorage.getItem('play11_home_banner') || '');
 
   const config = zoneConfig[zoneId] || zoneConfig['sport-zone'];
 
@@ -141,11 +141,18 @@ const QuizArenaPage = () => {
         
         if (zoneData.success && zoneData.value) {
           setActiveBanner(zoneData.value);
+          localStorage.setItem(`play11_arena_banner_${zoneId}`, zoneData.value);
         } else {
           // Fallback to global home banner
           const globalRes = await fetch('/api/settings/home_banner_url');
           const globalData = await globalRes.json();
-          if (globalData.success) setActiveBanner(globalData.value);
+          if (globalData.success && globalData.value) {
+            setActiveBanner(globalData.value);
+            localStorage.setItem('play11_home_banner', globalData.value);
+          } else {
+            setActiveBanner('');
+            localStorage.removeItem(`play11_arena_banner_${zoneId}`);
+          }
         }
       } catch (err) {
         console.error('Error fetching banners:', err);

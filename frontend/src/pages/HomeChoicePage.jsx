@@ -73,7 +73,7 @@ const HomeChoicePage = () => {
   const [allQuizzes, setAllQuizzes] = React.useState([]);
   const [joinedQuizzes, setJoinedQuizzes] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
-  const [globalBanner, setGlobalBanner] = React.useState('');
+  const [globalBanner, setGlobalBanner] = React.useState(localStorage.getItem('play11_home_banner') || '');
 
   React.useEffect(() => {
     const fetchQuizzes = async () => {
@@ -86,8 +86,12 @@ const HomeChoicePage = () => {
         
         // Fetch global banner
         const bannerData = await settingsService.getSetting('home_banner_url');
-        if (bannerData.success) {
+        if (bannerData.success && bannerData.value) {
           setGlobalBanner(bannerData.value);
+          localStorage.setItem('play11_home_banner', bannerData.value);
+        } else {
+          setGlobalBanner('');
+          localStorage.removeItem('play11_home_banner');
         }
       } catch (err) {
         console.error('Failed to fetch all quizzes:', err);
