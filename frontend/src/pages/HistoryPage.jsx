@@ -119,12 +119,12 @@ const HistoryPage = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1.5rem' }}>
             <div>
-              <h1 style={{ fontSize: '3.2rem', fontWeight: 950, letterSpacing: '-0.04em', color: '#0f172a', lineHeight: 1 }}>
+              <h1 style={{ fontSize: '2.2rem', fontWeight: 850, letterSpacing: '-0.03em', color: '#0f172a', lineHeight: 1.1 }}>
                 My Activity.
               </h1>
-              <p style={{ marginTop: '0.75rem', fontSize: '1.1rem', color: '#64748b', fontWeight: 500 }}>
+              <p style={{ marginTop: '0.5rem', fontSize: '0.95rem', color: '#64748b', fontWeight: 500 }}>
                 Tracking your progress across <span style={{ fontWeight: 800, color: '#0f172a' }}>{filteredHistory.length}</span> {filter !== 'All' ? filter.toLowerCase() : ''} quiz sessions.
               </p>
             </div>
@@ -422,7 +422,7 @@ const HistoryPage = () => {
           to { transform: rotate(360deg); }
         }
         @media (max-width: 768px) {
-          h1 { font-size: 2.2rem !important; }
+          h1 { font-size: 1.6rem !important; }
           .container { padding-top: 7.5rem !important; }
           .stats-summary-grid {
             gap: 0.5rem !important;
