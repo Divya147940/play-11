@@ -51,6 +51,9 @@ const AdminDashboard = () => {
   const [welcomeBonus, setWelcomeBonus] = useState('0');
   const [referralReferrerBonus, setReferralReferrerBonus] = useState('0');
   const [referralRefereeBonus, setReferralRefereeBonus] = useState('0');
+  const [selectedBonusKey, setSelectedBonusKey] = useState('welcome_bonus');
+  const [dailyLoginBonus, setDailyLoginBonus] = useState('0');
+  const [firstDepositBonus, setFirstDepositBonus] = useState('0');
 
 
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
@@ -241,7 +244,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchData();
-    if (activeTab === 'Settings' || activeTab === 'Banners') {
+    if (activeTab === 'Settings' || activeTab === 'Banners' || activeTab === 'Bonuses') {
       fetchSettings();
     }
   }, [activeTab]);
@@ -281,6 +284,12 @@ const AdminDashboard = () => {
       const refRefeData = await settingsService.getSetting('referral_referee_bonus');
       if (refRefeData.success) setReferralRefereeBonus(refRefeData.value);
 
+      const dailyData = await settingsService.getSetting('daily_login_bonus');
+      if (dailyData.success) setDailyLoginBonus(dailyData.value);
+
+      const firstDepData = await settingsService.getSetting('first_deposit_bonus');
+      if (firstDepData.success) setFirstDepositBonus(firstDepData.value);
+
     } catch (err) {
       console.error('Failed to fetch settings:', err);
     }
@@ -316,6 +325,8 @@ const AdminDashboard = () => {
         if (key === 'welcome_bonus') setWelcomeBonus(finalValue);
         if (key === 'referral_referrer_bonus') setReferralReferrerBonus(finalValue);
         if (key === 'referral_referee_bonus') setReferralRefereeBonus(finalValue);
+        if (key === 'daily_login_bonus') setDailyLoginBonus(finalValue);
+        if (key === 'first_deposit_bonus') setFirstDepositBonus(finalValue);
 
         alert(`${key.replace(/_/g, ' ')} updated successfully!`);
       }
@@ -1096,7 +1107,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, padding: '2.5rem' }}>
+      <div style={{ flex: 1, padding: '2.5rem', overflowX: 'auto', minWidth: '0' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
             <h2 style={{ fontSize: '2rem', fontWeight: 950, letterSpacing: '-0.02em', color: '#0f172a' }}>{activeTab}</h2>
@@ -1800,7 +1811,8 @@ const AdminDashboard = () => {
                 <Loader2 size={16} className={loading ? "animate-spin" : ""} /> Refresh
               </button>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', minWidth: '950px', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ textAlign: 'left', borderBottom: '2px solid #f1f5f9' }}>
                   <th style={{ padding: '1.25rem' }}>User</th>
@@ -1917,6 +1929,7 @@ const AdminDashboard = () => {
                 )}
               </tbody>
             </table>
+          </div>
           </div>
         )}
 
@@ -2347,63 +2360,96 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'Bonuses' && (
-          <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
-              <div style={{ width: '48px', height: '48px', background: '#fef3c7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Award size={24} color="#d97706" />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Bonus & Referral System</h3>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Configure automated rewards for users</p>
-              </div>
-            </div>
+        {activeTab === 'Bonuses' && (() => {
+          const activeValue = selectedBonusKey === 'welcome_bonus' ? welcomeBonus 
+                            : selectedBonusKey === 'referral_referrer_bonus' ? referralReferrerBonus 
+                            : selectedBonusKey === 'referral_referee_bonus' ? referralRefereeBonus
+                            : selectedBonusKey === 'daily_login_bonus' ? dailyLoginBonus
+                            : firstDepositBonus;
+          const activeSetter = selectedBonusKey === 'welcome_bonus' ? setWelcomeBonus 
+                             : selectedBonusKey === 'referral_referrer_bonus' ? setReferralReferrerBonus 
+                             : selectedBonusKey === 'referral_referee_bonus' ? setReferralRefereeBonus
+                             : selectedBonusKey === 'daily_login_bonus' ? setDailyLoginBonus
+                             : setFirstDepositBonus;
+          const activeDescription = selectedBonusKey === 'welcome_bonus' ? 'Credited to every new user immediately after OTP verification.'
+                                  : selectedBonusKey === 'referral_referrer_bonus' ? 'Credited to the person whose referral code was used.'
+                                  : selectedBonusKey === 'referral_referee_bonus' ? 'Additional bonus for the new user if they join via a valid code.'
+                                  : selectedBonusKey === 'daily_login_bonus' ? 'Bonus cash credited to the user\'s wallet for logging in daily.'
+                                  : 'Additional bonus cash rewarded when a user completes their first deposit.';
+          const activeLabel = selectedBonusKey === 'welcome_bonus' ? 'Welcome Bonus Amount (₹)'
+                            : selectedBonusKey === 'referral_referrer_bonus' ? 'Referrer Reward (₹)'
+                            : selectedBonusKey === 'referral_referee_bonus' ? 'Referee Join Bonus (₹)'
+                            : selectedBonusKey === 'daily_login_bonus' ? 'Daily Login Bonus (₹)'
+                            : 'First Deposit Bonus (₹)';
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-              {[
-                { key: 'welcome_bonus', label: 'Welcome Bonus Amount (₹)', description: 'Credited to every new user immediately after OTP verification.', value: welcomeBonus, setter: setWelcomeBonus },
-                { key: 'referral_referrer_bonus', label: 'Referrer Reward (₹)', description: 'Credited to the person whose referral code was used.', value: referralReferrerBonus, setter: setReferralReferrerBonus },
-                { key: 'referral_referee_bonus', label: 'Referee Join Bonus (₹)', description: 'Additional bonus for the new user if they join via a valid code.', value: referralRefereeBonus, setter: setReferralRefereeBonus }
-              ].map(setting => (
-                <div key={setting.key} style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '1.25rem', border: '1px solid #e2e8f0' }}>
-                  <div className="form-group">
-                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569' }}>{setting.label}</label>
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                      <input
-                        className="admin-input"
-                        type="number"
-                        placeholder="e.g. 100"
-                        value={setting.value}
-                        onChange={e => setting.setter(e.target.value)}
-                        style={{ background: 'white' }}
-                      />
-                      <button
-                        className="admin-primary-btn"
-                        style={{ padding: '0 1.5rem', background: '#3b82f6' }}
-                        onClick={() => handleUpdateSetting(setting.key, setting.value)}
-                        disabled={isUpdatingSettings}
-                      >
-                        {isUpdatingSettings ? <Loader2 className="animate-spin" size={16} /> : 'Save'}
-                      </button>
-                    </div>
-                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '1rem', lineHeight: 1.5 }}>{setting.description}</p>
+          return (
+            <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
+                <div style={{ width: '48px', height: '48px', background: '#fef3c7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Award size={24} color="#d97706" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Bonus & Referral System</h3>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Configure automated rewards for users</p>
+                </div>
+              </div>
+
+              <div style={{ maxWidth: '600px', background: '#f8fafc', padding: '2rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0', margin: '0 auto' }}>
+                <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569' }}>SELECT BONUS TYPE</label>
+                  <select 
+                    className="admin-input" 
+                    value={selectedBonusKey} 
+                    onChange={e => setSelectedBonusKey(e.target.value)}
+                    style={{ background: 'white', marginTop: '0.5rem' }}
+                  >
+                    <option value="welcome_bonus">🎁 Welcome Bonus (₹)</option>
+                    <option value="referral_referrer_bonus">👥 Referrer Reward (₹)</option>
+                    <option value="referral_referee_bonus">🔗 Referee Join Bonus (₹)</option>
+                    <option value="daily_login_bonus">📅 Daily Login Bonus (₹)</option>
+                    <option value="first_deposit_bonus">💳 First Deposit Bonus (₹)</option>
+                  </select>
+                  <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.75rem', fontWeight: 500, fontStyle: 'italic' }}>
+                    ℹ️ {activeDescription}
+                  </p>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569' }}>{activeLabel.toUpperCase()}</label>
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                    <input
+                      className="admin-input"
+                      type="number"
+                      placeholder="e.g. 100"
+                      value={activeValue}
+                      onChange={e => activeSetter(e.target.value)}
+                      style={{ background: 'white' }}
+                    />
+                    <button
+                      className="admin-primary-btn"
+                      style={{ padding: '0 2rem', background: '#3b82f6', whiteSpace: 'nowrap' }}
+                      onClick={() => handleUpdateSetting(selectedBonusKey, activeValue)}
+                      disabled={isUpdatingSettings}
+                    >
+                      {isUpdatingSettings ? <Loader2 className="animate-spin" size={16} /> : 'Save Amount'}
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
 
-            <div style={{ marginTop: '3rem', padding: '1.5rem', background: '#eff6ff', borderRadius: '1rem', border: '1px solid #dbeafe' }}>
-               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                 <AlertCircle size={18} color="#3b82f6" />
-                 <h4 style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e40af' }}>System Information</h4>
-               </div>
-               <p style={{ fontSize: '0.8rem', color: '#1e40af', opacity: 0.8, lineHeight: 1.6 }}>
-                 These settings are applied globally. Any changes will take effect for all future registrations. 
-                 Bonuses are credited as "Bonus Cash" and can be tracked in the user's transaction history.
-               </p>
+              <div style={{ marginTop: '3rem', padding: '1.5rem', background: '#eff6ff', borderRadius: '1rem', border: '1px solid #dbeafe' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                   <AlertCircle size={18} color="#3b82f6" />
+                   <h4 style={{ fontSize: '0.9rem', fontWeight: 900, color: '#1e40af' }}>System Information</h4>
+                 </div>
+                 <p style={{ fontSize: '0.8rem', color: '#1e40af', opacity: 0.8, lineHeight: 1.6 }}>
+                   These settings are applied globally. Any changes will take effect for all future registrations. 
+                   Bonuses are credited as "Bonus Cash" and can be tracked in the user's transaction history.
+                 </p>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {activeTab === 'Settings' && (
           <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
