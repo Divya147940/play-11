@@ -540,6 +540,29 @@ const approveTransaction = async (req, res) => {
     // 2. If it's a deposit, add coins to user balance now
     if (tx.category === 'deposit') {
       await db.query("UPDATE users SET coins = coins + $1 WHERE id = $2", [tx.amount, tx.user_id]);
+
+      // Check if this is the first successful deposit
+      const { rows: prevDeposits } = await db.query(
+        "SELECT id FROM transactions WHERE user_id = $1 AND category = 'deposit' AND status = 'success'",
+        [tx.user_id]
+      );
+      if (prevDeposits.length === 0) {
+        // Fetch First Deposit Bonus Setting
+        const { rows: firstDepositSetting } = await db.query(
+          "SELECT value FROM settings WHERE key = 'first_deposit_bonus'"
+        );
+        const bonusAmount = firstDepositSetting.length > 0 ? parseFloat(firstDepositSetting[0].value) : 0;
+        if (bonusAmount > 0) {
+          // Credit First Deposit Bonus to User
+          await db.query("UPDATE users SET bonus = bonus + $1 WHERE id = $2", [bonusAmount, tx.user_id]);
+          // Record Transaction for First Deposit Bonus
+          await db.query(
+            "INSERT INTO transactions (id, user_id, title, amount, type, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            [uuidv4(), tx.user_id, 'First Deposit Bonus', bonusAmount, 'credit', 'bonus', 'success']
+          );
+          console.log(`💳 Successfully credited First Deposit Bonus of ₹${bonusAmount} to user ${tx.user_id}`);
+        }
+      }
     }
     // Note: for withdrawal, coins were already deducted in wallet.controller.js
 

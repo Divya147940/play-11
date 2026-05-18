@@ -162,6 +162,31 @@ const verifyOtp = async (req, res) => {
       if (!user.name) isNewUser = true;
     }
 
+    // --- DAILY LOGIN BONUS TRIGGER ---
+    try {
+      const { rows: todayClaims } = await db.query(
+        "SELECT id FROM transactions WHERE user_id = $1 AND title = 'Daily Login Bonus' AND created_at >= CURRENT_DATE",
+        [user.id]
+      );
+      if (todayClaims.length === 0) {
+        const { rows: dailyBonusSetting } = await db.query(
+          "SELECT value FROM settings WHERE key = 'daily_login_bonus'"
+        );
+        const dailyBonusAmount = dailyBonusSetting.length > 0 ? parseFloat(dailyBonusSetting[0].value) : 0;
+        if (dailyBonusAmount > 0) {
+          console.log(`🎁 Crediting Daily Login Bonus of ₹${dailyBonusAmount} to user ${user.id}`);
+          await db.query("UPDATE users SET bonus = bonus + $1 WHERE id = $2", [dailyBonusAmount, user.id]);
+          await db.query(
+            "INSERT INTO transactions (id, user_id, title, amount, type, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            [uuidv4(), user.id, 'Daily Login Bonus', dailyBonusAmount, 'credit', 'bonus', 'success']
+          );
+          user.bonus = parseFloat(user.bonus || 0) + dailyBonusAmount;
+        }
+      }
+    } catch (dailyErr) {
+      console.error('⚠️ Failed to credit Daily Login Bonus:', dailyErr);
+    }
+
     // Create Session Token
     const token = jwt.sign({ userId: user.id, mobile: user.mobile }, JWT_SECRET, { expiresIn: '7d' });
 
