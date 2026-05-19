@@ -24,7 +24,7 @@ dist-ssr
 *.sw?
 
 .vercel
-backend/.env
+api/.env
 server/.env
 frontend/.env
 *.db

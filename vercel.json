@@ -3,14 +3,14 @@
   "public": true,
   "outputDirectory": "frontend/dist",
   "functions": {
-    "backend/index.js": {
+    "api/index.js": {
       "regions": ["sin1"]
     }
   },
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/backend/index.js"
+      "dest": "/api/index.js"
     },
     {
       "handle": "filesystem"
