@@ -161,7 +161,7 @@ const QuizArenaPage = () => {
 
     fetchBanners();
 
-    const interval = setInterval(fetchQuizzes, 3000);
+    const interval = setInterval(fetchQuizzes, 10000);
     return () => clearInterval(interval);
   }, [zoneId, config.tag]);
 

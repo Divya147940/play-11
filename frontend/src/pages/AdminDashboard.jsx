@@ -353,6 +353,9 @@ const AdminDashboard = () => {
       const url = isEditing ? `/api/admin/quizzes/${editId}` : '/api/admin/quizzes';
       const method = isEditing ? 'PUT' : 'POST';
 
+      // Warm-up ping: send a lightweight GET first so the serverless function is already awake
+      fetch('/api/admin/dashboard', { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => {});
+
       const res = await fetch(url, {
         method: method,
         headers: {
@@ -369,8 +372,8 @@ const AdminDashboard = () => {
       }
       const data = await res.json();
       if (data.success) {
-        alert(isEditing ? 'Quiz updated successfully!' : 'Quiz created successfully!');
-        localStorage.removeItem('play11_quiz_draft'); // Clear draft on success
+        alert(isEditing ? '✅ Quiz updated successfully!' : '✅ Quiz created successfully!');
+        localStorage.removeItem('play11_quiz_draft');
         resetForm();
         setActiveTab('Quizzes');
       } else {
@@ -378,6 +381,7 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       console.error(err);
+      alert('Network error. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -89,14 +89,14 @@ const App = () => {
             <Route path="/study-category/:id" element={<Layout><StudyCategoryPage /></Layout>} />
             <Route path="/study-quiz-detail/:id" element={<Layout><StudyQuizDetailPage /></Layout>} />
             <Route path="/study-quiz-play/:id" element={<Layout hideNav><StudyQuestionPage /></Layout>} />
-            <Route path="/study-review" element={<Layout><StudyReviewPage /></Layout>} />
+            <Route path="/study-review/:id" element={<Layout><StudyReviewPage /></Layout>} />
             <Route path="/study-result/:id" element={<Layout><StudyResultPage /></Layout>} />
             
             {/* Game Pages */}
             <Route path="/match-list" element={<Layout><MatchListPage /></Layout>} />
             <Route path="/game-quiz-detail/:id" element={<Layout><GameQuizDetailPage /></Layout>} />
             <Route path="/game-quiz-play/:id" element={<Layout hideNav><GameQuestionPage /></Layout>} />
-            <Route path="/game-review" element={<Layout><GameReviewPage /></Layout>} />
+            <Route path="/game-review/:id" element={<Layout><GameReviewPage /></Layout>} />
             <Route path="/game-result/:id" element={<Layout><GameResultPage /></Layout>} />
             <Route path="/match-quiz-room/:id" element={<ProtectedRoute><Layout><MatchQuizRoom /></Layout></ProtectedRoute>} />
             <Route path="/dummy-quiz-flow" element={<Layout><DummyQuizFlow /></Layout>} />

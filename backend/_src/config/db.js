@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL,
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
   connectionTimeoutMillis: 15000, // Increased to 15s to handle Neon cold starts
@@ -9,6 +9,16 @@ const pool = new Pool({
     rejectUnauthorized: false // Required for Neon
   }
 });
+
+// Keep-alive ping every 5 minutes to prevent Neon server from going to sleep (Eliminates cold start lag)
+setInterval(async () => {
+  try {
+    await pool.query('SELECT 1');
+    console.log('💓 Database keep-alive ping successful (Neon DB is warm)');
+  } catch (err) {
+    console.warn('⚠️ Database keep-alive warning:', err.message);
+  }
+}, 300000);
 
 if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
   console.error('❌ CRITICAL: DATABASE_URL environment variable is missing in production!');
@@ -186,7 +196,9 @@ const initDB = async () => {
         type TEXT NOT NULL, -- 'bonus', 'discount', 'free_entry'
         color TEXT DEFAULT '#7c3aed',
         expiry_days INTEGER DEFAULT 30,
-        status TEXT DEFAULT 'active'
+        status TEXT DEFAULT 'active',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMPTZ
       );
 
       CREATE TABLE IF NOT EXISTS user_vouchers (
@@ -268,6 +280,8 @@ const seedAndMigrate = async () => {
         ALTER TABLE users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0;
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS prize_amount INTEGER DEFAULT 0;
         ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS banner_url TEXT;
+        ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
+        ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
     `);
 
     // Clean up old visitor logs (keep only last 30 days)

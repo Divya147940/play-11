@@ -82,7 +82,7 @@ const StudyQuestionPage = () => {
     const stats = {
       score: localScore,
       total: questions.length,
-      rank: Math.floor(Math.random() * 50) + 1, 
+      rank: '-',  // Will be filled by server after submission
       time: formatTimeLocal(timeSpent)
     };
 
@@ -250,9 +250,6 @@ const StudyQuestionPage = () => {
                 {quizDetails?.title || 'Movies'}
               </h1>
             </div>
-            <div style={{ color: '#ffffff', cursor: 'pointer' }}>
-               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
@@ -366,15 +363,13 @@ const StudyQuestionPage = () => {
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 200px', background: '#334155', borderRadius: '0.75rem', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.25rem' }}>Your Rank</div>
-                  <div style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>Live Accuracy</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.25rem' }}>Progress</div>
+                  <div style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>Questions Attempted</div>
                 </div>
                 <div style={{ background: '#475569', padding: '0.4rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.9rem', fontWeight: 800, color: '#f8fafc' }}>
-                  #{Math.floor(Math.random() * 50) + 10}
+                  {answeredCount}/{questions.length}
                 </div>
               </div>
-
-              {/* Removed Answered from here as it is now in the top header */}
             </div>
           </div>
 

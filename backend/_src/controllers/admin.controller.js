@@ -1,4 +1,4 @@
-const { db } = require('../config/db');
+const { db, pool } = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -88,12 +88,13 @@ const createQuiz = async (req, res) => {
   } = req.body;
   
   const quizId = uuidv4();
+  const client = await pool.connect();
   
   try {
-    await db.query('BEGIN');
+    await client.query('BEGIN');
     
     // 1. Insert Quiz
-    await db.query(
+    await client.query(
       "INSERT INTO quizzes (id, zone_id, category_id, match_id, title, hindi_title, description, hindi_description, total_questions, timer_minutes, entry_amount, prize_amount, open_at, close_at, status, marks_per_q, banner_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)",
       [quizId, zone_id, category_id, match_id || null, title, hindiTitle || null, description, hindiDescription || null, total_questions, timer_minutes, entry_amount || 0, prize_amount || 0, open_at, close_at, 'active', marks_per_q || 2, banner_url || null]
     );
@@ -130,7 +131,7 @@ const createQuiz = async (req, res) => {
         for (let i = 0; i < questions.length; i++) {
           qPlaceholders.push(`($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${i * 6 + 5}, $${i * 6 + 6})`);
         }
-        await db.query(qQuery + qPlaceholders.join(', '), questionValues);
+        await client.query(qQuery + qPlaceholders.join(', '), questionValues);
       }
 
       // 3. Batch Insert Options
@@ -140,7 +141,7 @@ const createQuiz = async (req, res) => {
         for (let i = 0; i < optionValues.length / 5; i++) {
           oPlaceholders.push(`($${i * 5 + 1}, $${i * 5 + 2}, $${i * 5 + 3}, $${i * 5 + 4}, $${i * 5 + 5})`);
         }
-        await db.query(oQuery + oPlaceholders.join(', '), optionValues);
+        await client.query(oQuery + oPlaceholders.join(', '), optionValues);
       }
 
       // 4. Batch Insert Correct Answers
@@ -150,16 +151,18 @@ const createQuiz = async (req, res) => {
         for (let i = 0; i < correctAnswerValues.length / 3; i++) {
           aPlaceholders.push(`($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`);
         }
-        await db.query(aQuery + aPlaceholders.join(', '), correctAnswerValues);
+        await client.query(aQuery + aPlaceholders.join(', '), correctAnswerValues);
       }
     }
 
-    await db.query('COMMIT');
+    await client.query('COMMIT');
     res.json({ success: true, id: quizId });
   } catch (error) {
-    await db.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.error('Quiz Creation Error:', error);
     res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
   }
 };
 
@@ -375,14 +378,16 @@ const updateQuiz = async (req, res) => {
     open_at, close_at, marks_per_q, banner_url, questions 
   } = req.body;
   
+  const client = await pool.connect();
+  
   try {
-    await db.query('BEGIN');
+    await client.query('BEGIN');
     
     // 1. Reset all previous submissions so users can play the updated version
-    await db.query('DELETE FROM submissions WHERE quiz_id = $1', [id]);
+    await client.query('DELETE FROM submissions WHERE quiz_id = $1', [id]);
 
     // 2. Update Quiz metadata and Reset status to active
-    await db.query(
+    await client.query(
       `UPDATE quizzes SET 
         zone_id = $1, category_id = $2, match_id = $3, title = $4, hindi_title = $5, 
         description = $6, hindi_description = $7, total_questions = $8, timer_minutes = $9, 
@@ -394,7 +399,7 @@ const updateQuiz = async (req, res) => {
 
     if (questions && Array.isArray(questions)) {
       // 3. Delete existing questions (options and correct answers will be deleted via CASCADE)
-      await db.query("DELETE FROM questions WHERE quiz_id = $1", [id]);
+      await client.query("DELETE FROM questions WHERE quiz_id = $1", [id]);
 
       // 3. Re-insert all questions/options (copied logic from createQuiz)
       const questionValues = [];
@@ -423,7 +428,7 @@ const updateQuiz = async (req, res) => {
         for (let i = 0; i < questions.length; i++) {
           qPlaceholders.push(`($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${i * 6 + 5}, $${i * 6 + 6})`);
         }
-        await db.query(qQuery + qPlaceholders.join(', '), questionValues);
+        await client.query(qQuery + qPlaceholders.join(', '), questionValues);
       }
 
       if (optionValues.length > 0) {
@@ -432,7 +437,7 @@ const updateQuiz = async (req, res) => {
         for (let i = 0; i < optionValues.length / 5; i++) {
           oPlaceholders.push(`($${i * 5 + 1}, $${i * 5 + 2}, $${i * 5 + 3}, $${i * 5 + 4}, $${i * 5 + 5})`);
         }
-        await db.query(oQuery + oPlaceholders.join(', '), optionValues);
+        await client.query(oQuery + oPlaceholders.join(', '), optionValues);
       }
 
       if (correctAnswerValues.length > 0) {
@@ -441,16 +446,18 @@ const updateQuiz = async (req, res) => {
         for (let i = 0; i < correctAnswerValues.length / 3; i++) {
           aPlaceholders.push(`($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`);
         }
-        await db.query(aQuery + aPlaceholders.join(', '), correctAnswerValues);
+        await client.query(aQuery + aPlaceholders.join(', '), correctAnswerValues);
       }
     }
     
-    await db.query('COMMIT');
+    await client.query('COMMIT');
     res.json({ success: true, message: 'Quiz updated successfully' });
   } catch (error) {
-    await db.query('ROLLBACK');
+    await client.query('ROLLBACK');
     console.error('Quiz Update Error:', error);
     res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
   }
 };
 
@@ -540,6 +547,29 @@ const approveTransaction = async (req, res) => {
     // 2. If it's a deposit, add coins to user balance now
     if (tx.category === 'deposit') {
       await db.query("UPDATE users SET coins = coins + $1 WHERE id = $2", [tx.amount, tx.user_id]);
+
+      // Check if this is the first successful deposit
+      const { rows: prevDeposits } = await db.query(
+        "SELECT id FROM transactions WHERE user_id = $1 AND category = 'deposit' AND status = 'success'",
+        [tx.user_id]
+      );
+      if (prevDeposits.length === 0) {
+        // Fetch First Deposit Bonus Setting
+        const { rows: firstDepositSetting } = await db.query(
+          "SELECT value FROM settings WHERE key = 'first_deposit_bonus'"
+        );
+        const bonusAmount = firstDepositSetting.length > 0 ? parseFloat(firstDepositSetting[0].value) : 0;
+        if (bonusAmount > 0) {
+          // Credit First Deposit Bonus to User
+          await db.query("UPDATE users SET bonus = bonus + $1 WHERE id = $2", [bonusAmount, tx.user_id]);
+          // Record Transaction for First Deposit Bonus
+          await db.query(
+            "INSERT INTO transactions (id, user_id, title, amount, type, category, status) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            [uuidv4(), tx.user_id, 'First Deposit Bonus', bonusAmount, 'credit', 'bonus', 'success']
+          );
+          console.log(`💳 Successfully credited First Deposit Bonus of ₹${bonusAmount} to user ${tx.user_id}`);
+        }
+      }
     }
     // Note: for withdrawal, coins were already deducted in wallet.controller.js
 
@@ -595,12 +625,12 @@ const getVouchersAdmin = async (req, res) => {
 };
 
 const createVoucherAdmin = async (req, res) => {
-  const { title, code, discount_text, amount, type, color, expiry_days } = req.body;
+  const { title, code, discount_text, amount, type, color, expiry_days, expires_at } = req.body;
   const id = uuidv4();
   try {
     await db.query(
-      "INSERT INTO vouchers (id, title, code, discount_text, amount, type, color, expiry_days, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-      [id, title, code, discount_text, amount || 0, type, color || '#7c3aed', expiry_days || 30, 'active']
+      "INSERT INTO vouchers (id, title, code, discount_text, amount, type, color, expiry_days, status, expires_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+      [id, title, code, discount_text, amount || 0, type, color || '#7c3aed', expiry_days || 30, 'active', expires_at || null]
     );
     res.json({ success: true, id });
   } catch (error) {
