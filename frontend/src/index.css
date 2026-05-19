@@ -1034,14 +1034,26 @@ h2 {
     left: 0;
     right: 0;
     z-index: 1000;
-    height: 54px; /* Very thin */
-    background: white;
-    border-top: 1px solid #e2e8f0;
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
     display: flex;
     justify-content: space-around;
     align-items: center;
-    padding: 0 10px;
+    padding: 0 16px;
+    box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.04);
 }
+
+.luminescent-theme .floating-nav {
+    background: rgba(15, 23, 42, 0.85) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* floating-nav is visible on all screen sizes - no hiding on desktop */
 
 
 .cta {

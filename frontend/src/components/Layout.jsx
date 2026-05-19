@@ -17,7 +17,7 @@ const Layout = ({ children, hideHeader = false, hideFooter = false, hideBottomNa
       
       <main className="main-content" style={{ 
         flex: 1, 
-        paddingBottom: hideBottomNav ? '0' : '80px',
+        paddingBottom: hideBottomNav ? '0' : 'calc(80px + env(safe-area-inset-bottom, 0px))',
         display: 'flex',
         flexDirection: 'column'
       }}>

@@ -315,7 +315,7 @@ const MatchQuizRoom = () => {
 
         {!isFinished ? (
           /* Main Content Area */
-          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+          <div className="main-content-flex" style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
             
             {/* Left Column (Question Card) */}
             <div className="quiz-main-card" style={{ flex: '1 1 650px', background: '#ffffff', borderRadius: '1.5rem', padding: 'clamp(1rem, 5vw, 2rem)', color: '#0f172a', minWidth: '0', boxSizing: 'border-box', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px rgba(0,0,0,0.03)' }}>
@@ -409,28 +409,24 @@ const MatchQuizRoom = () => {
               </div>
             </div>
 
-            {/* Right Column (Sidebars) */}
+            {/* Right Column (Sidebar Navigator & Summary) */}
             <div className="quiz-sidebar" style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: '0', boxSizing: 'border-box' }}>
               
               {/* Question Navigator */}
-              <div style={{ background: '#ffffff', borderRadius: '1.25rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+              <div className="navigator-bar" style={{ background: '#ffffff', borderRadius: '1.25rem', padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
                 <h3 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1.25rem' }}>
                   {language === 'Hindi' ? 'प्रश्न नेविगेटर' : 'QUESTION NAVIGATOR'}
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(42px, 1fr))', gap: '0.6rem' }}>
+                <div className="navigator-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(42px, 1fr))', gap: '0.6rem' }}>
                   {questions.map((_, i) => {
                     let bg = '#f1f5f9';
                     let color = '#94a3b8';
                     let border = '1px solid #e2e8f0';
                     
                     if (i === currentIdx) {
-                      bg = '#3b82f6'; // Blue for current
-                      color = '#ffffff';
-                      border = 'none';
+                      bg = '#3b82f6'; color = '#ffffff'; border = 'none';
                     } else if (answers[i] !== undefined) {
-                      bg = '#10b981'; // Green for answered
-                      color = '#ffffff';
-                      border = 'none';
+                      bg = '#10b981'; color = '#ffffff'; border = 'none';
                     }
 
                     return (
@@ -472,7 +468,6 @@ const MatchQuizRoom = () => {
                     {quiz?.marks_per_q}
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
@@ -528,14 +523,43 @@ const MatchQuizRoom = () => {
           }
         }
         @media (max-width: 768px) {
+          .main-content-flex {
+            flex-direction: column-reverse !important;
+          }
+          .navigator-bar {
+            padding: 0.75rem 1rem !important;
+            border-radius: 0.75rem !important;
+            margin-bottom: 0.75rem !important;
+          }
+          .navigator-bar h3 {
+            font-size: 0.55rem !important;
+            margin-bottom: 0.5rem !important;
+          }
+          .navigator-grid {
+            display: grid !important;
+            grid-template-columns: repeat(10, 1fr) !important;
+            gap: 4px !important;
+          }
+          .navigator-grid > div {
+            width: 100% !important;
+            height: 28px !important;
+            font-size: 0.7rem !important;
+            border-radius: 4px !important;
+          }
           .quiz-main-card {
-            border-radius: 1.25rem !important;
+            border-radius: 1rem !important;
+            padding: 1rem !important;
+          }
+          .bottom-widgets-area {
+            flex-direction: column !important;
+            gap: 0.75rem !important;
+          }
+          .bottom-widgets-area > div {
+            flex: 1 1 100% !important;
+            padding: 0.75rem !important;
           }
         }
         @media (max-width: 480px) {
-          .quiz-main-card {
-            padding: 1rem !important;
-          }
           button {
             padding: 0.6rem 1rem !important;
             font-size: 0.8rem !important;

@@ -234,7 +234,7 @@ const HomeChoicePage = () => {
              <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
           </div>
         ) : selectedTab === 'All Rooms' ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }} className="mobile-grid-2">
+          <div className="mobile-grid-2">
             {quizRooms.map((room, idx) => (
               <div key={room.id} className="contest-room-card" 
                 style={{ 
@@ -244,11 +244,14 @@ const HomeChoicePage = () => {
                   border: '1px solid #edf2f7',
                   cursor: 'pointer',
                   textAlign: 'center',
-                  boxShadow: 'none'
+                  boxShadow: 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%'
                 }}
                 onClick={() => navigate(room.path)}
               >
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', height: '100%' }}>
                   <div style={{ 
                     width: '60px', 
                     height: '60px', 
@@ -265,7 +268,7 @@ const HomeChoicePage = () => {
                     <room.icon size={28} strokeWidth={2.2} />
                   </div>
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.6rem', fontWeight: 700, color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 6px', fontSize: '0.6rem', fontWeight: 700, color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase' }}>
                        <span>WIN UPTO {room.prize}</span>
                        {getLiveCount(room.id) > 0 ? (
                          <span style={{ color: '#ef4444' }}>● LIVE</span>
@@ -309,6 +312,11 @@ const HomeChoicePage = () => {
       </div>
       
       <style>{`
+        .mobile-grid-2 {
+           display: grid;
+           grid-template-columns: repeat(2, 1fr);
+           gap: 12px;
+        }
         @media (max-width: 768px) {
           .banner-stats-container {
             padding-right: 5% !important;
@@ -321,19 +329,27 @@ const HomeChoicePage = () => {
             padding-right: 5% !important;
           }
         }
-        .mobile-full-width {
-          @media (max-width: 480px) {
+        @media (max-width: 480px) {
+          .mobile-full-width {
             max-width: 100% !important;
             border-left: none !important;
             padding-left: 0 !important;
             border-top: 1px solid #f1f5f9;
             padding-top: 1.5rem;
           }
-        }
-        .mobile-grid-2 {
-           grid-template-columns: 1fr 1fr !important;
-           gap: 6px !important;
-           padding: 0 2px !important;
+          .mobile-grid-2 {
+             grid-template-columns: repeat(2, 1fr) !important;
+             gap: 12px !important;
+             padding: 0 4px !important;
+          }
+          .contest-room-card {
+             padding: 1.5rem !important;
+          }
+          .room-icon-wrapper {
+             width: 64px !important;
+             height: 64px !important;
+             border-radius: 20px !important;
+          }
         }
       `}</style>
     </div>

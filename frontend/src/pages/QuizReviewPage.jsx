@@ -20,26 +20,50 @@ const QuizReviewPage = () => {
       token = sessionRaw;
     }
 
-    fetch(`/api/auth/submission/${id}/review`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Submission review data not found');
-        return res.json();
-      })
+    const loadReview = async (submissionId) => {
+      const res = await fetch(`/api/auth/submission/${submissionId}/review`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Submission review data not found');
+      return res.json();
+    };
+
+    loadReview(id)
       .then(resData => {
-        console.log('Review data loaded:', resData);
         if (resData.success) {
           setData(resData);
+          setLoading(false);
         } else {
-          setData(null);
+          throw new Error('Not successful');
         }
       })
-      .catch(err => {
-        console.error('Review Fetch Error:', err);
-        setData(null);
-      })
-      .finally(() => setLoading(false));
+      .catch(async (err) => {
+        console.log('Direct submission review load failed. Retrying by matching quiz ID in user history...', err);
+        try {
+          const historyRes = await fetch('/api/auth/history', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const historyData = await historyRes.json();
+          if (historyData.success && historyData.history) {
+            // Find the user's submission for this quiz ID
+            const matchedSubmission = historyData.history.find(h => String(h.quiz_id) === String(id) || String(h.quizId) === String(id));
+            if (matchedSubmission) {
+              console.log('Matched submission ID from history:', matchedSubmission.id);
+              const retryData = await loadReview(matchedSubmission.id);
+              if (retryData.success) {
+                setData(retryData);
+                return;
+              }
+            }
+          }
+          setData(null);
+        } catch (retryErr) {
+          console.error('Failed to resolve review by quiz ID:', retryErr);
+          setData(null);
+        } finally {
+          setLoading(false);
+        }
+      });
   }, [id, navigate]);
 
   if (loading) {
@@ -61,6 +85,7 @@ const QuizReviewPage = () => {
   }
 
   const { submission, review } = data;
+  const isWinner = submission.quiz_winner_id === submission.user_id;
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', paddingBottom: '5rem' }}>
@@ -81,39 +106,98 @@ const QuizReviewPage = () => {
           </div>
         </div>
 
-        {/* Stats Summary Bar - ONLY SHOW IF RESULT DECLARED */}
-        {submission.quiz_winner_id && (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(3, 1fr)', 
-            gap: '1rem', 
-            marginBottom: '3rem',
-            background: 'white',
-            padding: '1.5rem',
-            borderRadius: '1.5rem',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
-            border: '1px solid #f1f5f9'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>SCORE</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#3b82f6' }}>{submission.total_score}</div>
+        {/* Leaderboard Winner Banner & stats */}
+        {submission.quiz_winner_id ? (
+          <>
+            {/* Stunning Alert Banner */}
+            <div className="glass-premium animate-fade-in" style={{ 
+              background: isWinner ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+              color: 'white',
+              padding: '2rem',
+              borderRadius: '2rem',
+              marginBottom: '2.5rem',
+              boxShadow: isWinner ? '0 20px 40px -10px rgba(16,185,129,0.3)' : '0 20px 40px -10px rgba(59,130,246,0.3)',
+              textAlign: 'center',
+              border: 'none'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>{isWinner ? "🎉🏆👑" : "🏆📊"}</div>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white', marginBottom: '0.5rem', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                {isWinner ? "CONGRATULATIONS, YOU WON!" : "TOURNAMENT RESULTS DECLARED"}
+              </h2>
+              <p style={{ fontSize: '0.95rem', opacity: 0.95, fontWeight: 500, marginBottom: '1.5rem', color: '#f8fafc' }}>
+                {isWinner 
+                  ? `Incredible! You secured Rank #1 in this battle and won a prize of ₹${submission.prize_amount || '0'}!` 
+                  : `The results are officially declared. You completed the quiz with an excellent effort!`}
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <button 
+                  onClick={() => navigate(`/leaderboard/${submission.quiz_id}`)}
+                  style={{
+                    background: 'white',
+                    color: isWinner ? '#059669' : '#1d4ed8',
+                    border: 'none',
+                    padding: '12px 32px',
+                    borderRadius: '14px',
+                    fontWeight: 800,
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 10px 20px rgba(0,0,0,0.05)',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  View Full Leaderboard
+                </button>
+              </div>
             </div>
-            <div style={{ textAlign: 'center', borderLeft: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9' }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>ACCURACY</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#10b981' }}>{Math.round((submission.correct_count / (submission.correct_count + submission.wrong_count || 1)) * 100)}%</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>CORRECT</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#0f172a' }}>{submission.correct_count}</div>
-            </div>
-          </div>
-        )}
 
-        {!submission.quiz_winner_id && (
-          <div className="glass-premium" style={{ marginBottom: '3rem', padding: '1.5rem', borderRadius: '1.5rem', background: '#fffbeb', border: '1px solid #fef3c7', textAlign: 'center' }}>
-             <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#b45309' }}>
-               🛡️ Performance details & correct answers will be revealed once the official results are declared by the admin.
-             </p>
+            {/* Stats Summary Bar */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(4, 1fr)', 
+              gap: '1rem', 
+              marginBottom: '3rem',
+              background: 'white',
+              padding: '1.5rem',
+              borderRadius: '1.5rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
+              border: '1px solid #f1f5f9'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>YOUR RANK</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#f59e0b' }}>#{submission.rank || '-'}</div>
+              </div>
+              <div style={{ textAlign: 'center', borderLeft: '1px solid #f1f5f9' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>SCORE</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#3b82f6' }}>{submission.total_score}</div>
+              </div>
+              <div style={{ textAlign: 'center', borderLeft: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>ACCURACY</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#10b981' }}>{Math.round((submission.correct_count / (submission.correct_count + submission.wrong_count || 1)) * 100)}%</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', marginBottom: '4px' }}>CORRECT</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 950, color: '#0f172a' }}>{submission.correct_count}</div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="glass-premium" style={{ 
+            marginBottom: '3rem', 
+            padding: '1.5rem 2rem', 
+            borderRadius: '1.5rem', 
+            background: '#fffbeb', 
+            border: '1px solid #fef3c7', 
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1.25rem'
+          }}>
+             <div style={{ fontSize: '2.5rem' }}>⏳</div>
+             <div style={{ textAlign: 'left' }}>
+                <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#b45309', margin: '0 0 4px 0' }}>Official Results Awaiting Declaration</h4>
+                <p style={{ fontSize: '0.85rem', fontWeight: 500, color: '#d97706', margin: 0, lineHeight: 1.4 }}>
+                  Your detailed correct/incorrect results and final leaderboard rank will be officially revealed once the admin declares the tournament results.
+                </p>
+             </div>
           </div>
         )}
 

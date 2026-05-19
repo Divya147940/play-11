@@ -64,14 +64,31 @@ const StudyResultPage = () => {
 
   return (
     <div style={{
-      background: '#0a192f',
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'center',
-      padding: '2rem 0 0 0',
+      background: '#f8fafc',
+      minHeight: '100vh',
+      position: 'relative',
       fontFamily: 'Inter, sans-serif'
     }}>
-      <div style={{ width: '100%' }}>
+      {/* Dark Header Banner overlay */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '280px',
+        background: '#0a192f',
+        zIndex: 0
+      }}></div>
+
+      <div style={{ 
+        position: 'relative', 
+        zIndex: 1, 
+        display: 'flex', 
+        alignItems: 'flex-start', 
+        justifyContent: 'center',
+        padding: '3rem 1rem'
+      }}>
+        <div style={{ width: '100%', maxWidth: '800px' }}>
 
         {/* Header label */}
         <div style={{ textAlign: 'center', marginBottom: '0.75rem' }}>
@@ -85,8 +102,8 @@ const StudyResultPage = () => {
 
         <h1 style={{
           textAlign: 'center',
-          fontSize: 'clamp(1.1rem, 5vw, 1.4rem)',
-          fontWeight: 800,
+          fontSize: 'clamp(1.2rem, 5vw, 1.6rem)',
+          fontWeight: 900,
           color: '#f8fafc',
           marginBottom: '0.5rem',
           whiteSpace: 'nowrap'
@@ -97,7 +114,7 @@ const StudyResultPage = () => {
           textAlign: 'center',
           fontSize: '0.9rem',
           color: '#94a3b8',
-          marginBottom: '2rem'
+          marginBottom: '2.5rem'
         }}>
           Based on your performance in the academic arena.
         </p>
@@ -106,7 +123,10 @@ const StudyResultPage = () => {
         <div style={{
           background: '#ffffff',
           width: '100%',
-          padding: '3rem 1.5rem',
+          padding: '2.5rem',
+          borderRadius: '1.5rem',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+          border: '1px solid #e2e8f0',
           textAlign: 'center',
           color: '#0f172a'
         }}>
@@ -172,32 +192,33 @@ const StudyResultPage = () => {
 
           {/* Result declared tomorrow banner */}
           <div style={{
-            background: 'linear-gradient(135deg, #1e3a5f, #1e4d8c)',
-            margin: '0 -1.5rem 2.5rem -1.5rem',
+            background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
+            margin: '0 0 2.5rem 0',
             padding: '1.75rem 1.5rem',
-            width: 'calc(100% + 3rem)',
-            border: 'none',
-            boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.1)'
+            borderRadius: '1rem',
+            border: '1px solid #bbf7d0',
+            width: '100%',
+            boxShadow: '0 4px 15px rgba(34, 197, 94, 0.05)'
           }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>📢</div>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📢</div>
             <p style={{
               fontSize: '1.2rem',
               fontWeight: 800,
-              color: '#f8fafc',
+              color: '#166534',
               marginBottom: '0.5rem'
             }}>
               Official results will be declared tomorrow
             </p>
             <p style={{
               fontSize: '0.9rem',
-              color: '#93c5fd',
-              fontWeight: 600
+              color: '#15803d',
+              fontWeight: 700
             }}>
               Expected On: {resultDate}
             </p>
             <p style={{
               fontSize: '0.8rem',
-              color: '#7dd3fc',
+              color: '#16a34a',
               marginTop: '0.75rem',
               lineHeight: 1.5
             }}>
@@ -209,9 +230,9 @@ const StudyResultPage = () => {
             <button
               onClick={() => navigate('/home-choice')}
               style={{
-                background: 'transparent',
-                border: '1px solid #334155',
-                color: '#f8fafc',
+                background: '#f8fafc',
+                border: '1px solid #cbd5e1',
+                color: '#0f172a',
                 padding: '1rem 1.5rem',
                 borderRadius: '0.75rem',
                 fontWeight: 800,
@@ -259,6 +280,7 @@ const StudyResultPage = () => {
           </div>
         </div>
 
+      </div>
       </div>
     </div>
   );

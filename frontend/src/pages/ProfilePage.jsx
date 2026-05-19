@@ -140,11 +140,11 @@ const ProfilePage = () => {
       bgIcon: <Wallet size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
     },
     { 
-      icon: <Award size={20} />, 
-      title: 'My Bonuses', 
-      subtext: 'View your active bonuses and referral rewards', 
-      onClick: () => setShowBonusModal(true),
-      bgIcon: <Award size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
+      icon: <Ticket size={20} />, 
+      title: 'My Vouchers', 
+      subtext: 'View and manage your vouchers', 
+      onClick: () => navigate('/vouchers'),
+      bgIcon: <Ticket size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
     },
     { 
       icon: <Trophy size={20} />, 
@@ -152,13 +152,6 @@ const ProfilePage = () => {
       subtext: 'Check your quiz history and stats', 
       onClick: () => navigate('/history'),
       bgIcon: <Trophy size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
-    },
-    { 
-      icon: <Ticket size={20} />, 
-      title: 'My Vouchers', 
-      subtext: 'View and manage your vouchers', 
-      onClick: () => navigate('/vouchers'),
-      bgIcon: <Ticket size={64} style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
     },
     { 
       icon: <Gamepad2 size={20} />, 

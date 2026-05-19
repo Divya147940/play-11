@@ -5,7 +5,7 @@ import {
   AlertCircle, ChevronRight, Search,
   MoreVertical, CheckCircle2, Clock, ArrowRight,
   ArrowUpRight, ArrowDownRight, Globe, Lock, Unlock, Edit, Trash2, Shield, Upload,
-  Plus, Save, Trash, Award, FileText, Image as ImageIcon, Loader2, X, Landmark, Ticket, Clipboard
+  Plus, Save, Trash, Award, FileText, Image as ImageIcon, Loader2, X, Landmark, Ticket, Clipboard, Menu
 } from 'lucide-react';
 import Papa from 'papaparse';
 import Tesseract from 'tesseract.js';
@@ -13,6 +13,7 @@ import { settingsService } from '../services/api';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('Overview');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [statsData, setStatsData] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
@@ -926,66 +927,73 @@ const AdminDashboard = () => {
     let currentQ = null;
 
     lines.forEach(line => {
-      // 1. Detect Question Starters
-      const qNumMatch = line.match(/^(\d+)[\.\)]\s*(.*)/i);
-      const qWordMatch = line.match(/^Question\s*(\d+)[:\s]*(.*)/i);
-      const qMarkerMatch = line.match(/^Q[:\s]*(.*)/i);
+      // 1. Clean the line and strip emojis/bullets from start for parsing
+      const cleanLine = line.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}►•*\-✓✅✔️👍]+\s*/gu, '').trim();
+      
+      const qWordMatch = cleanLine.match(/^(?:Question|Q|Prashn)\s*(?:\d+)?\s*[\.\-\):\]]?\s*(.*)/i);
+      const qNumMatch = cleanLine.match(/^[\(\[]?\s*(\d+)\s*[\.\)\-\]:]\s*(.*)/i);
 
-      if (qNumMatch || qWordMatch || qMarkerMatch) {
-        if (currentQ) questions.push(currentQ);
-        
-        let qText = "";
-        if (qNumMatch) qText = qNumMatch[2];
-        else if (qWordMatch) qText = qWordMatch[2];
-        else if (qMarkerMatch) qText = qMarkerMatch[1];
+      const optMatch = cleanLine.match(/^([A-D]|[a-d]|1|2|3|4|i|ii|iii|iv)[\.\)]\s*(.*)/i) || cleanLine.match(/^\(([A-D]|[a-d]|1|2|3|4|i|ii|iii|iv)\)\s*(.*)/i);
+      const ansMatch = cleanLine.match(/^(Ans|Answer|Correct|उत्तर)[:\s\-]*([A-D]|[a-d]|1|2|3|4)/i);
 
-        // Filter out noisy titles like "Quiz Questions"
-        if (qText.toLowerCase().includes('questions') && qText.length < 20) {
-          currentQ = null;
-          return;
-        }
+      // Determine if this line starts a NEW question
+      let isNewQuestion = false;
+      let qText = cleanLine;
 
-        currentQ = {
-          text: qText.trim(),
-          options: [],
-          correctOptionIndex: 0
-        };
-        return;
+      if (qWordMatch) {
+         isNewQuestion = true;
+         qText = qWordMatch[1] || cleanLine;
+      } else if (qNumMatch && (!currentQ || currentQ.options.length >= 2)) {
+         // If it starts with a number, and currentQ already has >= 2 options, it's the next question
+         isNewQuestion = true;
+         qText = qNumMatch[2] || cleanLine;
+      } else if (!optMatch && !ansMatch && (!currentQ || currentQ.options.length >= 4)) {
+         // Plain text and we need a new question
+         isNewQuestion = true;
+         qText = cleanLine;
       }
 
-      // 2. Detect Options (A, B, C, D or (a), (b)...)
-      const optMatch = line.match(/^([A-D]|[a-d])[\.\)]\s*(.*)/i) || line.match(/^\(([A-D]|[a-d])\)\s*(.*)/i);
-      if (optMatch && currentQ) {
-        const isCorrect = line.includes('✅') || /v\s*Correct/i.test(line) || /\(Correct\)/i.test(line);
-        const optText = optMatch[2].replace(/v\s*Correct/i, '').replace(/\(Correct\)/i, '').replace('✅', '').trim();
-        
-        currentQ.options.push({ text: optText, hindiText: '' });
-        if (isCorrect) currentQ.correctOptionIndex = currentQ.options.length - 1;
-        return;
+      if (isNewQuestion) {
+         if (currentQ) questions.push(currentQ);
+         
+         if (qText.toLowerCase().includes('questions') && qText.length < 20) {
+            currentQ = null;
+            return;
+         }
+
+         currentQ = {
+            text: qText.trim() || line.trim(),
+            options: [],
+            correctOptionIndex: 0
+         };
+         return;
       }
 
-      // 3. Detect Answer Keys (Ans: A)
-      const ansMatch = line.match(/^(Ans|Answer|Correct)[:\s]*([A-D])/i);
+      // If not a new question, it's an answer key, option, or continuation
       if (ansMatch && currentQ) {
-        const ans = ansMatch[2].toUpperCase();
-        const index = ['A', 'B', 'C', 'D'].indexOf(ans);
-        if (index !== -1) currentQ.correctOptionIndex = index;
-        return;
+         const ans = ansMatch[2].toUpperCase();
+         const index = ['A', 'B', 'C', 'D', '1', '2', '3', '4'].indexOf(ans);
+         if (index !== -1) currentQ.correctOptionIndex = index % 4; // Map 1->0, A->0
+         return;
       }
 
-      // 4. Fallback: Multi-line question text or plain options
       if (currentQ) {
-        if (currentQ.options.length === 0) {
-          // If no options yet, append to question text
-          currentQ.text = (currentQ.text + " " + line).trim();
-        } else if (currentQ.options.length < 4) {
-          // If we have some options but this line doesn't match A/B/C/D, 
-          // it might be a plain text option (OCR often misses the letter)
-          const isCorrect = line.includes('✅') || /v\s*Correct/i.test(line);
-          const optText = line.replace(/v\s*Correct/i, '').replace('✅', '').trim();
-          currentQ.options.push({ text: optText, hindiText: '' });
-          if (isCorrect) currentQ.correctOptionIndex = currentQ.options.length - 1;
-        }
+         const isCorrect = line.includes('✅') || line.includes('✔️') || line.includes('✓') || line.includes('👍') || /v\s*Correct/i.test(line) || /\(Correct\)/i.test(line);
+         
+         if (currentQ.options.length === 0 && !isCorrect && !optMatch && line.length > 40) {
+             // Likely a continuation of the question text
+             currentQ.text = (currentQ.text + " " + line).trim();
+             return;
+         }
+
+         // It's an option
+         let optText = optMatch ? optMatch[2] : cleanLine;
+         optText = optText.replace(/v\s*Correct/i, '').replace(/\(Correct\)/i, '').replace(/[✅✔️✓👍]/g, '').trim();
+
+         if (currentQ.options.length < 4) {
+             currentQ.options.push({ text: optText, hindiText: '' });
+             if (isCorrect) currentQ.correctOptionIndex = currentQ.options.length - 1;
+         }
       }
     });
 
@@ -1007,7 +1015,10 @@ const AdminDashboard = () => {
 
   const SidebarItem = ({ icon, label }) => (
     <div
-      onClick={() => setActiveTab(label)}
+      onClick={() => {
+        setActiveTab(label);
+        setIsSidebarOpen(false);
+      }}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -1026,7 +1037,7 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', color: '#0f172a' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', color: '#0f172a', position: 'relative' }}>
       <style>{`
         .admin-input {
           width: 100%;
@@ -1085,14 +1096,158 @@ const AdminDashboard = () => {
         .flex-center { display: flex; align-items: center; justify-content: center; }
         .animate-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+          /* Sidebar slides in from left on mobile */
+          .admin-sidebar {
+            position: fixed !important;
+            top: 0;
+            bottom: 0;
+            left: -280px;
+            width: 280px;
+            z-index: 1010;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+          }
+          .admin-sidebar.open { left: 0 !important; }
+          .admin-sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1005;
+          }
+          .admin-hamburger { display: flex !important; }
+
+          /* Content area - no horizontal overflow */
+          .admin-content {
+            padding: 1rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Header stacks vertically */
+          .admin-content header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.75rem !important;
+            margin-bottom: 1.25rem !important;
+            box-sizing: border-box !important;
+          }
+          .admin-title-row {
+            flex-wrap: wrap !important;
+            gap: 0.5rem !important;
+            width: 100% !important;
+          }
+          .admin-content header > button {
+            width: 100% !important;
+            margin-left: 0 !important;
+          }
+
+          /* All cards get proper width and box-sizing */
+          .admin-content > div,
+          .admin-content > div > div,
+          .admin-content form {
+            max-width: 100% !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
+          /* ✅ KEY FIX 1: Collapse ALL 2-column grids to 1 column on mobile */
+          .admin-form-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1rem !important;
+          }
+
+          /* ✅ KEY FIX 2: Stack input + Update button rows vertically */
+          .admin-input-row {
+            flex-direction: column !important;
+            gap: 0.75rem !important;
+          }
+          .admin-input-row > input,
+          .admin-input-row > button {
+            width: 100% !important;
+            flex: none !important;
+          }
+
+          /* ✅ KEY FIX 3: Reset grid-column span to 1 (no wide overflow fields) */
+          .admin-span-full {
+            grid-column: span 1 !important;
+          }
+
+          /* Quizzes list card - stack buttons vertically */
+          .admin-quiz-card-actions {
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+            width: 100% !important;
+            margin-top: 0.75rem !important;
+          }
+          .admin-quiz-card-actions > button {
+            width: 100% !important;
+          }
+          .admin-quiz-card {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 0.75rem !important;
+          }
+
+          /* Scrollable tables - only table scrolls, not page */
+          .admin-content div[style*="overflow"] {
+            overflow-x: auto !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .admin-content table {
+            font-size: 0.8rem !important;
+            min-width: 500px;
+          }
+          .admin-content th, .admin-content td {
+            padding: 0.5rem !important;
+          }
+        }
       `}</style>
+
+      {/* Sidebar Backdrop Overlay on Mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="admin-sidebar-overlay" 
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div style={{ width: '280px', background: 'white', borderRight: '1px solid #e2e8f0', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem', padding: '0 0.5rem' }}>
-          <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #3b82f6, #2dd4bf)', borderRadius: '12px' }} className="flex-center">
-            <Shield size={20} color="white" />
+      <div 
+        className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`}
+        style={{ width: '280px', background: 'white', borderRight: '1px solid #e2e8f0', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3rem', padding: '0 0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #3b82f6, #2dd4bf)', borderRadius: '12px' }} className="flex-center">
+              <Shield size={20} color="white" />
+            </div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Play11 Admin</h2>
           </div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Play11 Admin</h2>
+          {/* Close Sidebar Button on Mobile */}
+          <button 
+            className="admin-hamburger"
+            onClick={() => setIsSidebarOpen(false)}
+            style={{
+              display: 'none',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: '#f1f5f9',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#64748b'
+            }}
+          >
+            <X size={16} />
+          </button>
         </div>
         <SidebarItem icon={<LayoutDashboard />} label="Overview" />
         <SidebarItem icon={<Upload />} label="Upload Quiz" />
@@ -1107,9 +1262,30 @@ const AdminDashboard = () => {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, padding: '2.5rem', overflowX: 'auto', minWidth: '0' }}>
+      <div className="admin-content" style={{ flex: 1, padding: '2.5rem', overflowX: 'auto', minWidth: '0' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div className="admin-title-row" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            {/* Hamburger Button */}
+            <button 
+              className="admin-hamburger" 
+              onClick={() => setIsSidebarOpen(true)}
+              style={{
+                display: 'none',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                background: 'white',
+                border: '1px solid #e2e8f0',
+                cursor: 'pointer',
+                color: '#0f172a',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Menu size={20} />
+            </button>
+            
             <h2 style={{ fontSize: '2rem', fontWeight: 950, letterSpacing: '-0.02em', color: '#0f172a' }}>{activeTab}</h2>
             <button 
               onClick={() => setActiveTab('Overview')}
@@ -1170,7 +1346,7 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'Upload Quiz' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2.5rem' }}>
+          <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2.5rem' }}>
             {/* File Upload Section */}
             <div style={{ background: 'white', padding: '3rem', borderRadius: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '2.5rem' }}>
@@ -1374,7 +1550,7 @@ const AdminDashboard = () => {
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', width: '100%' }}>
+              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', width: '100%' }}>
                 <div>
                   <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#3b82f6', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Your Local Time</p>
                   <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1e40af', fontFamily: 'monospace' }}>
@@ -1394,7 +1570,7 @@ const AdminDashboard = () => {
             </div>
 
             <form onSubmit={handleCreateQuiz}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
                 <div className="form-group">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label>QUIZ TITLE (ENGLISH)</label>
@@ -1475,7 +1651,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2.5rem' }}>
+              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2.5rem' }}>
                 <div className="form-group">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label>DESCRIPTION (ENGLISH)</label>
@@ -1525,7 +1701,7 @@ const AdminDashboard = () => {
                         </button>
                       )}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                    <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                       <div style={{ position: 'relative' }}>
                         <input
                           placeholder="Question Text (English)"
@@ -1557,7 +1733,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+                    <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
                       {q.options.map((opt, optIdx) => (
                         <div key={optIdx} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1rem', background: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
                           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -1691,14 +1867,14 @@ const AdminDashboard = () => {
               </div>
             ) : (
               quizzes.map(q => (
-                <div key={q.id} style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={q.id} className="admin-quiz-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h4 style={{ fontWeight: 800 }}>{q.title || 'Untitled Quiz'}</h4>
                   <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
                     {q.participants_count || 0} Participants • {(q.status || 'unknown').toUpperCase()} • {(q.zone_id || 'general').toUpperCase()}
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div className="admin-quiz-card-actions" style={{ display: 'flex', gap: '0.75rem' }}>
                   <button onClick={() => { setSelectedQuiz(q); fetchParticipants(q.id); }} className="admin-secondary-btn">Manage</button>
                   <button
                     onClick={() => handleEditQuiz(q)}
@@ -1947,7 +2123,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <form onSubmit={handleCreateVoucher} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+              <form onSubmit={handleCreateVoucher} className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
                 <div className="form-group">
                   <label>Voucher Title</label>
                   <input 
@@ -2009,7 +2185,7 @@ const AdminDashboard = () => {
                     onChange={e => setNewVoucher({...newVoucher, color: e.target.value})}
                   />
                 </div>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <div className="form-group admin-span-full" style={{ gridColumn: 'span 2' }}>
                   <label style={{ fontWeight: 700, color: '#475569', marginBottom: '8px', display: 'block' }}>Expiry Setting</label>
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                     <button 
@@ -2191,7 +2367,7 @@ const AdminDashboard = () => {
               <div style={{ maxWidth: '700px' }}>
                 <div className="form-group" style={{ marginBottom: '2rem' }}>
                   <label>Home Hero Banner Image URL</label>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div className="admin-input-row" style={{ display: 'flex', gap: '1rem' }}>
                     <input
                       className="admin-input"
                       placeholder="https://example.com/image.jpg"
@@ -2257,7 +2433,7 @@ const AdminDashboard = () => {
               <div style={{ maxWidth: '700px' }}>
                 <div className="form-group" style={{ marginBottom: '2rem' }}>
                   <label>Global Quiz Room Banner URL</label>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div className="admin-input-row" style={{ display: 'flex', gap: '1rem' }}>
                     <input
                       className="admin-input"
                       placeholder="https://example.com/quiz-banner.jpg"
@@ -2332,7 +2508,7 @@ const AdminDashboard = () => {
                   <div key={zone.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '2rem' }}>
                     <div className="form-group">
                       <label>{zone.label}</label>
-                      <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div className="admin-input-row" style={{ display: 'flex', gap: '1rem' }}>
                         <input
                           className="admin-input"
                           placeholder={`https://example.com/${zone.id}-banner.jpg`}
@@ -2416,7 +2592,7 @@ const AdminDashboard = () => {
 
                 <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                   <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569' }}>{activeLabel.toUpperCase()}</label>
-                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                  <div className="admin-input-row" style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
                     <input
                       className="admin-input"
                       type="number"
@@ -2486,7 +2662,7 @@ const AdminDashboard = () => {
                 {reviewLoading && <div style={{ textAlign: 'center', padding: '2rem' }}><Loader2 className="animate-spin" size={32} /></div>}
                 {!reviewLoading && reviewData && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.5rem' }}>
+                    <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.5rem' }}>
                       <div style={{ padding: '1.25rem', background: '#f8fafc', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
                         <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Submission Stats</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -2674,7 +2850,7 @@ const AdminDashboard = () => {
                     <div key={idx} style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
                       <p style={{ fontWeight: 800, color: '#3b82f6', marginBottom: '0.5rem', fontSize: '0.8rem', textTransform: 'uppercase' }}>Question {idx + 1}</p>
                       <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem', color: '#1e293b' }}>{q.text}</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         {q.options.map((opt, oIdx) => (
                           <div key={oIdx} style={{ 
                             padding: '0.75rem 1rem', borderRadius: '0.75rem', 

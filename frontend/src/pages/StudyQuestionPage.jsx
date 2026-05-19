@@ -242,77 +242,46 @@ const StudyQuestionPage = () => {
         )}
         
         {/* Top Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <button 
-              onClick={() => navigate('/home-choice')} 
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.5rem', 
-                color: '#94a3b8', 
-                background: 'rgba(255,255,255,0.05)', 
-                border: '1px solid rgba(255,255,255,0.1)', 
-                padding: '0.5rem 1rem',
-                borderRadius: '0.75rem',
-                cursor: 'pointer', 
-                marginBottom: '1.5rem', 
-                fontWeight: 800,
-                fontSize: '0.85rem',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-            >
-              <ChevronLeft size={18} /> Back to Arena
-            </button>
-
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 0.5rem 0', color: '#f8fafc' }}>
-              {quizDetails?.title || 'Check how quiz will feel after joining'}
-            </h1>
-            {/* Removed Description Text */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', marginBottom: '1rem', gap: '0.75rem', textAlign: 'center' }}>
+          <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }} onClick={() => navigate('/home-choice')}>
+              <ChevronLeft size={24} color="#ffffff" />
+              <h1 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '0', color: '#ffffff' }}>
+                {quizDetails?.title || 'Movies'}
+              </h1>
+            </div>
+            <div style={{ color: '#ffffff', cursor: 'pointer' }}>
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <div style={{ background: '#1e293b', padding: '0.75rem 1.25rem', borderRadius: '0.75rem', textAlign: 'center', border: '1px solid #334155' }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>ZONE</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f8fafc' }}>STUDY</div>
+          <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#cbd5e1', textTransform: 'uppercase', marginBottom: '0.1rem' }}>ZONE</div>
+              <div style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff' }}>STUDY</div>
             </div>
-            <div style={{ background: timeLeft < 60 ? '#450a0a' : '#1e293b', padding: '0.75rem 1.25rem', borderRadius: '0.75rem', textAlign: 'center', border: '1px solid ' + (timeLeft < 60 ? '#ef4444' : '#334155') }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: timeLeft < 60 ? '#ef4444' : '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>TIME LEFT</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: timeLeft < 60 ? '#ef4444' : '#f8fafc' }}>{formatTime(timeLeft)}</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: timeLeft < 60 ? '#ef4444' : '#cbd5e1', textTransform: 'uppercase', marginBottom: '0.1rem' }}>TIME LEFT</div>
+              <div style={{ fontSize: '1rem', fontWeight: 900, color: timeLeft < 60 ? '#ef4444' : '#ffffff' }}>{formatTime(timeLeft)}</div>
             </div>
-            <div style={{ background: '#1e293b', padding: '0.75rem 1.25rem', borderRadius: '0.75rem', textAlign: 'center', border: '1px solid #334155' }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>ANSWERED</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f8fafc' }}>{answeredCount}/{questions.length}</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#cbd5e1', textTransform: 'uppercase', marginBottom: '0.1rem' }}>ANSWERED</div>
+              <div style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff' }}>{answeredCount}/{questions.length}</div>
             </div>
           </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="main-content-flex" style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+        <div className="main-content-flex" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
           
-          {/* Left Column (Question Card) */}
-          <div className="question-card" style={{ flex: '0 1 550px', background: '#ffffff', borderRadius: '1.5rem', padding: '1.5rem', color: '#0f172a' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                QUESTION {currentIdx + 1} OF {questions.length}
-              </span>
-              <span style={{ background: '#e0f2fe', color: '#0284c7', fontSize: '0.7rem', fontWeight: 800, padding: '4px 12px', borderRadius: '999px' }}>
-                {quizDetails?.timer_minutes || 10} MINUTES QUIZ
-              </span>
-            </div>
+          {/* Question Card */}
+          <div className="question-card" style={{ width: '100%', background: '#ffffff', borderRadius: '1.5rem', padding: '1.5rem', color: '#0f172a' }}>
 
-            <div style={{ width: '100%', height: '6px', background: '#f1f5f9', borderRadius: '999px', marginBottom: '2rem' }}>
-              <div style={{ width: `${progressPercent}%`, height: '100%', background: '#3b82f6', borderRadius: '999px', transition: 'width 0.3s ease' }}></div>
-            </div>
+            <p style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '2rem', lineHeight: 1.4, color: '#334155' }}>
+              Q{currentIdx + 1}. {currentQ?.question_text}
+            </p>
 
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '2rem', lineHeight: 1.4, color: '#0f172a' }}>
-              {currentQ?.question_text}
-            </h2>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '3rem' }}>
               {currentQ?.options?.map((opt, idx) => {
                 // Simplest possible check to avoid any equality issues
                 const isSelected = answers[currentIdx] == idx;
@@ -343,33 +312,25 @@ const StudyQuestionPage = () => {
                 );
               })}
             </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'space-between' }}>
               <button 
                 onClick={() => {
-                  if (currentIdx > 0) {
-                    setCurrentIdx(currentIdx - 1);
-                  } else {
-                    navigate('/home-choice');
-                  }
+                  if (currentIdx > 0) { setCurrentIdx(currentIdx - 1); }
+                  else { navigate('/home-choice'); }
                 }}
                 style={{
-                  background: 'transparent', border: '1px solid #cbd5e1', color: '#0f172a',
-                  padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer'
+                  flex: 1, background: '#ffffff', border: '1px solid #cbd5e1', color: '#475569',
+                  padding: '0.75rem 0', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer'
                 }}
               >
                 Previous
               </button>
               <button 
-                onClick={() => {
-                  if (currentIdx < questions.length - 1) {
-                    setCurrentIdx(currentIdx + 1);
-                  }
-                }}
+                onClick={() => { if (currentIdx < questions.length - 1) { setCurrentIdx(currentIdx + 1); } }}
                 disabled={currentIdx === questions.length - 1 || isSubmitting}
                 style={{
-                  background: 'transparent', border: '1px solid #cbd5e1', color: '#64748b',
-                  padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
+                  flex: 1, background: '#ffffff', border: '1px solid #cbd5e1', color: '#475569',
+                  padding: '0.75rem 0', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
                   opacity: currentIdx === questions.length - 1 ? 0.3 : 1
                 }}
               >
@@ -377,66 +338,26 @@ const StudyQuestionPage = () => {
               </button>
               <button 
                 onClick={() => {
-                  if (currentIdx === questions.length - 1) {
-                    handleSubmit();
-                  } else {
-                    setCurrentIdx(currentIdx + 1);
-                  }
+                  if (currentIdx === questions.length - 1) { handleSubmit(); }
+                  else { setCurrentIdx(currentIdx + 1); }
                 }}
-                disabled={answers[currentQ?.id] === undefined || isSubmitting}
+                disabled={answers[currentIdx] === undefined || isSubmitting}
                 style={{
-                  background: (answers[currentQ?.id] === undefined || isSubmitting) ? '#94a3b8' : '#3b82f6', border: 'none', color: '#ffffff',
-                  padding: '0.75rem 2rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.9rem', cursor: (answers[currentQ?.id] === undefined || isSubmitting) ? 'not-allowed' : 'pointer',
-                  boxShadow: (answers[currentQ?.id] === undefined || isSubmitting) ? 'none' : '0 4px 12px rgba(59, 130, 246, 0.3)',
-                  transition: 'all 0.2s ease',
-                  minWidth: '160px'
+                  flex: 1.5, background: (answers[currentIdx] === undefined || isSubmitting) ? '#94a3b8' : '#0052cc', border: 'none', color: '#ffffff',
+                  padding: '0.75rem 0', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.85rem',
+                  cursor: (answers[currentIdx] === undefined || isSubmitting) ? 'not-allowed' : 'pointer',
+                  boxShadow: (answers[currentIdx] === undefined || isSubmitting) ? 'none' : '0 4px 10px rgba(0, 82, 204, 0.3)',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 {isSubmitting ? 'Submitting...' : (currentIdx === questions.length - 1 ? 'Submit Battle' : 'Save & Next')}
               </button>
             </div>
           </div>
-
-          {/* Right Column (Navigator only) */}
-          <div className="sidebar-column" style={{ flex: '0 0 280px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
-            {/* Question Navigator */}
-            <div style={{ background: '#1e293b', borderRadius: '1.25rem', padding: '1.5rem', border: '1px solid #334155' }}>
-              <h3 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1.25rem' }}>
-                QUESTION NAVIGATOR
-              </h3>
-              <div className="navigator-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem' }}>
-                {questions.map((q, i) => {
-                  let bg = '#334155';
-                  let color = '#94a3b8';
-                  
-                  if (i === currentIdx) {
-                    bg = '#3b82f6'; // Blue for current
-                    color = '#ffffff';
-                  } else if (answers[i] !== undefined) {
-                    bg = '#10b981'; // Green for answered
-                    color = '#ffffff';
-                  }
-
-                  return (
-                    <div key={i} onClick={() => setCurrentIdx(i)} style={{
-                      aspectRatio: '1', borderRadius: '0.5rem', background: bg, color: color,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      {i + 1}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Widgets (Moved out of sidebar for mobile) */}
         <div className="bottom-widgets-area" style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-          {/* Live Rank Preview */}
           <div style={{ flex: '1 1 300px', background: '#1e293b', borderRadius: '1.25rem', padding: '1.5rem', border: '1px solid #334155' }}>
             <h3 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1.25rem' }}>
               LIVE RANK PREVIEW

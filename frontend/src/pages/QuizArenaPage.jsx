@@ -167,7 +167,7 @@ const QuizArenaPage = () => {
 
   return (
     <div className="quiz-room-bg" style={{ minHeight: '100vh' }}>
-      <div className="container" style={{ paddingTop: '4rem', paddingBottom: '6rem', paddingLeft: '3%', paddingRight: '3%' }}>
+      <div className="container" style={{ paddingTop: '80px', paddingBottom: '6rem', paddingLeft: '3%', paddingRight: '3%' }}>
         
         {/* Global or Zone-Specific Banner */}
         {activeBanner && (
@@ -222,7 +222,7 @@ const QuizArenaPage = () => {
              <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTopColor: config.themeColor, borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }} className="animate-slide-up">
+          <div style={{ display: 'grid', gap: '12px' }} className="mobile-grid-2 animate-slide-up">
             {quizzes.map((quiz) => (
               <div key={quiz.id} className="game-zone-card" style={{ padding: '0.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -291,37 +291,6 @@ const QuizArenaPage = () => {
                 )}
               </div>
             ))}
-
-            {/* Practice Card */}
-              <div key="practice" className="game-zone-card" style={{ padding: '0.75rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                   <div style={{ fontSize: '0.55rem', fontWeight: 900, color: '#94a3b8', letterSpacing: '0.1em' }}>PRACTICE</div>
-                   <div className="badge-practice-mini" style={{ fontSize: '0.5rem', padding: '2px 4px' }}>FREE</div>
-                </div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.4rem', lineHeight: 1.2 }}>{config.practiceTitle}</h3>
-                <div className="game-status-box" style={{ padding: '0.5rem' }}>
-                   <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.2rem', letterSpacing: '0.05em' }}>MODE</p>
-                   <p style={{ fontSize: '1.1rem', fontWeight: 950, color: config.themeColor }}>{config.practiceMode}</p>
-                </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem', marginBottom: '1.5rem' }}>
-                <div className="arena-metric" style={{ padding: '0.4rem' }}>
-                    <span className="label" style={{ fontSize: '0.5rem' }}>Qs</span>
-                    <span className="value" style={{ fontSize: '0.7rem' }}>10</span>
-                </div>
-                <div className="arena-metric" style={{ padding: '0.4rem' }}>
-                    <span className="label" style={{ fontSize: '0.5rem' }}>PLAYERS</span>
-                    <span className="value" style={{ fontSize: '0.7rem' }}>300+</span>
-                </div>
-                <div className="arena-metric" style={{ padding: '0.4rem' }}>
-                    <span className="label" style={{ fontSize: '0.5rem' }}>TYPE</span>
-                    <span className="value" style={{ fontSize: '0.7rem' }}>{config.practiceType}</span>
-                </div>
-              </div>
-              <button className="shimmer-btn" onClick={() => navigate(config.practiceAction)} style={{ marginTop: 'auto', height: '56px', background: '#64748b' }}>
-                <span>{config.practiceBtn}</span>
-                <ChevronRight size={20} strokeWidth={3} />
-              </button>
-            </div>
           </div>
         )}
 
@@ -332,6 +301,35 @@ const QuizArenaPage = () => {
               <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>{config.aboutDesc}</p>
            </div>
         </div>
+        
+        <style>{`
+          .mobile-grid-2 {
+             grid-template-columns: repeat(2, 1fr);
+          }
+          @media (max-width: 480px) {
+             .mobile-grid-2 {
+                grid-template-columns: 1fr !important;
+                gap: 16px !important;
+             }
+             .game-zone-card {
+                padding: 1.25rem !important;
+             }
+             .game-zone-card h3 {
+                font-size: 1.15rem !important;
+             }
+             .arena-metric {
+                padding: 0.6rem 0.3rem !important;
+             }
+             .arena-metric .value {
+                font-size: 0.85rem !important;
+             }
+             .shimmer-btn {
+                width: 100% !important;
+                padding: 0.8rem !important;
+                font-size: 0.9rem !important;
+             }
+          }
+        `}</style>
       </div>
     </div>
   );

@@ -109,30 +109,63 @@ const UpcomingQuizzes = ({ quizzes = [], title = "Multiple quizzes scheduled by 
            })}
         </div>
 
-        <style>{`
-           @media (max-width: 640px) {
-              .mobile-grid-2 {
-                 grid-template-columns: 1fr 1fr !important;
-                 gap: 8px !important;
-                 padding: 0 8px !important;
-                 width: 100% !important;
-                 box-sizing: border-box !important;
-              }
-              .game-zone-card {
-                 padding: 0.75rem 0.6rem !important;
-                 min-width: 0 !important;
-              }
-              .game-zone-card h3 {
-                 font-size: 0.95rem !important;
-              }
-              .game-status-box {
-                 padding: 0.75rem 0.4rem !important;
-              }
-              .quiz-metric-pill {
-                 padding: 0.35rem 0.1rem !important;
-              }
-           }
-        `}</style>
+         <style>{`
+            .mobile-grid-2 {
+               display: grid;
+               grid-template-columns: repeat(2, 1fr);
+               gap: 12px;
+            }
+            @media (max-width: 640px) {
+               .mobile-grid-2 {
+                  grid-template-columns: 1fr 1fr !important;
+                  gap: 8px !important;
+                  padding: 0 8px !important;
+                  width: 100% !important;
+                  box-sizing: border-box !important;
+               }
+               .game-zone-card {
+                  padding: 0.75rem 0.6rem !important;
+                  min-width: 0 !important;
+               }
+               .game-zone-card h3 {
+                  font-size: 0.95rem !important;
+               }
+               .game-status-box {
+                  padding: 0.75rem 0.4rem !important;
+               }
+               .quiz-metric-pill {
+                  padding: 0.35rem 0.1rem !important;
+               }
+            }
+            @media (max-width: 480px) {
+               .mobile-grid-2 {
+                  grid-template-columns: 1fr !important;
+                  gap: 16px !important;
+                  padding: 0 4px !important;
+               }
+               .game-zone-card {
+                  padding: 1.25rem !important;
+               }
+               .game-zone-card h3 {
+                  font-size: 1.15rem !important;
+               }
+               .game-status-box {
+                  padding: 1rem !important;
+               }
+               .quiz-metric-pill {
+                  padding: 0.5rem 0.25rem !important;
+               }
+               .quiz-metric-pill strong {
+                  font-size: 0.8rem !important;
+               }
+               .quiz-join-btn {
+                  width: 100% !important;
+                  padding: 0.65rem !important;
+                  font-size: 0.85rem !important;
+                  border-radius: 8px !important;
+               }
+            }
+         `}</style>
     </div>
   );
 };
