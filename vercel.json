@@ -3,14 +3,14 @@
   "public": true,
   "outputDirectory": "frontend/dist",
   "functions": {
-    "api/index.js": {
-      "regions": ["sin1"]
+    "api/index.php": {
+      "runtime": "vercel-php@0.6.0"
     }
   },
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index.js"
+      "dest": "/api/index.php"
     },
     {
       "handle": "filesystem"
