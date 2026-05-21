@@ -19,15 +19,26 @@ if ($dbUrl && (strpos($dbUrl, 'postgres://') === 0 || strpos($dbUrl, 'postgresql
     
     // Check if query parameter has sslmode or add it
     $sslmode = 'require';
+    $optionsParam = '';
     if (isset($dbParts['query'])) {
         parse_str($dbParts['query'], $queryParts);
         if (isset($queryParts['sslmode'])) {
             $sslmode = $queryParts['sslmode'];
         }
+        if (isset($queryParts['options'])) {
+            $optionsParam = ";options='" . addslashes($queryParts['options']) . "'";
+        }
+    }
+
+    // Automatically detect neon.tech and add options endpoint parameter if not already set
+    if (empty($optionsParam) && strpos($host, 'neon.tech') !== false) {
+        $hostParts = explode('.', $host);
+        $endpointId = $hostParts[0];
+        $optionsParam = ";options='endpoint=$endpointId'";
     }
 
     try {
-        $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;sslmode=$sslmode";
+        $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;sslmode=$sslmode" . $optionsParam;
         $pdo = new PDO($dsn, $user, $pass, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
