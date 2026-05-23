@@ -42,7 +42,7 @@ if ($dbUrl && (strpos($dbUrl, 'postgres://') === 0 || strpos($dbUrl, 'postgresql
         $pdo = new PDO($dsn, $user, $pass, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_EMULATE_PREPARES => true, // Must be true for Postgres to avoid masking real errors with 25P02
         ]);
     } catch (PDOException $e) {
         error_log("PostgreSQL connection failed: " . $e->getMessage());
