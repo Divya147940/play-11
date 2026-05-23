@@ -1,7 +1,6 @@
 import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import Loader from './components/Loader';
 import './index.css';
 
 // Dynamic route-based lazy loading of pages to minimize initial bundle size and optimize load times
@@ -67,8 +66,8 @@ const App = () => {
           <div className="bg-blob blob-3"></div>
         </div>
         
-        {/* Suspense fallback using custom premium animated Loader */}
-        <Suspense fallback={<Loader fullPage={true} />}>
+        {/* Suspense fallback using null (no full-page preloader) */}
+        <Suspense fallback={null}>
           <Routes>
             {/* Auth & Splash - No global nav */}
             <Route path="/" element={<Layout hideNav><LandingPage /></Layout>} />
