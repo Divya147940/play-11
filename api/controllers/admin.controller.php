@@ -450,12 +450,12 @@ class AdminController {
 
             // 2. Update Quiz
             DB::query(
-                `UPDATE quizzes SET 
+                "UPDATE quizzes SET 
                   zone_id = ?, category_id = ?, match_id = ?, title = ?, hindi_title = ?, 
                   description = ?, hindi_description = ?, total_questions = ?, timer_minutes = ?, 
                   entry_amount = ?, prize_amount = ?, open_at = ?, close_at = ?, marks_per_q = ?, banner_url = ?,
                   status = 'active', winner_id = NULL
-                WHERE id = ?`,
+                WHERE id = ?",
                 [$zone_id, $category_id, $match_id, $title, $hindiTitle, $description, $hindiDescription, $total_questions, $timer_minutes, $entry_amount, $prize_amount, $open_at, $close_at, $marks_per_q, $banner_url, $id]
             );
 
