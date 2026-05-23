@@ -84,7 +84,7 @@ class AdminController {
     public static function getUsers($queryParams) {
         $page = isset($queryParams['page']) ? (int)$queryParams['page'] : 1;
         $limit = isset($queryParams['limit']) ? (int)$queryParams['limit'] : 50;
-        $offset = ($page - 1) * limit;
+        $offset = ($page - 1) * $limit;
 
         try {
             $stmt = DB::query("SELECT * FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?", [$limit, $offset]);

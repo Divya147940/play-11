@@ -4,6 +4,7 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Guest-Id");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Max-Age: 86400");
+header("Connection: close");
 
 // Handle Preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -189,7 +190,7 @@ if ($uri === 'vouchers/redeem' && $method === 'POST') {
 }
 
 // --- Categories Routes ---
-if ($uri === 'categories' && $method === 'GET') {
+if (($uri === 'categories' || $uri === 'categories/all') && $method === 'GET') {
     CategoryController::getAllCategories();
     exit;
 }
@@ -303,7 +304,7 @@ if (($uri === 'admin/quizzes/create' || $uri === 'admin/quizzes/upload' || $uri 
     AdminController::createQuiz($inputBody);
     exit;
 }
-if ($uri === 'admin/quizzes' && $method === 'GET') {
+if (($uri === 'admin/quizzes' || $uri === 'admin/quizzes/stats') && $method === 'GET') {
     verifyAdmin();
     AdminController::getQuizzesWithStats();
     exit;
