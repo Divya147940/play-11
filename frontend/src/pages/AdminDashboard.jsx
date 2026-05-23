@@ -168,7 +168,8 @@ const AdminDashboard = () => {
     try {
       const token = localStorage.getItem('play11_admin_session');
       const statsRes = await fetch('/api/admin/dashboard', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
       });
       if (statsRes.status === 401 || statsRes.status === 403) {
         localStorage.removeItem('play11_admin_session');
@@ -181,7 +182,8 @@ const AdminDashboard = () => {
 
       if (activeTab === 'Payments') {
         const transRes = await fetch('/api/admin/transactions/pending', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store'
         });
         const tData = await transRes.json();
         console.log('[AdminDashboard] Pending Transactions Fetch Result:', tData);
@@ -195,7 +197,8 @@ const AdminDashboard = () => {
 
       if (activeTab === 'Users') {
         const usersRes = await fetch('/api/admin/users', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store'
         });
         if (usersRes.status === 401) {
           window.location.href = '/admin/login';
@@ -207,7 +210,8 @@ const AdminDashboard = () => {
 
       if (activeTab === 'Quizzes' || activeTab === 'Create Quiz') {
         const quizRes = await fetch('/api/admin/quizzes/stats', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store'
         });
         if (quizRes.status === 401) {
           window.location.href = '/admin/login';
@@ -221,18 +225,19 @@ const AdminDashboard = () => {
           setQuizzes([]);
         }
 
-        const catRes = await fetch('/api/categories/all');
+        const catRes = await fetch('/api/categories/all', { cache: 'no-store' });
         const catData = await catRes.json();
         if (catData.success) setCategories(catData.categories);
 
-        const matchRes = await fetch('/api/matches');
+        const matchRes = await fetch('/api/matches', { cache: 'no-store' });
         const matchData = await matchRes.json();
         if (matchData.success) setMatches(matchData.matches || []);
       }
 
       if (activeTab === 'Vouchers') {
         const vRes = await fetch('/api/admin/vouchers', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store'
         });
         const vData = await vRes.json();
         if (vData.success) setVouchers(vData.vouchers);
