@@ -105,29 +105,42 @@ if ($uri === 'db-test' && $method === 'GET') {
     try {
         $pdo = DB::getPdo();
         $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
-        $tables = [];
-        $columns = [];
+        $result = ['success' => true, 'driver' => $driver];
         
         if ($driver === 'pgsql') {
-            $stmt = $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema='public'");
-            $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            // Check categories exist (FK target for quizzes)
+            $catStmt = $pdo->query("SELECT id, name FROM categories LIMIT 10");
+            $result['categories'] = $catStmt->fetchAll();
             
-            $stmt = $pdo->query("SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name='quizzes'");
-            $columns['quizzes'] = $stmt->fetchAll();
+            // Check questions schema
+            $stmt = $pdo->query("SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name='questions' ORDER BY ordinal_position");
+            $result['questions_schema'] = $stmt->fetchAll();
             
-            $stmt = $pdo->query("SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name='question_options'");
-            $columns['question_options'] = $stmt->fetchAll();
-
-            $stmt = $pdo->query("SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name='correct_answers'");
-            $columns['correct_answers'] = $stmt->fetchAll();
+            // Check FK constraints on quizzes table
+            $stmt = $pdo->query("
+                SELECT kcu.column_name, ccu.table_name AS foreign_table, ccu.column_name AS foreign_column
+                FROM information_schema.table_constraints AS tc
+                JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+                JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema
+                WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name = 'quizzes'
+            ");
+            $result['quizzes_fk'] = $stmt->fetchAll();
+            
+            // Try a test insert that mirrors what createQuiz does
+            $testError = null;
+            try {
+                $pdo->beginTransaction();
+                $pdo->exec("INSERT INTO quizzes (id, zone_id, category_id, match_id, title, hindi_title, description, hindi_description, total_questions, timer_minutes, entry_amount, prize_amount, open_at, close_at, status, marks_per_q, banner_url) VALUES ('test-diag-999', 'study-zone', 'cat-1', NULL, 'Test Quiz', NULL, '', NULL, 1, 5, 0, 0, NOW(), NOW() + INTERVAL '1 hour', 'active', 2, NULL)");
+                $pdo->rollBack(); // Always rollback - this is just a test
+                $result['insert_test'] = 'OK - insert succeeded (rolled back)';
+            } catch (Exception $insertEx) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                $testError = $insertEx->getMessage();
+                $result['insert_test_error'] = $testError;
+            }
         }
         
-        echo json_encode([
-            'success' => true,
-            'driver' => $driver,
-            'tables' => $tables,
-            'columns' => $columns
-        ]);
+        echo json_encode($result);
     } catch (Exception $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
