@@ -127,19 +127,19 @@ class AdminController {
     public static function createQuiz($data) {
         $zone_id = $data['zone_id'] ?? '';
         $category_id = $data['category_id'] ?? '';
-        $match_id = $data['match_id'] ?? null;
+        $match_id = !empty($data['match_id']) ? $data['match_id'] : null;
         $title = $data['title'] ?? '';
-        $hindiTitle = $data['hindiTitle'] ?? null;
+        $hindiTitle = !empty($data['hindiTitle']) ? $data['hindiTitle'] : null;
         $description = $data['description'] ?? '';
-        $hindiDescription = $data['hindiDescription'] ?? null;
+        $hindiDescription = !empty($data['hindiDescription']) ? $data['hindiDescription'] : null;
         $total_questions = (int)($data['total_questions'] ?? 0);
         $timer_minutes = (int)($data['timer_minutes'] ?? 5);
         $entry_amount = (float)($data['entry_amount'] ?? 0);
         $prize_amount = (float)($data['prize_amount'] ?? 0);
-        $open_at = $data['open_at'] ?? null;
-        $close_at = $data['close_at'] ?? null;
+        $open_at = !empty($data['open_at']) ? $data['open_at'] : null;
+        $close_at = !empty($data['close_at']) ? $data['close_at'] : null;
         $marks_per_q = (int)($data['marks_per_q'] ?? 2);
-        $banner_url = $data['banner_url'] ?? null;
+        $banner_url = !empty($data['banner_url']) ? $data['banner_url'] : null;
         $questions = $data['questions'] ?? [];
 
         $quizId = guidv4();
@@ -425,19 +425,19 @@ class AdminController {
     public static function updateQuiz($id, $data) {
         $zone_id = $data['zone_id'] ?? '';
         $category_id = $data['category_id'] ?? '';
-        $match_id = $data['match_id'] ?? null;
+        $match_id = !empty($data['match_id']) ? $data['match_id'] : null;
         $title = $data['title'] ?? '';
-        $hindiTitle = $data['hindiTitle'] ?? null;
+        $hindiTitle = !empty($data['hindiTitle']) ? $data['hindiTitle'] : null;
         $description = $data['description'] ?? '';
-        $hindiDescription = $data['hindiDescription'] ?? null;
+        $hindiDescription = !empty($data['hindiDescription']) ? $data['hindiDescription'] : null;
         $total_questions = (int)($data['total_questions'] ?? 0);
         $timer_minutes = (int)($data['timer_minutes'] ?? 5);
         $entry_amount = (float)($data['entry_amount'] ?? 0);
         $prize_amount = (float)($data['prize_amount'] ?? 0);
-        $open_at = $data['open_at'] ?? null;
-        $close_at = $data['close_at'] ?? null;
+        $open_at = !empty($data['open_at']) ? $data['open_at'] : null;
+        $close_at = !empty($data['close_at']) ? $data['close_at'] : null;
         $marks_per_q = (int)($data['marks_per_q'] ?? 2);
-        $banner_url = $data['banner_url'] ?? null;
+        $banner_url = !empty($data['banner_url']) ? $data['banner_url'] : null;
         $questions = $data['questions'] ?? [];
 
         $pdo = DB::getPdo();

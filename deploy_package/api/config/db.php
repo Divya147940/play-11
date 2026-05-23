@@ -439,6 +439,7 @@ function runMigrations($pdo, $driver) {
 
 function seedData($pdo) {
     try {
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
         // Seed Categories
         $count = $pdo->query("SELECT COUNT(*) FROM categories")->fetchColumn();
         if ($count == 0) {
