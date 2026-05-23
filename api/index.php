@@ -112,13 +112,13 @@ if ($uri === 'db-test' && $method === 'GET') {
             $stmt = $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema='public'");
             $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
             
-            $stmt = $pdo->query("SELECT column_name, data_type FROM information_schema.columns WHERE table_name='quizzes'");
+            $stmt = $pdo->query("SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name='quizzes'");
             $columns['quizzes'] = $stmt->fetchAll();
             
-            $stmt = $pdo->query("SELECT column_name, data_type FROM information_schema.columns WHERE table_name='question_options'");
+            $stmt = $pdo->query("SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name='question_options'");
             $columns['question_options'] = $stmt->fetchAll();
 
-            $stmt = $pdo->query("SELECT column_name, data_type FROM information_schema.columns WHERE table_name='correct_answers'");
+            $stmt = $pdo->query("SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name='correct_answers'");
             $columns['correct_answers'] = $stmt->fetchAll();
         }
         
