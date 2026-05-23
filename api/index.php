@@ -103,13 +103,31 @@ if ($uri === 'health' && $method === 'GET') {
 
 if ($uri === 'db-test' && $method === 'GET') {
     try {
-        $driver = DB::getPdo()->getAttribute(PDO::ATTR_DRIVER_NAME);
-        if ($driver === 'pgsql' || $driver === 'mysql') {
-            $time = DB::query('SELECT NOW()')->fetchColumn();
-        } else {
-            $time = DB::query("SELECT datetime('now')")->fetchColumn();
+        $pdo = DB::getPdo();
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $tables = [];
+        $columns = [];
+        
+        if ($driver === 'pgsql') {
+            $stmt = $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema='public'");
+            $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            $stmt = $pdo->query("SELECT column_name, data_type FROM information_schema.columns WHERE table_name='quizzes'");
+            $columns['quizzes'] = $stmt->fetchAll();
+            
+            $stmt = $pdo->query("SELECT column_name, data_type FROM information_schema.columns WHERE table_name='question_options'");
+            $columns['question_options'] = $stmt->fetchAll();
+
+            $stmt = $pdo->query("SELECT column_name, data_type FROM information_schema.columns WHERE table_name='correct_answers'");
+            $columns['correct_answers'] = $stmt->fetchAll();
         }
-        echo json_encode(['success' => true, 'time' => $time, 'message' => 'Database connection successful!']);
+        
+        echo json_encode([
+            'success' => true,
+            'driver' => $driver,
+            'tables' => $tables,
+            'columns' => $columns
+        ]);
     } catch (Exception $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
