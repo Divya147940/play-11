@@ -170,8 +170,9 @@ const AdminDashboard = () => {
       const statsRes = await fetch('/api/admin/dashboard', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (statsRes.status === 401) {
+      if (statsRes.status === 401 || statsRes.status === 403) {
         localStorage.removeItem('play11_admin_session');
+        alert('Session expired or invalid. Please login again.');
         window.location.href = '/admin/login';
         return;
       }
@@ -344,10 +345,25 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('play11_admin_session');
+
+      // Validate dates before sending
+      const openDate = new Date(newQuiz.open_at);
+      const closeDate = new Date(newQuiz.close_at);
+      if (!newQuiz.open_at || isNaN(openDate.getTime())) {
+        alert('Please set a valid Open At date/time.');
+        setLoading(false);
+        return;
+      }
+      if (!newQuiz.close_at || isNaN(closeDate.getTime())) {
+        alert('Please set a valid Close At date/time.');
+        setLoading(false);
+        return;
+      }
+
       const quizData = {
         ...newQuiz,
-        open_at: new Date(newQuiz.open_at).toISOString(),
-        close_at: new Date(newQuiz.close_at).toISOString()
+        open_at: openDate.toISOString(),
+        close_at: closeDate.toISOString()
       };
 
       const url = isEditing ? `/api/admin/quizzes/${editId}` : '/api/admin/quizzes';
@@ -365,8 +381,9 @@ const AdminDashboard = () => {
         body: JSON.stringify(quizData)
       });
 
-      if (res.status === 401) {
-        alert('Your session has expired. Please login again.');
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem('play11_admin_session');
+        alert('Session expired. Please login again.');
         window.location.href = '/admin/login';
         return;
       }
@@ -381,7 +398,7 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       console.error(err);
-      alert('Network error. Please try again.');
+      alert('Network error: ' + err.message);
     } finally {
       setLoading(false);
     }

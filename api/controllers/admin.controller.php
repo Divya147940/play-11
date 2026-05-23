@@ -142,6 +142,30 @@ class AdminController {
         $banner_url = !empty($data['banner_url']) ? $data['banner_url'] : null;
         $questions = $data['questions'] ?? [];
 
+        // Validate required timestamps server-side
+        if (empty($open_at) || empty($close_at)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'open_at and close_at are required']);
+            return;
+        }
+        // Ensure timestamps are valid ISO strings that PostgreSQL can accept
+        $openTs = strtotime($open_at);
+        $closeTs = strtotime($close_at);
+        if (!$openTs) {
+            http_response_code(400);
+            echo json_encode(['error' => 'open_at is not a valid date: ' . $open_at]);
+            return;
+        }
+        if (!$closeTs) {
+            http_response_code(400);
+            echo json_encode(['error' => 'close_at is not a valid date: ' . $close_at]);
+            return;
+        }
+        // Convert to PostgreSQL-safe format
+        $open_at = date('Y-m-d H:i:s', $openTs);
+        $close_at = date('Y-m-d H:i:s', $closeTs);
+
+
         $quizId = guidv4();
         $pdo = DB::getPdo();
 
