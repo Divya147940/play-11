@@ -134,8 +134,8 @@ class AdminController {
         $hindiDescription = !empty($data['hindiDescription']) ? $data['hindiDescription'] : null;
         $total_questions = (int)($data['total_questions'] ?? 0);
         $timer_minutes = (int)($data['timer_minutes'] ?? 5);
-        $entry_amount = (float)($data['entry_amount'] ?? 0);
-        $prize_amount = (float)($data['prize_amount'] ?? 0);
+        $entry_amount = (int)($data['entry_amount'] ?? 0);
+        $prize_amount = (int)($data['prize_amount'] ?? 0);
         $open_at = !empty($data['open_at']) ? $data['open_at'] : null;
         $close_at = !empty($data['close_at']) ? $data['close_at'] : null;
         $marks_per_q = (int)($data['marks_per_q'] ?? 2);
@@ -145,48 +145,69 @@ class AdminController {
         $quizId = guidv4();
         $pdo = DB::getPdo();
 
+        // Safety: reset any stale aborted transaction from migrations
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+
         try {
             $pdo->beginTransaction();
 
-            // 1. Insert Quiz
-            DB::query(
-                "INSERT INTO quizzes (id, zone_id, category_id, match_id, title, hindi_title, description, hindi_description, total_questions, timer_minutes, entry_amount, prize_amount, open_at, close_at, status, marks_per_q, banner_url) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)",
-                [$quizId, $zone_id, $category_id, $match_id, $title, $hindiTitle, $description, $hindiDescription, $total_questions, $timer_minutes, $entry_amount, $prize_amount, $open_at, $close_at, $marks_per_q, $banner_url]
-            );
+            // 1. Insert Quiz - wrap with label so error says which step failed
+            try {
+                DB::query(
+                    "INSERT INTO quizzes (id, zone_id, category_id, match_id, title, hindi_title, description, hindi_description, total_questions, timer_minutes, entry_amount, prize_amount, open_at, close_at, status, marks_per_q, banner_url)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)",
+                    [$quizId, $zone_id, $category_id, $match_id, $title, $hindiTitle, $description, $hindiDescription, $total_questions, $timer_minutes, $entry_amount, $prize_amount, $open_at, $close_at, $marks_per_q, $banner_url]
+                );
+            } catch (Exception $e) {
+                throw new Exception('[quizzes insert failed] ' . $e->getMessage());
+            }
 
             // 2. Insert Questions & Options
             if (is_array($questions)) {
                 foreach ($questions as $qIdx => $q) {
                     $qId = guidv4();
                     $qText = $q['text'] ?? '';
-                    $qHindiText = $q['hindiText'] ?? null;
+                    $qHindiText = !empty($q['hindiText']) ? $q['hindiText'] : null;
                     $qMarks = $marks_per_q;
 
-                    DB::query(
-                        "INSERT INTO questions (id, quiz_id, question_text, hindi_question_text, marks, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
-                        [$qId, $quizId, $qText, $qHindiText, $qMarks, $qIdx]
-                    );
+                    try {
+                        DB::query(
+                            "INSERT INTO questions (id, quiz_id, question_text, hindi_question_text, marks, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
+                            [$qId, $quizId, $qText, $qHindiText, $qMarks, $qIdx]
+                        );
+                    } catch (Exception $e) {
+                        throw new Exception("[question #$qIdx insert failed] " . $e->getMessage());
+                    }
 
                     // Options
                     if (isset($q['options']) && is_array($q['options'])) {
                         foreach ($q['options'] as $oIdx => $opt) {
                             $optId = guidv4();
                             $text = is_array($opt) ? ($opt['text'] ?? '') : $opt;
-                            $hindiText = is_array($opt) ? ($opt['hindiText'] ?? null) : null;
-                            DB::query(
-                                "INSERT INTO question_options (id, question_id, option_text, hindi_option_text, option_value) VALUES (?, ?, ?, ?, ?)",
-                                [$optId, $qId, $text, $hindiText, (string)$oIdx]
-                            );
+                            $hindiText = is_array($opt) ? (!empty($opt['hindiText']) ? $opt['hindiText'] : null) : null;
+                            try {
+                                DB::query(
+                                    "INSERT INTO question_options (id, question_id, option_text, hindi_option_text, option_value) VALUES (?, ?, ?, ?, ?)",
+                                    [$optId, $qId, $text, $hindiText, (string)$oIdx]
+                                );
+                            } catch (Exception $e) {
+                                throw new Exception("[question #$qIdx option #$oIdx insert failed] " . $e->getMessage());
+                            }
                         }
                     }
 
                     // Correct Answer
                     $correctOptionIndex = (string)($q['correctOptionIndex'] ?? '0');
-                    DB::query(
-                        "INSERT INTO correct_answers (id, question_id, answer_value) VALUES (?, ?, ?)",
-                        [guidv4(), $qId, $correctOptionIndex]
-                    );
+                    try {
+                        DB::query(
+                            "INSERT INTO correct_answers (id, question_id, answer_value) VALUES (?, ?, ?)",
+                            [guidv4(), $qId, $correctOptionIndex]
+                        );
+                    } catch (Exception $e) {
+                        throw new Exception("[question #$qIdx correct_answer insert failed] " . $e->getMessage());
+                    }
                 }
             }
 

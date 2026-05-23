@@ -415,9 +415,18 @@ function runMigrations($pdo, $driver) {
 
         foreach ($alterations as $alteration) {
             try {
+                // For PostgreSQL: use IF NOT EXISTS to prevent transaction abort errors
+                // when columns already exist. This is the fix for SQLSTATE[25P02].
+                if ($driver === 'pgsql') {
+                    $alteration = str_replace('ADD COLUMN ', 'ADD COLUMN IF NOT EXISTS ', $alteration);
+                }
                 $pdo->exec($alteration);
             } catch (PDOException $e) {
-                // Ignore errors about columns already existing
+                // For non-pgsql drivers, still catch and ignore duplicate column errors
+                // Also reset any aborted transaction state in PostgreSQL
+                if ($driver === 'pgsql') {
+                    try { $pdo->exec('ROLLBACK'); } catch (\Exception $re) {}
+                }
             }
         }
 
