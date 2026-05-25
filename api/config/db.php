@@ -410,7 +410,18 @@ function runMigrations($pdo, $driver) {
             "ALTER TABLE quizzes ADD COLUMN prize_amount INTEGER DEFAULT 0",
             "ALTER TABLE quizzes ADD COLUMN banner_url TEXT",
             "ALTER TABLE vouchers ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
-            "ALTER TABLE vouchers ADD COLUMN expires_at TIMESTAMP"
+            "ALTER TABLE vouchers ADD COLUMN expires_at TIMESTAMP",
+            "CREATE INDEX idx_quizzes_category ON quizzes(category_id)",
+            "CREATE INDEX idx_quizzes_zone ON quizzes(zone_id)",
+            "CREATE INDEX idx_quizzes_match ON quizzes(match_id)",
+            "CREATE INDEX idx_questions_quiz ON questions(quiz_id)",
+            "CREATE INDEX idx_submissions_user ON submissions(user_id)",
+            "CREATE INDEX idx_submissions_quiz ON submissions(quiz_id)",
+            "CREATE INDEX idx_otp_requests_mobile ON otp_requests(mobile)",
+            "CREATE INDEX idx_sub_answers_sub ON submission_answers(submission_id)",
+            "CREATE INDEX idx_transactions_user ON transactions(user_id)",
+            "CREATE INDEX idx_user_vouchers_user ON user_vouchers(user_id)",
+            "CREATE INDEX idx_vouchers_code ON vouchers(code)"
         ];
 
         foreach ($alterations as $alteration) {
@@ -419,6 +430,9 @@ function runMigrations($pdo, $driver) {
                 // when columns already exist. This is the fix for SQLSTATE[25P02].
                 if ($driver === 'pgsql') {
                     $alteration = str_replace('ADD COLUMN ', 'ADD COLUMN IF NOT EXISTS ', $alteration);
+                    if (strpos($alteration, 'CREATE INDEX') === 0) {
+                        $alteration = str_replace('CREATE INDEX ', 'CREATE INDEX IF NOT EXISTS ', $alteration);
+                    }
                 }
                 $pdo->exec($alteration);
             } catch (PDOException $e) {

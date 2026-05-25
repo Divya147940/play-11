@@ -37,6 +37,7 @@ const VouchersPage = lazy(() => import('./pages/VouchersPage'));
 const QuizReviewPage = lazy(() => import('./pages/QuizReviewPage'));
 const AboutUsPage = lazy(() => import('./pages/AboutUsPage'));
 const SupportPage = lazy(() => import('./pages/SupportPage'));
+const TransactionPage = lazy(() => import('./pages/TransactionPage'));
 
 const ProtectedAdminRoute = ({ children }) => {
   const isAdminAuth = localStorage.getItem('play11_admin_session');
@@ -109,6 +110,7 @@ const App = () => {
             <Route path="/balance" element={<Layout><BalancePage /></Layout>} />
             <Route path="/vouchers" element={<Layout><VouchersPage /></Layout>} />
             <Route path="/quiz-review/:id" element={<Layout><QuizReviewPage /></Layout>} />
+            <Route path="/transaction/:type" element={<Layout><TransactionPage /></Layout>} />
             
             {/* Admin Panels */}
             <Route path="/admin/login" element={<Layout hideNav><AdminLoginPage /></Layout>} />

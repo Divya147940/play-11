@@ -80,12 +80,18 @@ const HomeChoicePage = () => {
       // Only show loading on initial fetch
       if (allQuizzes.length === 0) setLoading(true);
       
+      const session = localStorage.getItem('play11_session');
+
       try {
-        const all = await quizService.getAllQuizzes();
+        // Fire ALL requests in parallel — much faster than sequential await
+        const [all, bannerData, joined] = await Promise.all([
+          quizService.getAllQuizzes(),
+          settingsService.getSetting('home_banner_url'),
+          session ? quizService.getJoinedQuizzes() : Promise.resolve([]),
+        ]);
+
         setAllQuizzes(all);
-        
-        // Fetch global banner
-        const bannerData = await settingsService.getSetting('home_banner_url');
+
         if (bannerData.success && bannerData.value) {
           setGlobalBanner(bannerData.value);
           localStorage.setItem('play11_home_banner', bannerData.value);
@@ -93,21 +99,13 @@ const HomeChoicePage = () => {
           setGlobalBanner('');
           localStorage.removeItem('play11_home_banner');
         }
-      } catch (err) {
-        console.error('Failed to fetch all quizzes:', err);
-      }
 
-      try {
-        const session = localStorage.getItem('play11_session');
-        if (session) {
-          const joined = await quizService.getJoinedQuizzes();
-          setJoinedQuizzes(joined);
-        }
+        if (session) setJoinedQuizzes(joined);
       } catch (err) {
-        console.warn('Could not fetch joined quizzes (might be guest):', err);
+        console.error('Failed to fetch home data:', err);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchQuizzes();
@@ -229,11 +227,7 @@ const HomeChoicePage = () => {
         </div>
 
         {/* Tab Content */}
-        {loading ? (
-          <div className="flex-center" style={{ padding: '3rem' }}>
-             <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-          </div>
-        ) : selectedTab === 'All Rooms' ? (
+        {selectedTab === 'All Rooms' ? (
           <div className="mobile-grid-2">
             {quizRooms.map((room, idx) => (
               <div key={room.id} className="contest-room-card" 
@@ -270,7 +264,9 @@ const HomeChoicePage = () => {
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 6px', fontSize: '0.6rem', fontWeight: 700, color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase' }}>
                        <span>WIN UPTO {room.prize}</span>
-                       {getLiveCount(room.id) > 0 ? (
+                       {loading ? (
+                         <span style={{ color: '#94a3b8' }}>● ...</span>
+                       ) : getLiveCount(room.id) > 0 ? (
                          <span style={{ color: '#ef4444' }}>● LIVE</span>
                        ) : (
                          <span style={{ color: '#94a3b8' }}>● OFF</span>
@@ -300,6 +296,10 @@ const HomeChoicePage = () => {
                 </div>
               </div>
             ))}
+          </div>
+        ) : loading ? (
+          <div className="flex-center" style={{ padding: '3rem' }}>
+             <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
           </div>
         ) : (
           <UpcomingQuizzes 

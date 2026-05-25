@@ -10,20 +10,28 @@ const QuizReviewPage = () => {
 
   useEffect(() => {
     const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
-    if (!sessionRaw) return navigate('/login');
+    const guestId = localStorage.getItem('play11_guest_id');
+    
+    if (!sessionRaw && !guestId) return navigate('/login');
 
     let token = '';
-    try {
-      const parsed = JSON.parse(sessionRaw);
-      token = parsed.token || (typeof sessionRaw === 'string' ? sessionRaw : '');
-    } catch (e) {
-      token = sessionRaw;
+    if (sessionRaw) {
+      try {
+        const parsed = JSON.parse(sessionRaw);
+        token = parsed.token || (typeof sessionRaw === 'string' ? sessionRaw : '');
+      } catch (e) {
+        token = sessionRaw;
+      }
     }
 
     const loadReview = async (submissionId) => {
-      const res = await fetch(`/api/auth/submission/${submissionId}/review`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      } else if (guestId) {
+        headers['x-guest-id'] = guestId;
+      }
+      const res = await fetch(`/api/auth/submission/${submissionId}/review`, { headers });
       if (!res.ok) throw new Error('Submission review data not found');
       return res.json();
     };
@@ -40,9 +48,13 @@ const QuizReviewPage = () => {
       .catch(async (err) => {
         console.log('Direct submission review load failed. Retrying by matching quiz ID in user history...', err);
         try {
-          const historyRes = await fetch('/api/auth/history', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+          const headers = {};
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          } else if (guestId) {
+            headers['x-guest-id'] = guestId;
+          }
+          const historyRes = await fetch('/api/auth/history', { headers });
           const historyData = await historyRes.json();
           if (historyData.success && historyData.history) {
             // Find the user's submission for this quiz ID
@@ -68,7 +80,7 @@ const QuizReviewPage = () => {
 
   if (loading) {
     return (
-      <div className="flex-center" style={{ minHeight: '100vh' }}>
+      <div className="flex-center" style={{ minHeight: '60vh' }}>
         <div style={{ width: '40px', height: '40px', border: '4px solid #e2e8f0', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
       </div>
     );
@@ -76,7 +88,7 @@ const QuizReviewPage = () => {
 
   if (!data) {
     return (
-      <div className="flex-center" style={{ minHeight: '100vh', flexDirection: 'column', gap: '1rem' }}>
+      <div className="flex-center" style={{ minHeight: '60vh', flexDirection: 'column', gap: '1rem' }}>
         <Info size={48} color="#94a3b8" />
         <p style={{ fontWeight: 800, color: '#64748b' }}>Submission not found</p>
         <button onClick={() => navigate('/history')} className="primary-btn">Back to History</button>
@@ -239,35 +251,10 @@ const QuizReviewPage = () => {
 
             const isResultDeclared = !!submission.quiz_winner_id;
 
-            // High-precision cleanup logic (same as admin)
-            const subTitle = submission.title?.trim().toLowerCase();
-            const qText = item.question_text?.trim().toLowerCase();
-            const isTitleMatch = qText === subTitle || qText === "question" || !item.question_text;
-            const opt0HasQMark = item.options?.[0]?.text?.includes('?');
-            const isCorrupted = (isTitleMatch || (!item.question_text?.includes('?') && opt0HasQMark)) && item.options?.length > 1;
-
-            const displayQuestion = isCorrupted ? item.options[0].text : item.question_text;
-            const optionsToDisplay = [...(isCorrupted ? item.options.slice(1) : (item.options || []))];
-
-            // Adjusted correct index: If corrupted and pointing to the question text, shift by 1
-            const correctIdxRaw = normalizeIndex(item.correct_value);
-            let correctIdx = correctIdxRaw;
-            if (isCorrupted && item.options?.[correctIdxRaw]?.text?.trim() === displayQuestion?.trim()) {
-              correctIdx = correctIdxRaw + 1;
-            }
-
-            // Data Recovery: If selected or correct index is beyond current options, or if we have < 4, 
-            // try to pad to 4 options to maintain the A, B, C, D sequence.
-            const selIdx = normalizeIndex(item.selected_value);
-            const corIdx = correctIdx; // Now correctly defined
-            const targetLen = Math.max(4, selIdx + 1, corIdx + 1);
-            
-            while (optionsToDisplay.length < targetLen && optionsToDisplay.length < 10) {
-              optionsToDisplay.push({ 
-                text: 'Option data not available', 
-                value: String(optionsToDisplay.length + (isCorrupted ? 1 : 0)) 
-              });
-            }
+            const correctIdx = normalizeIndex(item.correct_value);
+            const selectedIdx = normalizeIndex(item.selected_value);
+            const optionsToDisplay = item.options || [];
+            const displayQuestion = item.question_text;
 
             return (
               <div key={idx} id={`question-${idx + 1}`} style={{ 
@@ -295,11 +282,10 @@ const QuizReviewPage = () => {
 
                 <div style={{ display: 'grid', gap: '1rem' }}>
                   {optionsToDisplay.map((opt, oIdx) => {
-                    const actualVal = opt.value;
                     const selectedIdx = normalizeIndex(item.selected_value);
                     
-                    const isUserSelected = String(selectedIdx) === String(actualVal);
-                    const isCorrect = String(correctIdx) === String(actualVal);
+                    const isUserSelected = selectedIdx === oIdx;
+                    const isCorrect = correctIdx === oIdx;
                     
                     let bgColor = '#f8fafc';
                     let borderColor = '#e2e8f0';

@@ -2,15 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Wallet, Plus, ArrowUpRight, ArrowDownLeft, Landmark, History, X, CheckCircle2, ShieldCheck, Gift, Search, Trophy, Image as ImageIcon } from 'lucide-react';
 
+// ─── Persistent sessionStorage cache helper ─────────────────────────────────
+const pgCache = {
+  get(key) {
+    try {
+      const raw = sessionStorage.getItem(`play11_cache:${key}`);
+      if (!raw) return null;
+      const { data, expiry } = JSON.parse(raw);
+      if (Date.now() > expiry) { sessionStorage.removeItem(`play11_cache:${key}`); return null; }
+      return data;
+    } catch (e) { return null; }
+  },
+  set(key, data, ttlMs = 60000) {
+    try { sessionStorage.setItem(`play11_cache:${key}`, JSON.stringify({ data, expiry: Date.now() + ttlMs })); } catch (e) {}
+  }
+};
+
 const BalancePage = () => {
   const navigate = useNavigate();
   const [balance, setBalance] = useState({ coins: 0, points: 0, bonus: 0 });
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [amount, setAmount] = useState('');
-  const [upiId, setUpiId] = useState('');
-  const [step, setStep] = useState('input'); // input, processing, success
   
   const [transactions, setTransactions] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,12 +45,19 @@ const BalancePage = () => {
 
     const headers = { 'Authorization': `Bearer ${token}` };
 
+    // ── Show cached data instantly, then refresh in background ──────
+    const cachedBalance = pgCache.get('wallet_balance');
+    const cachedTx = pgCache.get('wallet_transactions');
+    if (cachedBalance) { setBalance(cachedBalance); setLoading(false); }
+    if (cachedTx) setTransactions(cachedTx);
+
     // Fetch Balance
     fetch('/api/wallet/balance', { headers })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
           setBalance(data.balance);
+          pgCache.set('wallet_balance', data.balance);
         }
       })
       .catch(console.error);
@@ -49,77 +67,19 @@ const BalancePage = () => {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          setTransactions(data.transactions.map(tx => ({
+          const formatted = data.transactions.map(tx => ({
             ...tx,
             amount: (tx.type === 'credit' ? '+' : '') + tx.amount,
             isWin: tx.category === 'win',
             date: new Date(tx.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
-          })));
+          }));
+          setTransactions(formatted);
+          pgCache.set('wallet_transactions', formatted);
         }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
-
-  const handleAction = async (type, qrCode = null) => {
-    if (!amount || isNaN(amount) || Number(amount) <= 0) {
-      alert('Please enter a valid amount');
-      return;
-    }
-    if (type === 'withdraw' && !upiId.includes('@') && !qrCode) {
-      alert('Please enter a valid UPI ID or Upload QR Code');
-      return;
-    }
-    
-    const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
-    let token;
-    try {
-      const session = JSON.parse(sessionRaw);
-      token = session.token || sessionRaw;
-    } catch (e) {
-      token = sessionRaw;
-    }
-
-    setStep('processing');
-    
-    try {
-      const endpoint = type === 'add' ? '/api/wallet/add-money' : '/api/wallet/withdraw';
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ amount: Number(amount), upiId, qrCode })
-      });
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        setStep('success');
-        // Refresh balance
-        const balRes = await fetch('/api/wallet/balance', { headers: { 'Authorization': `Bearer ${token}` } });
-        const balData = await balRes.json();
-        if (balData.success) setBalance(balData.balance);
-      } else {
-        alert(data.message || 'Transaction failed');
-        setStep('input');
-      }
-    } catch (error) {
-      console.error('Transaction Error:', error);
-      alert('Network error. Please try again.');
-      setStep('input');
-    }
-  };
-
-  const resetModal = () => {
-    setShowAddModal(false);
-    setShowWithdrawModal(false);
-    setAmount('');
-    setUpiId('');
-    setStep('input');
-    window.qrCodeData = null;
-  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', paddingBottom: '100px', fontFamily: "'Outfit', sans-serif" }}>
@@ -191,7 +151,7 @@ const BalancePage = () => {
         {/* Action Buttons */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '3rem' }}>
           <button 
-            onClick={() => setShowAddModal(true)}
+            onClick={() => navigate('/transaction/add')}
             style={{ 
               background: '#0ea5e9', color: 'white', border: 'none', padding: '1.25rem', borderRadius: '20px', fontWeight: 800, fontSize: '1rem',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', boxShadow: '0 10px 20px rgba(14, 165, 233, 0.2)'
@@ -200,7 +160,7 @@ const BalancePage = () => {
             <Plus size={20} /> Add Money
           </button>
           <button 
-            onClick={() => setShowWithdrawModal(true)}
+            onClick={() => navigate('/transaction/withdraw')}
             style={{ 
               background: 'white', color: '#1e1b4b', border: '1px solid #e2e8f0', padding: '1.25rem', borderRadius: '20px', fontWeight: 800, fontSize: '1rem',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer'
@@ -368,140 +328,6 @@ const BalancePage = () => {
           </div>
         </div>
 
-        {/* MODAL SYSTEM */}
-        {(showAddModal || showWithdrawModal) && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}>
-            <div style={{ background: 'white', width: '100%', maxWidth: '450px', borderRadius: '32px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-              
-              <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1e1b4b' }}>{showAddModal ? 'Add Money' : 'Withdraw Money'}</h3>
-                <button onClick={resetModal} style={{ background: '#f8fafc', border: 'none', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                  <X size={20} color="#64748b" />
-                </button>
-              </div>
-
-              <div style={{ padding: '2rem' }}>
-                {step === 'input' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>Amount (₹)</label>
-                      <input 
-                        type="number" 
-                        value={amount} 
-                        onChange={(e) => setAmount(e.target.value)}
-                        placeholder="Enter amount (e.g. 500)"
-                        style={{ width: '100%', padding: '1.25rem', borderRadius: '16px', border: '1.5px solid #e2e8f0', fontSize: '1.5rem', fontWeight: 800, outline: 'none', background: '#f8fafc' }}
-                      />
-                    </div>
-
-                    {showWithdrawModal && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>UPI ID</label>
-                          <input 
-                            type="text" 
-                            value={upiId} 
-                            onChange={(e) => setUpiId(e.target.value)}
-                            placeholder="yourname@upi"
-                            style={{ width: '100%', padding: '1.25rem', borderRadius: '16px', border: '1.5px solid #e2e8f0', fontSize: '1.1rem', fontWeight: 700, outline: 'none', background: '#f8fafc' }}
-                          />
-                        </div>
-
-                        <div style={{ textAlign: 'center' }}>
-                          <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', marginBottom: '1rem', textTransform: 'uppercase' }}>OR UPLOAD QR SCANNER</p>
-                          <input 
-                            type="file" 
-                            id="qr-upload" 
-                            accept="image/*" 
-                            hidden 
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onloadend = () => {
-                                  // This is the base64 string
-                                  const base64String = reader.result;
-                                  // We can store this in a temporary state or just alert
-                                  window.qrCodeData = base64String;
-                                  alert('QR Code uploaded successfully!');
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
-                          <label 
-                            htmlFor="qr-upload"
-                            style={{ 
-                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', 
-                              padding: '1.5rem', border: '2px dashed #cbd5e1', borderRadius: '20px', cursor: 'pointer',
-                              background: '#f8fafc', transition: 'all 0.2s'
-                            }}
-                          >
-                            <ImageIcon size={32} color="#64748b" />
-                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}>Click to Upload QR Image</span>
-                          </label>
-                          {window.qrCodeData && (
-                            <p style={{ marginTop: '10px', fontSize: '0.7rem', color: '#10b981', fontWeight: 800 }}>âœ… QR Image Attached</p>
-                          )}
-                        </div>
-
-                        <p style={{ marginTop: '8px', fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <ShieldCheck size={14} color="#10b981" /> Verified withdrawal destination
-                        </p>
-                      </div>
-                    )}
-
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      {[50, 100, 500, 1000].map(v => (
-                        <button key={v} onClick={() => setAmount(v)} style={{ flex: 1, padding: '8px', borderRadius: '10px', background: '#f1f5f9', border: 'none', fontWeight: 800, color: '#1e1b4b', cursor: 'pointer', fontSize: '0.8rem' }}>+₹{v}</button>
-                      ))}
-                    </div>
-
-                    <button 
-                      onClick={() => {
-                        const qrCode = window.qrCodeData;
-                        handleAction(showAddModal ? 'add' : 'withdraw', qrCode);
-                      }}
-                      style={{ width: '100%', padding: '1.25rem', borderRadius: '18px', background: '#0d1f3c', color: 'white', border: 'none', fontWeight: 900, fontSize: '1.1rem', cursor: 'pointer', marginTop: '1rem' }}
-                    >
-                      {showAddModal ? 'Proceed to Pay' : 'Verify & Withdraw'}
-                    </button>
-                  </div>
-                )}
-
-                {step === 'processing' && (
-                  <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-                    <div style={{ width: '60px', height: '60px', border: '4px solid #f1f5f9', borderTopColor: '#0ea5e9', borderRadius: '50%', margin: '0 auto 1.5rem', animation: 'spin 1s linear infinite' }}></div>
-                    <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e1b4b' }}>Processing...</h4>
-                    <p style={{ color: '#64748b', marginTop: '8px' }}>Please do not close this window</p>
-                  </div>
-                )}
-
-                {step === 'success' && (
-                  <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-                    <CheckCircle2 size={64} color="#10b981" style={{ margin: '0 auto 1.5rem' }} />
-                    <h4 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1e1b4b' }}>{showAddModal ? 'Transaction Successful!' : 'Withdrawal Request Sent!'}</h4>
-                    <p style={{ color: '#64748b', marginTop: '12px', fontSize: '1rem', fontWeight: 600 }}>
-                      {showAddModal 
-                        ? `₹${amount} has been added to your wallet.` 
-                        : `₹${amount} withdrawal request is pending admin approval.`}
-                    </p>
-                    <button 
-                      onClick={resetModal}
-                      style={{ width: '100%', padding: '1.25rem', borderRadius: '18px', background: '#1e1b4b', color: 'white', border: 'none', fontWeight: 900, fontSize: '1.1rem', cursor: 'pointer', marginTop: '2rem' }}
-                    >
-                      Awesome!
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <style>{`
-          @keyframes spin { to { transform: rotate(360deg); } }
-        `}</style>
         </div>
       )}
     </div>

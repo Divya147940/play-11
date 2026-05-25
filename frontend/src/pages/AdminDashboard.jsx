@@ -258,45 +258,29 @@ const AdminDashboard = () => {
 
   const fetchSettings = async () => {
     try {
-      const homeData = await settingsService.getSetting('home_banner_url');
-      if (homeData.success) {
-        setHomeBannerUrl(homeData.value);
+      const data = await settingsService.getBatchSettings([
+        'home_banner_url', 'quiz_room_banner_url',
+        'banner_zone_study-zone', 'banner_zone_sport-zone',
+        'banner_zone_game-zone', 'banner_zone_movie-zone', 'banner_zone_news-zone',
+        'welcome_bonus', 'referral_referrer_bonus', 'referral_referee_bonus',
+        'daily_login_bonus', 'first_deposit_bonus'
+      ]);
+
+      if (data.success && data.settings) {
+        const s = data.settings;
+        if (s.home_banner_url !== undefined) setHomeBannerUrl(s.home_banner_url);
+        if (s.quiz_room_banner_url !== undefined) setQuizRoomBannerUrl(s.quiz_room_banner_url);
+        if (s['banner_zone_study-zone'] !== undefined) setStudyZoneBannerUrl(s['banner_zone_study-zone']);
+        if (s['banner_zone_sport-zone'] !== undefined) setSportZoneBannerUrl(s['banner_zone_sport-zone']);
+        if (s['banner_zone_game-zone'] !== undefined) setGameZoneBannerUrl(s['banner_zone_game-zone']);
+        if (s['banner_zone_movie-zone'] !== undefined) setMovieZoneBannerUrl(s['banner_zone_movie-zone']);
+        if (s['banner_zone_news-zone'] !== undefined) setNewsZoneBannerUrl(s['banner_zone_news-zone']);
+        if (s.welcome_bonus !== undefined) setWelcomeBonus(s.welcome_bonus);
+        if (s.referral_referrer_bonus !== undefined) setReferralReferrerBonus(s.referral_referrer_bonus);
+        if (s.referral_referee_bonus !== undefined) setReferralRefereeBonus(s.referral_referee_bonus);
+        if (s.daily_login_bonus !== undefined) setDailyLoginBonus(s.daily_login_bonus);
+        if (s.first_deposit_bonus !== undefined) setFirstDepositBonus(s.first_deposit_bonus);
       }
-      const quizRoomData = await settingsService.getSetting('quiz_room_banner_url');
-      if (quizRoomData.success) {
-        setQuizRoomBannerUrl(quizRoomData.value);
-      }
-      
-      const studyData = await settingsService.getSetting('banner_zone_study-zone');
-      if (studyData.success) setStudyZoneBannerUrl(studyData.value);
-      
-      const sportData = await settingsService.getSetting('banner_zone_sport-zone');
-      if (sportData.success) setSportZoneBannerUrl(sportData.value);
-      
-      const gameData = await settingsService.getSetting('banner_zone_game-zone');
-      if (gameData.success) setGameZoneBannerUrl(gameData.value);
-      
-      const movieData = await settingsService.getSetting('banner_zone_movie-zone');
-      if (movieData.success) setMovieZoneBannerUrl(movieData.value);
-      
-      const newsData = await settingsService.getSetting('banner_zone_news-zone');
-      if (newsData.success) setNewsZoneBannerUrl(newsData.value);
-
-      const welcomeData = await settingsService.getSetting('welcome_bonus');
-      if (welcomeData.success) setWelcomeBonus(welcomeData.value);
-
-      const refRefData = await settingsService.getSetting('referral_referrer_bonus');
-      if (refRefData.success) setReferralReferrerBonus(refRefData.value);
-
-      const refRefeData = await settingsService.getSetting('referral_referee_bonus');
-      if (refRefeData.success) setReferralRefereeBonus(refRefeData.value);
-
-      const dailyData = await settingsService.getSetting('daily_login_bonus');
-      if (dailyData.success) setDailyLoginBonus(dailyData.value);
-
-      const firstDepData = await settingsService.getSetting('first_deposit_bonus');
-      if (firstDepData.success) setFirstDepositBonus(firstDepData.value);
-
     } catch (err) {
       console.error('Failed to fetch settings:', err);
     }
@@ -347,6 +331,7 @@ const AdminDashboard = () => {
 
   const handleCreateQuiz = async (e) => {
     e.preventDefault();
+    if (loading) return; // Prevent double clicks
     setLoading(true);
     try {
       const token = localStorage.getItem('play11_admin_session');
@@ -355,7 +340,7 @@ const AdminDashboard = () => {
       const openDate = new Date(newQuiz.open_at);
       const closeDate = new Date(newQuiz.close_at);
       if (!newQuiz.open_at || isNaN(openDate.getTime())) {
-        alert('Please set a valid Open At date/time.');
+        alert('Please set a valid Created At date/time.');
         setLoading(false);
         return;
       }
@@ -497,7 +482,9 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteQuiz = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) return;
+    // Optimistic instant UI update
+    setQuizzes(prev => prev.filter(q => q.id !== id));
+    
     try {
       const token = localStorage.getItem('play11_admin_session');
       const res = await fetch(`/api/admin/quizzes/${id}`, {
@@ -505,10 +492,7 @@ const AdminDashboard = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      if (data.success) {
-        alert('Quiz deleted successfully');
-        fetchData(); // Refresh the list
-      } else {
+      if (!data.success) {
         alert('Error: ' + data.error);
       }
     } catch (err) {
@@ -1644,6 +1628,7 @@ const AdminDashboard = () => {
                     ))}
                   </div>
                 </div>
+                {/*
                 <div className="form-group">
                   <label>ASSOCIATED MATCH (OPTIONAL)</label>
                   <select className="admin-input" value={newQuiz.match_id} onChange={e => setNewQuiz({ ...newQuiz, match_id: e.target.value })}>
@@ -1655,8 +1640,9 @@ const AdminDashboard = () => {
                     ))}
                   </select>
                 </div>
+                */}
                 <div className="form-group">
-                  <label>OPEN AT</label>
+                  <label>CREATED AT</label>
                   <input className="admin-input" type="datetime-local" required value={newQuiz.open_at} onChange={e => setNewQuiz({ ...newQuiz, open_at: e.target.value })} />
                 </div>
                 <div className="form-group">
@@ -1832,7 +1818,7 @@ const AdminDashboard = () => {
                     transition: 'all 0.2s'
                   }}
                 >
-                  âˆ’
+                  -
                 </button>
                 <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a', minWidth: '120px', textAlign: 'center' }}>
                   {newQuiz.questions.length} Question{newQuiz.questions.length !== 1 ? 's' : ''}
@@ -1858,7 +1844,7 @@ const AdminDashboard = () => {
                   onClick={() => {
                     if (window.confirm('Clear all form data?')) {
                       localStorage.removeItem('play11_quiz_draft');
-                      window.location.reload();
+                      resetForm();
                     }
                   }}
                   style={{
@@ -2001,17 +1987,11 @@ const AdminDashboard = () => {
 
         {activeTab === 'Payments' && (
           <div style={{ background: 'white', borderRadius: '1.5rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
               <div>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>Pending Payment Requests</h3>
                 <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Verify manual transfers before approving</p>
               </div>
-              <button 
-                onClick={fetchData}
-                style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <Loader2 size={16} className={loading ? "animate-spin" : ""} /> Refresh
-              </button>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', minWidth: '950px', borderCollapse: 'collapse' }}>
@@ -2724,42 +2704,10 @@ const AdminDashboard = () => {
 
                         const isResultDeclared = !!reviewData.submission.quiz_winner_id;
 
-                        // High-precision cleanup logic for corrupted ingestion
-                        const subTitle = reviewData.submission.title?.trim().toLowerCase();
-                        const qText = ans.question_text?.trim().toLowerCase();
-
-                        // Check if the saved question text is actually just the quiz title
-                        const isTitleMatch = qText === subTitle || qText === "question" || !ans.question_text;
-                        // Check if the real question text (with ?) is hidden in the options
-                        const opt0HasQMark = ans.options?.[0]?.text?.includes('?');
-
-                        const isCorrupted = (isTitleMatch || (!ans.question_text?.includes('?') && opt0HasQMark)) && ans.options?.length > 1;
-
-                        const displayQuestion = isCorrupted ? ans.options[0].text : ans.question_text;
-                        const optionsToDisplay = [...(isCorrupted ? ans.options.slice(1) : (ans.options || []))];
-
-                        // Data Recovery padding
-                        const selIdx = normalizeIndex(ans.selected_value);
-                        const corIdxRaw = normalizeIndex(ans.correct_value);
-                        let corIdx = corIdxRaw;
-                        if (isCorrupted && ans.options?.[corIdxRaw]?.text?.trim() === (isCorrupted ? ans.options[0].text : ans.question_text)?.trim()) {
-                          corIdx = corIdxRaw + 1;
-                        }
-                        const targetLen = Math.max(4, selIdx + 1, corIdx + 1);
-                        
-                        while (optionsToDisplay.length < targetLen && optionsToDisplay.length < 10) {
-                          optionsToDisplay.push({ 
-                            text: 'Option data not available', 
-                            value: String(optionsToDisplay.length + (isCorrupted ? 1 : 0)) 
-                          });
-                        }
-
-                        // Adjusted correct index: If corrupted and pointing to the question text, shift by 1
-                        const correctIdxRaw = normalizeIndex(ans.correct_value);
-                        let correctIdx = correctIdxRaw;
-                        if (isCorrupted && ans.options?.[correctIdxRaw]?.text?.trim() === displayQuestion?.trim()) {
-                          correctIdx = correctIdxRaw + 1;
-                        }
+                        const correctIdx = normalizeIndex(ans.correct_value);
+                        const selectedIdx = normalizeIndex(ans.selected_value);
+                        const optionsToDisplay = ans.options || [];
+                        const displayQuestion = ans.question_text;
 
                         return (
                           <div key={idx} style={{ padding: '2.5rem', border: '1px solid #f1f5f9', borderRadius: '2rem', background: 'white', boxShadow: '0 8px 30px rgba(0,0,0,0.02)', marginBottom: '2.5rem' }}>
@@ -2779,12 +2727,10 @@ const AdminDashboard = () => {
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
                               {optionsToDisplay.map((opt, oIdx) => {
-                                // Map back to original indices if we shifted/filtered
-                                const actualVal = opt.value;
                                 const selectedIdx = normalizeIndex(ans.selected_value);
 
-                                const isSelected = String(selectedIdx) === String(actualVal);
-                                const isCorrect = String(correctIdx) === String(actualVal);
+                                const isSelected = selectedIdx === oIdx;
+                                const isCorrect = correctIdx === oIdx;
 
                                 let bgColor = '#f8fafc';
                                 let borderColor = '#e2e8f0';

@@ -1,5 +1,28 @@
-// Play11 API Service Layer (Connected to Neon DB with In-Memory 0ms Cache Layer)
+// Play11 API Service Layer (Connected to Neon DB with In-Memory + sessionStorage Cache)
 const API_BASE = '/api';
+
+// ─── Persistent sessionStorage cache (survives tab switches, cleared on logout) ───
+const persistentCache = {
+  get(key) {
+    try {
+      const raw = sessionStorage.getItem(`play11_cache:${key}`);
+      if (!raw) return null;
+      const { data, expiry } = JSON.parse(raw);
+      if (Date.now() > expiry) { sessionStorage.removeItem(`play11_cache:${key}`); return null; }
+      return data;
+    } catch (e) { return null; }
+  },
+  set(key, data, ttlMs = 60000) { // 60-second default TTL
+    try {
+      sessionStorage.setItem(`play11_cache:${key}`, JSON.stringify({ data, expiry: Date.now() + ttlMs }));
+    } catch (e) { /* storage full, ignore */ }
+  },
+  invalidate() {
+    try {
+      Object.keys(sessionStorage).filter(k => k.startsWith('play11_cache:')).forEach(k => sessionStorage.removeItem(k));
+    } catch (e) {}
+  }
+};
 
 // Lightweight, highly-efficient client-side cache store
 const cacheStore = {
@@ -137,6 +160,7 @@ export const authService = {
   },
   logout: () => {
     cacheStore.invalidate();
+    persistentCache.invalidate();
     localStorage.removeItem('play11_session');
     localStorage.removeItem('play11_admin_session');
   }
@@ -224,6 +248,24 @@ export const settingsService = {
     const response = await cachedFetch(`${API_BASE}/settings/${key}`);
     return handleResponse(response);
   },
+  /**
+   * Fetch multiple settings in ONE request.
+   * @param {string[]} keys - array of setting keys, e.g. ['welcome_bonus', 'daily_login_bonus']
+   * Uses persistent sessionStorage cache (60s TTL) so repeated tab switches are instant.
+   */
+  getBatchSettings: async (keys = []) => {
+    const cacheKey = 'settings_batch_' + (keys.length ? keys.sort().join(',') : 'all');
+    const cached = persistentCache.get(cacheKey);
+    if (cached) return { success: true, settings: cached };
+
+    const query = keys.length ? `?keys=${keys.join(',')}` : '';
+    const response = await fetch(`${API_BASE}/settings/batch${query}`);
+    const data = await response.json();
+    if (data.success) {
+      persistentCache.set(cacheKey, data.settings, 60000);
+    }
+    return data;
+  },
   updateSetting: async (key, value) => {
     const response = await cachedFetch(`${API_BASE}/settings/update`, {
       method: 'POST',
@@ -233,7 +275,8 @@ export const settingsService = {
       },
       body: JSON.stringify({ key, value }),
     });
+    // Invalidate settings cache after update
+    persistentCache.invalidate();
     return handleResponse(response);
   }
 };
-

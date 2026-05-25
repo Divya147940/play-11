@@ -48,7 +48,7 @@ const GameQuestionPage = () => {
       .catch(console.error);
 
     // 2. Fetch Questions
-    fetch(`/api/quizzes/${id}/questions`)
+    fetch(`/api/quizzes/${id}/questions`, { headers })
       .then(res => res.json())
       .then(data => {
         if (data.success && data.questions.length > 0) {

@@ -109,13 +109,14 @@ if ($uri === 'db-test' && $method === 'GET') {
         } else {
             $time = DB::query("SELECT datetime('now')")->fetchColumn();
         }
-        echo json_encode(['success' => true, 'time' => $time, 'message' => 'Database connection successful!']);
+        echo json_encode(['success' => true, 'time' => $time, 'driver' => $driver]);
     } catch (Exception $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
     exit;
 }
+
 
 // --- Auth Routes ---
 if ($uri === 'auth/send-otp' && $method === 'POST') {

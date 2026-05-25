@@ -32,7 +32,7 @@ const StudyQuestionPage = () => {
     // Parallel fetching for 2x faster loading
     Promise.all([
       fetch(`/api/quizzes/${id}`, { headers }).then(res => res.json()),
-      fetch(`/api/quizzes/${id}/questions`).then(res => res.json())
+      fetch(`/api/quizzes/${id}/questions`, { headers }).then(res => res.json())
     ])
       .then(([quizData, questionsData]) => {
         // Handle Quiz Details

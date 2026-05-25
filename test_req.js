@@ -1,0 +1,1 @@
+const fs = require("fs"); fetch("http://localhost:5173/api/admin/quizzes/create", { method: "POST", headers: { "Content-Type": "application/json" }, body: fs.readFileSync("test_quiz.json") }).then(r => r.text()).then(console.log).catch(console.error);

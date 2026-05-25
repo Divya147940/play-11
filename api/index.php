@@ -270,6 +270,10 @@ if (matchRoute('matches/:id', $uri, $params) && $method === 'GET') {
 }
 
 // --- Settings Routes ---
+if ($uri === 'settings/batch' && $method === 'GET') {
+    SettingsController::getBatchSettings($_GET);
+    exit;
+}
 if (matchRoute('settings/:key', $uri, $params) && $method === 'GET') {
     SettingsController::getSetting($params['key']);
     exit;

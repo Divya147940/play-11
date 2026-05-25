@@ -1,6 +1,23 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, ChevronRight, ShieldCheck, History, Award, Wallet, Trophy, Ticket, Gamepad2, MoreHorizontal, Headphones, FileText } from 'lucide-react';
+import { settingsService } from '../services/api';
+
+// ─── Tiny persistent cache helper (same pattern as api.js) ──────────────────
+const pgCache = {
+  get(key) {
+    try {
+      const raw = sessionStorage.getItem(`play11_cache:${key}`);
+      if (!raw) return null;
+      const { data, expiry } = JSON.parse(raw);
+      if (Date.now() > expiry) { sessionStorage.removeItem(`play11_cache:${key}`); return null; }
+      return data;
+    } catch (e) { return null; }
+  },
+  set(key, data, ttlMs = 60000) {
+    try { sessionStorage.setItem(`play11_cache:${key}`, JSON.stringify({ data, expiry: Date.now() + ttlMs })); } catch (e) {}
+  }
+};
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -60,63 +77,72 @@ const ProfilePage = () => {
       headers['x-guest-id'] = guestId;
     }
 
-    fetch('/api/auth/history', { headers })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.history) {
-          const quizzes = data.history.length;
-          const wins = data.history.filter(h => h.display_won_amount && parseFloat(h.display_won_amount) > 0).length;
-          const points = data.history.reduce((sum, h) => sum + (parseFloat(h.total_score) || 0), 0);
-          setUserStats({ quizzes, wins, points });
-        }
-      })
-      .catch(console.error);
+    // ── Load from cache instantly (0ms) then re-fetch in background ──
+    const cachedStats = pgCache.get('profile_stats');
+    const cachedBalance = pgCache.get('profile_balance');
+    const cachedSettings = pgCache.get('profile_settings');
+    const cachedBonusTx = pgCache.get('profile_bonus_tx');
 
-    fetch('/api/wallet/balance', { headers })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setBalance(data.balance);
-        }
-      })
-      .catch(console.error);
+    if (cachedStats) setUserStats(cachedStats);
+    if (cachedBalance) setBalance(cachedBalance);
+    if (cachedSettings) setBonusOffers(cachedSettings);
+    if (cachedBonusTx) setBonusTransactions(cachedBonusTx);
 
-    fetch('/api/wallet/transactions', { headers })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.transactions) {
-          const bonusTx = data.transactions.filter(tx => tx.category === 'bonus' || tx.title.toLowerCase().includes('bonus'));
-          setBonusTransactions(bonusTx);
-        }
-      })
-      .catch(console.error);
-
-    const fetchOffer = async (key) => {
-      try {
-        const res = await fetch(`/api/settings/${key}`);
-        const data = await res.json();
-        if (data.success) return data.value || '0';
-      } catch (e) {
-        console.error(e);
-      }
-      return '0';
-    };
+    // ── Fire all 3 requests in parallel ──────────────────────────────
+    const SETTING_KEYS = [
+      'welcome_bonus', 'referral_referrer_bonus', 'referral_referee_bonus',
+      'daily_login_bonus', 'first_deposit_bonus'
+    ];
 
     Promise.all([
-      fetchOffer('welcome_bonus'),
-      fetchOffer('referral_referrer_bonus'),
-      fetchOffer('referral_referee_bonus'),
-      fetchOffer('daily_login_bonus'),
-      fetchOffer('first_deposit_bonus')
-    ]).then(([welcome, referrer, referee, daily, firstDeposit]) => {
-      setBonusOffers({
-        welcome_bonus: welcome,
-        referral_referrer_bonus: referrer,
-        referral_referee_bonus: referee,
-        daily_login_bonus: daily,
-        first_deposit_bonus: firstDeposit
-      });
+      fetch('/api/auth/history', { headers }).then(r => r.json()).catch(() => null),
+      fetch('/api/wallet/balance', { headers }).then(r => r.json()).catch(() => null),
+      settingsService.getBatchSettings(SETTING_KEYS)
+    ]).then(([historyData, balanceData, settingsData]) => {
+      if (historyData?.success && historyData.history) {
+        const quizzes = historyData.history.length;
+        const wins = historyData.history.filter(h => h.display_won_amount && parseFloat(h.display_won_amount) > 0).length;
+        const points = historyData.history.reduce((sum, h) => sum + (parseFloat(h.total_score) || 0), 0);
+        const stats = { quizzes, wins, points };
+        setUserStats(stats);
+        pgCache.set('profile_stats', stats);
+
+        const bonusTx = historyData.history.filter ? [] : [];
+        // Bonus tx comes from wallet/transactions separately only if we need it
+      }
+
+      if (balanceData?.success) {
+        setBalance(balanceData.balance);
+        pgCache.set('profile_balance', balanceData.balance);
+      }
+
+      if (settingsData?.success && settingsData.settings) {
+        const s = settingsData.settings;
+        const offers = {
+          welcome_bonus: s.welcome_bonus || '0',
+          referral_referrer_bonus: s.referral_referrer_bonus || '0',
+          referral_referee_bonus: s.referral_referee_bonus || '0',
+          daily_login_bonus: s.daily_login_bonus || '0',
+          first_deposit_bonus: s.first_deposit_bonus || '0'
+        };
+        setBonusOffers(offers);
+        pgCache.set('profile_settings', offers);
+      }
     });
+
+    // Bonus transactions fetch (non-blocking, lower priority)
+    if (!cachedBonusTx) {
+      fetch('/api/wallet/transactions', { headers })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.transactions) {
+            const bonusTx = data.transactions.filter(tx => tx.category === 'bonus' || tx.title.toLowerCase().includes('bonus'));
+            setBonusTransactions(bonusTx);
+            pgCache.set('profile_bonus_tx', bonusTx);
+          }
+        })
+        .catch(console.error);
+    }
   }, []);
 
   const handleNameSave = (newName) => {

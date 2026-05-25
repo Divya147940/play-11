@@ -176,15 +176,29 @@ class QuizController {
             ", [$id]);
             $questions = $stmt->fetchAll();
 
-            // Fetch and attach options for each question
-            foreach ($questions as &$q) {
+            if (!empty($questions)) {
+                // Fetch all options in a single query
                 $optStmt = DB::query("
-                    SELECT qo.id, qo.option_text as text, qo.hindi_option_text as hindiText, qo.option_value as value
+                    SELECT qo.id, qo.question_id, qo.option_text as text, qo.hindi_option_text as hindiText, qo.option_value as value
                     FROM question_options qo
-                    WHERE qo.question_id = ?
+                    JOIN questions q ON qo.question_id = q.id
+                    WHERE q.quiz_id = ?
                     ORDER BY qo.option_value ASC
-                ", [$q['id']]);
-                $q['options'] = $optStmt->fetchAll();
+                ", [$id]);
+                $allOptions = $optStmt->fetchAll();
+
+                // Group options by question_id
+                $optionsByQuestion = [];
+                foreach ($allOptions as $opt) {
+                    $qId = $opt['question_id'];
+                    unset($opt['question_id']);
+                    $optionsByQuestion[$qId][] = $opt;
+                }
+
+                // Attach options to questions
+                foreach ($questions as &$q) {
+                    $q['options'] = isset($optionsByQuestion[$q['id']]) ? $optionsByQuestion[$q['id']] : [];
+                }
             }
 
             echo json_encode(['success' => true, 'questions' => $questions]);
@@ -284,16 +298,22 @@ class QuizController {
                 [$subId, $userId, $id, 'completed', $score, $correctCount, $wrongCount, $time_taken]
             );
 
-            // 5. Insert answers
+            // 5. Insert answers using batch insert
+            $ansPlaceholders = [];
+            $ansParams = [];
             foreach ($questions as $q) {
                 $selectedValue = isset($answers[$q['id']]) ? $answers[$q['id']] : null;
                 if ($selectedValue !== null) {
                     $isCorrect = (string)$selectedValue === (string)$q['answer_value'];
-                    DB::query(
-                        'INSERT INTO submission_answers (id, submission_id, question_id, selected_value, is_correct) 
-                         VALUES (?, ?, ?, ?, ?)',
-                        [guidv4(), $subId, $q['id'], (string)$selectedValue, $isCorrect ? 1 : 0]
-                    );
+                    $ansPlaceholders[] = '(?, ?, ?, ?, ?)';
+                    array_push($ansParams, guidv4(), $subId, $q['id'], (string)$selectedValue, $isCorrect ? 1 : 0);
+                }
+            }
+            if (!empty($ansPlaceholders)) {
+                // Batch insert answers
+                foreach(array_chunk($ansPlaceholders, 100) as $chunkIdx => $chunk) {
+                    $chunkParams = array_slice($ansParams, $chunkIdx * 500, count($chunk) * 5);
+                    DB::query('INSERT INTO submission_answers (id, submission_id, question_id, selected_value, is_correct) VALUES ' . implode(',', $chunk), $chunkParams);
                 }
             }
 

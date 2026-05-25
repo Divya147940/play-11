@@ -24,6 +24,12 @@
   --radius: 1rem;
 }
 
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {

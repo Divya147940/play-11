@@ -130,35 +130,32 @@ const QuizArenaPage = () => {
         .finally(() => setLoading(false));
     };
 
-    fetchQuizzes();
-
-    // Fetch banners: Check zone-specific first, then global
+    // Fetch banners in parallel with quiz fetch for speed
     const fetchBanners = async () => {
       try {
-        // Try zone-specific banner first (e.g., banner_zone_study-zone)
-        const zoneRes = await fetch(`/api/settings/banner_zone_${zoneId}`);
-        const zoneData = await zoneRes.json();
-        
+        // Fire both banner requests in parallel
+        const [zoneData, globalData] = await Promise.all([
+          fetch(`/api/settings/banner_zone_${zoneId}`).then(r => r.json()).catch(() => ({})),
+          fetch('/api/settings/home_banner_url').then(r => r.json()).catch(() => ({}))
+        ]);
+
         if (zoneData.success && zoneData.value) {
           setActiveBanner(zoneData.value);
           localStorage.setItem(`play11_arena_banner_${zoneId}`, zoneData.value);
+        } else if (globalData.success && globalData.value) {
+          setActiveBanner(globalData.value);
+          localStorage.setItem('play11_home_banner', globalData.value);
         } else {
-          // Fallback to global home banner
-          const globalRes = await fetch('/api/settings/home_banner_url');
-          const globalData = await globalRes.json();
-          if (globalData.success && globalData.value) {
-            setActiveBanner(globalData.value);
-            localStorage.setItem('play11_home_banner', globalData.value);
-          } else {
-            setActiveBanner('');
-            localStorage.removeItem(`play11_arena_banner_${zoneId}`);
-          }
+          setActiveBanner('');
+          localStorage.removeItem(`play11_arena_banner_${zoneId}`);
         }
       } catch (err) {
         console.error('Error fetching banners:', err);
       }
     };
 
+    // Fire quiz + banner fetches simultaneously
+    fetchQuizzes();
     fetchBanners();
 
     const interval = setInterval(fetchQuizzes, 10000);

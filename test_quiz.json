@@ -1,0 +1,1 @@
+{"title":"Test Quiz","description":"Testing batch inserts","open_at":"2026-05-25T10:00:00","close_at":"2026-05-25T11:00:00","total_questions":2,"questions":[{"text":"Q1?","options":["A","B","C","D"],"correctOptionIndex":0},{"text":"Q2?","options":["A","B","C","D"],"correctOptionIndex":1}]}

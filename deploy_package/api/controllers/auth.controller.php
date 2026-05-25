@@ -317,6 +317,19 @@ class AuthController {
             $submission = $stmt->fetch();
 
             if (!$submission) {
+                // Try querying assuming the ID passed is a quiz ID
+                $stmt = DB::query(
+                    'SELECT s.*, q.title, q.winner_id as quiz_winner_id, q.status as quiz_status, q.prize_amount 
+                     FROM submissions s 
+                     JOIN quizzes q ON s.quiz_id = q.id 
+                     WHERE s.quiz_id = ? AND s.user_id = ?
+                     ORDER BY s.submitted_at DESC LIMIT 1',
+                    [$id, $userId]
+                );
+                $submission = $stmt->fetch();
+            }
+
+            if (!$submission) {
                 http_response_code(404);
                 echo json_encode(['error' => 'Submission not found or unauthorized']);
                 return;
@@ -328,25 +341,42 @@ class AuthController {
             // and then query options separately to format in PHP (so it works on SQLite as well).
             $reviewStmt = DB::query("
                 SELECT 
-                  sa.question_id, sa.selected_value, sa.is_correct,
+                  q.id as question_id, sa.selected_value, sa.is_correct,
                   q.question_text, q.hindi_question_text,
                   ca.answer_value as correct_value
-                FROM submission_answers sa
-                JOIN questions q ON sa.question_id = q.id
-                JOIN correct_answers ca ON q.id = ca.question_id
-                WHERE sa.submission_id = ?
+                FROM questions q
+                LEFT JOIN submission_answers sa ON q.id = sa.question_id AND sa.submission_id = ?
+                LEFT JOIN correct_answers ca ON q.id = ca.question_id
+                WHERE q.quiz_id = ?
                 ORDER BY q.sort_order ASC, q.id ASC
-            ", [$id]);
+            ", [$submission['id'], $submission['quiz_id']]);
 
             $review = $reviewStmt->fetchAll();
 
-            foreach ($review as &$row) {
+            if (!empty($review)) {
+                // Fetch all options for these questions in a single query
+                $questionIds = array_column($review, 'question_id');
+                $placeholders = implode(',', array_fill(0, count($questionIds), '?'));
+                
                 $optStmt = DB::query("
-                    SELECT option_text as text, option_value as value 
+                    SELECT question_id, option_text as text, option_value as value 
                     FROM question_options 
-                    WHERE question_id = ?
-                ", [$row['question_id']]);
-                $row['options'] = $optStmt->fetchAll();
+                    WHERE question_id IN ($placeholders)
+                ", $questionIds);
+                $allOptions = $optStmt->fetchAll();
+
+                // Group options by question_id
+                $optionsByQuestion = [];
+                foreach ($allOptions as $opt) {
+                    $qId = $opt['question_id'];
+                    unset($opt['question_id']);
+                    $optionsByQuestion[$qId][] = $opt;
+                }
+
+                // Attach options to each review row
+                foreach ($review as &$row) {
+                    $row['options'] = isset($optionsByQuestion[$row['question_id']]) ? $optionsByQuestion[$row['question_id']] : [];
+                }
             }
 
             echo json_encode([

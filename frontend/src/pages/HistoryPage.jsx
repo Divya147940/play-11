@@ -6,6 +6,22 @@ import {
   Calendar, Award, Target, Filter, RefreshCw
 } from 'lucide-react';
 
+// ─── Persistent sessionStorage cache helper ─────────────────────────────────
+const pgCache = {
+  get(key) {
+    try {
+      const raw = sessionStorage.getItem(`play11_cache:${key}`);
+      if (!raw) return null;
+      const { data, expiry } = JSON.parse(raw);
+      if (Date.now() > expiry) { sessionStorage.removeItem(`play11_cache:${key}`); return null; }
+      return data;
+    } catch (e) { return null; }
+  },
+  set(key, data, ttlMs = 60000) {
+    try { sessionStorage.setItem(`play11_cache:${key}`, JSON.stringify({ data, expiry: Date.now() + ttlMs })); } catch (e) {}
+  }
+};
+
 const HistoryPage = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('All');
@@ -29,8 +45,18 @@ const HistoryPage = () => {
     } else if (guestId) {
       headers['x-guest-id'] = guestId;
     }
+
+    // ── Show cached data instantly if no date filter active ──────────
+    const cacheKey = `quiz_history_${startDate}_${endDate}`;
+    if (!startDate && !endDate) {
+      const cached = pgCache.get('quiz_history_all');
+      if (cached) {
+        setHistory(cached);
+        setLoading(false);
+        // Still refresh in background (silently)
+      }
+    }
     
-    setLoading(true);
     let url = `/api/auth/history?`;
     if (startDate) url += `startDate=${startDate}&`;
     if (endDate) url += `endDate=${endDate}&`;
@@ -70,6 +96,10 @@ const HistoryPage = () => {
               };
             });
           setHistory(formatted);
+          // Cache only unfiltered results
+          if (!startDate && !endDate) {
+            pgCache.set('quiz_history_all', formatted);
+          }
         }
       })
       .catch(console.error)

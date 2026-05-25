@@ -176,15 +176,29 @@ class QuizController {
             ", [$id]);
             $questions = $stmt->fetchAll();
 
-            // Fetch and attach options for each question
-            foreach ($questions as &$q) {
+            if (!empty($questions)) {
+                // Fetch all options in a single query
                 $optStmt = DB::query("
-                    SELECT qo.id, qo.option_text as text, qo.hindi_option_text as hindiText, qo.option_value as value
+                    SELECT qo.id, qo.question_id, qo.option_text as text, qo.hindi_option_text as hindiText, qo.option_value as value
                     FROM question_options qo
-                    WHERE qo.question_id = ?
+                    JOIN questions q ON qo.question_id = q.id
+                    WHERE q.quiz_id = ?
                     ORDER BY qo.option_value ASC
-                ", [$q['id']]);
-                $q['options'] = $optStmt->fetchAll();
+                ", [$id]);
+                $allOptions = $optStmt->fetchAll();
+
+                // Group options by question_id
+                $optionsByQuestion = [];
+                foreach ($allOptions as $opt) {
+                    $qId = $opt['question_id'];
+                    unset($opt['question_id']);
+                    $optionsByQuestion[$qId][] = $opt;
+                }
+
+                // Attach options to questions
+                foreach ($questions as &$q) {
+                    $q['options'] = isset($optionsByQuestion[$q['id']]) ? $optionsByQuestion[$q['id']] : [];
+                }
             }
 
             echo json_encode(['success' => true, 'questions' => $questions]);
