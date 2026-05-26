@@ -116,6 +116,14 @@ class AuthController {
             $user = $stmt->fetch();
             $isNewUser = false;
 
+            $flow = isset($data['flow']) ? trim($data['flow']) : 'register';
+
+            if ($flow === 'login' && !$user) {
+                http_response_code(404);
+                echo json_encode(['error' => 'User Account not found. Please sign up.']);
+                return;
+            }
+
             if (!$user) {
                 $isNewUser = true;
                 $userId = guidv4();
@@ -143,9 +151,10 @@ class AuthController {
 
                 $totalInitialBonus = $welcomeBonus + $refereeBonus;
 
+                $name = isset($data['name']) ? trim($data['name']) : null;
                 DB::query(
-                    'INSERT INTO users (id, mobile, referral_code, referred_by, bonus) VALUES (?, ?, ?, ?, ?)',
-                    [$userId, $verifiedMobile, $referralCode, $referredBy, $totalInitialBonus]
+                    'INSERT INTO users (id, mobile, name, referral_code, referred_by, bonus) VALUES (?, ?, ?, ?, ?, ?)',
+                    [$userId, $verifiedMobile, $name, $referralCode, $referredBy, $totalInitialBonus]
                 );
 
                 // Insert transactions
@@ -177,7 +186,12 @@ class AuthController {
                 $stmt = DB::query('SELECT * FROM users WHERE id = ?', [$userId]);
                 $user = $stmt->fetch();
             } else {
-                if (empty($user['name'])) {
+                $name = isset($data['name']) ? trim($data['name']) : null;
+                if ($name && empty($user['name'])) {
+                    DB::query('UPDATE users SET name = ? WHERE id = ?', [$name, $user['id']]);
+                    $user['name'] = $name;
+                    $isNewUser = false;
+                } else if (empty($user['name'])) {
                     $isNewUser = true;
                 }
             }

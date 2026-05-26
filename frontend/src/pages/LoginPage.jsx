@@ -9,6 +9,20 @@ const LoginPage = () => {
   const [error, setError] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  useEffect(() => {
+    // Prefill mobile if available in localStorage
+    const savedMobile = localStorage.getItem('user_mobile') || localStorage.getItem('temp_mobile') || '';
+    if (savedMobile) {
+      setMobile(savedMobile);
+    }
+    
+    // Set default flow to login unless redirected from signup
+    const flow = localStorage.getItem('auth_flow');
+    if (flow !== 'register') {
+      localStorage.setItem('auth_flow', 'login');
+    }
+  }, []);
+
   const handleMobileChange = (e) => {
     const value = e.target.value.replace(/\D/g, '');
     if (value.length <= 10) {
@@ -112,7 +126,10 @@ const LoginPage = () => {
           </form>
 
           <p className="footer-link">
-            Already a member? <span className="link-text" onClick={() => navigate('/register')}>Sign In</span>
+            Don't have an account? <span className="link-text" onClick={() => {
+              localStorage.setItem('auth_flow', 'register');
+              navigate('/register');
+            }}>Sign Up</span>
           </p>
         </div>
       </main>

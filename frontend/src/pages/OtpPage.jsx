@@ -47,6 +47,9 @@ const OtpPage = () => {
     setIsLoading(true);
     setError('');
 
+    const flow = localStorage.getItem('auth_flow') || 'login';
+    const name = localStorage.getItem('reg_name') || '';
+
     try {
       // Call the real backend API to verify OTP and get JWT token
       const response = await fetch('/api/auth/verify-otp', {
@@ -54,7 +57,9 @@ const OtpPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           mobile,
-          otp_code: code
+          otp_code: code,
+          flow,
+          name
         })
       });
 
@@ -66,7 +71,11 @@ const OtpPage = () => {
         localStorage.setItem('user_name', data.user?.name || 'Scholar');
         localStorage.setItem('user_mobile', mobile);
         localStorage.setItem('play11_user', JSON.stringify(data.user));
+        
+        // Clean up temporary auth files
         localStorage.removeItem('temp_mobile');
+        localStorage.removeItem('reg_name');
+        localStorage.removeItem('auth_flow');
         
         // Check for smart redirection (e.g., back to quiz after login)
         const redirectPath = localStorage.getItem('auth_redirect');
@@ -81,6 +90,21 @@ const OtpPage = () => {
       } else {
         setError(data.error || 'Invalid OTP. Please try again.');
         setIsLoading(false);
+
+        // Check if error is "User Account not found" to redirect to signup page
+        const isNotFound = response.status === 404 || 
+                           (data.error && (
+                             data.error.toLowerCase().includes('not found') || 
+                             data.error.toLowerCase().includes('sign up')
+                           ));
+        if (isNotFound) {
+          setError('User Account not found. Redirecting to Sign Up...');
+          setTimeout(() => {
+            // Set flow to register so they can sign up
+            localStorage.setItem('auth_flow', 'register');
+            navigate('/register');
+          }, 2000);
+        }
       }
     } catch (err) {
       console.error('OTP Verify error:', err);

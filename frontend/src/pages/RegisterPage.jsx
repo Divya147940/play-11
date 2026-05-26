@@ -16,6 +16,13 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  React.useEffect(() => {
+    const prefillMobile = localStorage.getItem('temp_mobile') || '';
+    if (prefillMobile) {
+      setFormData(prev => ({ ...prev, mobile: prefillMobile }));
+    }
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -38,18 +45,18 @@ const RegisterPage = () => {
 
     setIsLoading(true);
     try {
-      // In a real app, we would call the API here
-      // For now, we simulate success and save to localStorage
+      // Stash signup details in localStorage to use in OtpPage
+      localStorage.setItem('reg_name', formData.name);
       localStorage.setItem('user_name', formData.name);
       localStorage.setItem('user_mobile', formData.mobile);
       localStorage.setItem('user_profession', formData.profession);
       localStorage.setItem('play11_has_account', 'true');
+      localStorage.setItem('auth_flow', 'register');
 
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Redirect to login page to complete authentication via OTP
-      // We DO NOT remove 'auth_redirect' here, so OtpPage can use it after login.
       navigate('/login');
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
