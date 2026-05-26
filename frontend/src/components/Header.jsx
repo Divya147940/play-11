@@ -5,6 +5,7 @@ import { Menu, X, Home, BookOpen, Trophy, History, User, LogOut, Globe } from 'l
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const mobileNumber = localStorage.getItem('user_mobile');
@@ -38,11 +39,22 @@ const Header = () => {
       <div className="topbar-inner">
         
         {/* Logo - QUZO Branding */}
-        <div className="logo-boxes" onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <div className="logo-box">Q</div>
-          <div className="logo-box">U</div>
-          <div className="logo-box">Z</div>
-          <div className="logo-box">O</div>
+        <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+          {!logoFailed ? (
+            <img 
+              src="/logo.png" 
+              alt="QUZO" 
+              onError={() => setLogoFailed(true)} 
+              style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+            />
+          ) : (
+            <div className="logo-boxes" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div className="logo-box">Q</div>
+              <div className="logo-box">U</div>
+              <div className="logo-box">Z</div>
+              <div className="logo-box">O</div>
+            </div>
+          )}
         </div>
 
         {/* Desktop Nav */}
