@@ -189,48 +189,54 @@ class AdminController {
             }
 
             // 2. Insert Questions & Options
-            if (is_array($questions)) {
+            if (is_array($questions) && count($questions) > 0) {
+                $qParams = [];
+                $qPlaceholders = [];
+                $optParams = [];
+                $optPlaceholders = [];
+                $caParams = [];
+                $caPlaceholders = [];
+
                 foreach ($questions as $qIdx => $q) {
                     $qId = guidv4();
                     $qText = $q['text'] ?? '';
                     $qHindiText = !empty($q['hindiText']) ? $q['hindiText'] : null;
-                    $qMarks = $marks_per_q;
 
-                    try {
-                        DB::query(
-                            "INSERT INTO questions (id, quiz_id, question_text, hindi_question_text, marks, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
-                            [$qId, $quizId, $qText, $qHindiText, $qMarks, $qIdx]
-                        );
-                    } catch (Exception $e) {
-                        throw new Exception("[question #$qIdx insert failed] " . $e->getMessage());
-                    }
+                    $qPlaceholders[] = '(?, ?, ?, ?, ?, ?)';
+                    array_push($qParams, $qId, $quizId, $qText, $qHindiText, $marks_per_q, $qIdx);
 
-                    // Options
                     if (isset($q['options']) && is_array($q['options'])) {
                         foreach ($q['options'] as $oIdx => $opt) {
                             $optId = guidv4();
                             $text = is_array($opt) ? ($opt['text'] ?? '') : $opt;
                             $hindiText = is_array($opt) ? (!empty($opt['hindiText']) ? $opt['hindiText'] : null) : null;
-                            try {
-                                DB::query(
-                                    "INSERT INTO question_options (id, question_id, option_text, hindi_option_text, option_value) VALUES (?, ?, ?, ?, ?)",
-                                    [$optId, $qId, $text, $hindiText, (string)$oIdx]
-                                );
-                            } catch (Exception $e) {
-                                throw new Exception("[question #$qIdx option #$oIdx insert failed] " . $e->getMessage());
-                            }
+                            
+                            $optPlaceholders[] = '(?, ?, ?, ?, ?)';
+                            array_push($optParams, $optId, $qId, $text, $hindiText, (string)$oIdx);
                         }
                     }
 
-                    // Correct Answer
                     $correctOptionIndex = (string)($q['correctOptionIndex'] ?? '0');
-                    try {
-                        DB::query(
-                            "INSERT INTO correct_answers (id, question_id, answer_value) VALUES (?, ?, ?)",
-                            [guidv4(), $qId, $correctOptionIndex]
-                        );
-                    } catch (Exception $e) {
-                        throw new Exception("[question #$qIdx correct_answer insert failed] " . $e->getMessage());
+                    $caPlaceholders[] = '(?, ?, ?)';
+                    array_push($caParams, guidv4(), $qId, $correctOptionIndex);
+                }
+
+                if (!empty($qPlaceholders)) {
+                    foreach(array_chunk($qPlaceholders, 100) as $chunkIdx => $chunk) {
+                        $chunkParams = array_slice($qParams, $chunkIdx * 600, count($chunk) * 6);
+                        DB::query("INSERT INTO questions (id, quiz_id, question_text, hindi_question_text, marks, sort_order) VALUES " . implode(',', $chunk), $chunkParams);
+                    }
+                }
+                if (!empty($optPlaceholders)) {
+                    foreach(array_chunk($optPlaceholders, 100) as $chunkIdx => $chunk) {
+                        $chunkParams = array_slice($optParams, $chunkIdx * 500, count($chunk) * 5);
+                        DB::query("INSERT INTO question_options (id, question_id, option_text, hindi_option_text, option_value) VALUES " . implode(',', $chunk), $chunkParams);
+                    }
+                }
+                if (!empty($caPlaceholders)) {
+                    foreach(array_chunk($caPlaceholders, 100) as $chunkIdx => $chunk) {
+                        $chunkParams = array_slice($caParams, $chunkIdx * 300, count($chunk) * 3);
+                        DB::query("INSERT INTO correct_answers (id, question_id, answer_value) VALUES " . implode(',', $chunk), $chunkParams);
                     }
                 }
             }
@@ -250,11 +256,10 @@ class AdminController {
     public static function getQuizzesWithStats() {
         try {
             $stmt = DB::query("
-                SELECT q.*, u.name as winner_name, COUNT(s.id) as participants_count
+                SELECT q.*, u.name as winner_name, 
+                       (SELECT COUNT(*) FROM submissions s WHERE s.quiz_id = q.id) as participants_count
                 FROM quizzes q 
-                LEFT JOIN submissions s ON q.id = s.quiz_id
                 LEFT JOIN users u ON q.winner_id = u.id
-                GROUP BY q.id, u.name
                 ORDER BY q.open_at DESC
             ");
             $quizzes = $stmt->fetchAll();
@@ -508,34 +513,55 @@ class AdminController {
                 // 3. Delete existing questions
                 DB::query("DELETE FROM questions WHERE quiz_id = ?", [$id]);
 
-                // 4. Re-insert questions/options
+                // 4. Re-insert questions/options using batch inserts
+                $qParams = [];
+                $qPlaceholders = [];
+                $optParams = [];
+                $optPlaceholders = [];
+                $caParams = [];
+                $caPlaceholders = [];
+
                 foreach ($questions as $qIdx => $q) {
                     $qId = guidv4();
                     $qText = $q['text'] ?? '';
-                    $qHindiText = $q['hindiText'] ?? null;
+                    $qHindiText = !empty($q['hindiText']) ? $q['hindiText'] : null;
 
-                    DB::query(
-                        "INSERT INTO questions (id, quiz_id, question_text, hindi_question_text, marks, sort_order) VALUES (?, ?, ?, ?, ?, ?)",
-                        [$qId, $id, $qText, $qHindiText, $marks_per_q, $qIdx]
-                    );
+                    $qPlaceholders[] = '(?, ?, ?, ?, ?, ?)';
+                    array_push($qParams, $qId, $id, $qText, $qHindiText, $marks_per_q, $qIdx);
 
                     if (isset($q['options']) && is_array($q['options'])) {
                         foreach ($q['options'] as $oIdx => $opt) {
                             $optId = guidv4();
                             $text = is_array($opt) ? ($opt['text'] ?? '') : $opt;
-                            $hindiText = is_array($opt) ? ($opt['hindiText'] ?? null) : null;
-                            DB::query(
-                                "INSERT INTO question_options (id, question_id, option_text, hindi_option_text, option_value) VALUES (?, ?, ?, ?, ?)",
-                                [$optId, $qId, $text, $hindiText, (string)$oIdx]
-                            );
+                            $hindiText = is_array($opt) ? (!empty($opt['hindiText']) ? $opt['hindiText'] : null) : null;
+                            
+                            $optPlaceholders[] = '(?, ?, ?, ?, ?)';
+                            array_push($optParams, $optId, $qId, $text, $hindiText, (string)$oIdx);
                         }
                     }
 
                     $correctOptionIndex = (string)($q['correctOptionIndex'] ?? '0');
-                    DB::query(
-                        "INSERT INTO correct_answers (id, question_id, answer_value) VALUES (?, ?, ?)",
-                        [guidv4(), $qId, $correctOptionIndex]
-                    );
+                    $caPlaceholders[] = '(?, ?, ?)';
+                    array_push($caParams, guidv4(), $qId, $correctOptionIndex);
+                }
+
+                if (!empty($qPlaceholders)) {
+                    foreach(array_chunk($qPlaceholders, 100) as $chunkIdx => $chunk) {
+                        $chunkParams = array_slice($qParams, $chunkIdx * 600, count($chunk) * 6);
+                        DB::query("INSERT INTO questions (id, quiz_id, question_text, hindi_question_text, marks, sort_order) VALUES " . implode(',', $chunk), $chunkParams);
+                    }
+                }
+                if (!empty($optPlaceholders)) {
+                    foreach(array_chunk($optPlaceholders, 100) as $chunkIdx => $chunk) {
+                        $chunkParams = array_slice($optParams, $chunkIdx * 500, count($chunk) * 5);
+                        DB::query("INSERT INTO question_options (id, question_id, option_text, hindi_option_text, option_value) VALUES " . implode(',', $chunk), $chunkParams);
+                    }
+                }
+                if (!empty($caPlaceholders)) {
+                    foreach(array_chunk($caPlaceholders, 100) as $chunkIdx => $chunk) {
+                        $chunkParams = array_slice($caParams, $chunkIdx * 300, count($chunk) * 3);
+                        DB::query("INSERT INTO correct_answers (id, question_id, answer_value) VALUES " . implode(',', $chunk), $chunkParams);
+                    }
                 }
             }
 

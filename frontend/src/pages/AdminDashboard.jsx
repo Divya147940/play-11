@@ -1266,7 +1266,6 @@ const AdminDashboard = () => {
         <SidebarItem icon={<ImageIcon />} label="Banners" />
         <SidebarItem icon={<Users />} label="Users" />
         <SidebarItem icon={<Ticket />} label="Vouchers" />
-        <SidebarItem icon={<Award />} label="Bonuses" />
         <SidebarItem icon={<Landmark />} label="Payments" />
         <SidebarItem icon={<Settings />} label="Settings" />
       </div>

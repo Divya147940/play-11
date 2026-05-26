@@ -105,10 +105,74 @@ class DB {
 
 DB::init($pdo);
 
+function getAlterations() {
+    return [
+        "ALTER TABLE users ADD COLUMN bonus NUMERIC DEFAULT 0",
+        "ALTER TABLE transactions ADD COLUMN upi_id TEXT",
+        "ALTER TABLE transactions ADD COLUMN qr_code TEXT",
+        "ALTER TABLE vouchers ADD COLUMN amount NUMERIC DEFAULT 0",
+        "ALTER TABLE user_vouchers ADD COLUMN redeemed_at TIMESTAMP",
+        "ALTER TABLE quizzes ADD COLUMN marks_per_q INTEGER DEFAULT 2",
+        "ALTER TABLE quizzes ADD COLUMN entry_type TEXT DEFAULT 'free'",
+        "ALTER TABLE quizzes ADD COLUMN entry_amount INTEGER DEFAULT 0",
+        "ALTER TABLE quizzes ADD COLUMN winner_id TEXT",
+        "ALTER TABLE quizzes ADD COLUMN hindi_title TEXT",
+        "ALTER TABLE quizzes ADD COLUMN hindi_description TEXT",
+        "ALTER TABLE questions ADD COLUMN hindi_question_text TEXT",
+        "ALTER TABLE question_options ADD COLUMN hindi_option_text TEXT",
+        "ALTER TABLE quizzes ADD COLUMN match_id TEXT",
+        "ALTER TABLE categories ADD COLUMN hindi_name TEXT",
+        "ALTER TABLE quizzes ADD COLUMN negative_marks NUMERIC DEFAULT 0.5",
+        "ALTER TABLE questions ADD COLUMN sort_order INTEGER DEFAULT 0",
+        "ALTER TABLE matches ADD COLUMN hindi_team_a TEXT",
+        "ALTER TABLE matches ADD COLUMN hindi_team_b TEXT",
+        "ALTER TABLE matches ADD COLUMN hindi_venue TEXT",
+        "ALTER TABLE submissions ADD COLUMN status TEXT DEFAULT 'completed'",
+        "ALTER TABLE submissions ADD COLUMN total_score NUMERIC DEFAULT 0",
+        "ALTER TABLE submissions ADD COLUMN correct_count INTEGER DEFAULT 0",
+        "ALTER TABLE submissions ADD COLUMN wrong_count INTEGER DEFAULT 0",
+        "ALTER TABLE submissions ADD COLUMN time_taken TEXT",
+        "ALTER TABLE submissions ADD COLUMN won_amount NUMERIC DEFAULT 0",
+        "ALTER TABLE submissions ADD COLUMN rank INTEGER",
+        "ALTER TABLE submissions ADD COLUMN started_at TIMESTAMP",
+        "ALTER TABLE users ADD COLUMN coins NUMERIC DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN points INTEGER DEFAULT 0",
+        "ALTER TABLE quizzes ADD COLUMN prize_amount INTEGER DEFAULT 0",
+        "ALTER TABLE quizzes ADD COLUMN banner_url TEXT",
+        "ALTER TABLE vouchers ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        "ALTER TABLE vouchers ADD COLUMN expires_at TIMESTAMP",
+        "CREATE INDEX idx_quizzes_category ON quizzes(category_id)",
+        "CREATE INDEX idx_quizzes_zone ON quizzes(zone_id)",
+        "CREATE INDEX idx_quizzes_match ON quizzes(match_id)",
+        "CREATE INDEX idx_questions_quiz ON questions(quiz_id)",
+        "CREATE INDEX idx_submissions_user ON submissions(user_id)",
+        "CREATE INDEX idx_submissions_quiz ON submissions(quiz_id)",
+        "CREATE INDEX idx_otp_requests_mobile ON otp_requests(mobile)",
+        "CREATE INDEX idx_sub_answers_sub ON submission_answers(submission_id)",
+        "CREATE INDEX idx_transactions_user ON transactions(user_id)",
+        "CREATE INDEX idx_user_vouchers_user ON user_vouchers(user_id)",
+        "CREATE INDEX idx_vouchers_code ON vouchers(code)",
+        "CREATE INDEX idx_question_options_q ON question_options(question_id)"
+    ];
+}
+
 // Initialize DB schema & seed if not initialized
 function initDB() {
     $pdo = DB::getPdo();
     $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+    // Fast check: Skip if database version matches the alterations count
+    $alterations = getAlterations();
+    $expectedVersion = count($alterations);
+    try {
+        $stmt = $pdo->query("SELECT value FROM settings WHERE key = 'db_version' LIMIT 1");
+        $currentVersion = $stmt->fetchColumn();
+        if ($currentVersion !== false && (int)$currentVersion === $expectedVersion) {
+            return;
+        }
+    } catch (Exception $e) {
+        // Table or key doesn't exist, we will proceed to create and run migrations
+    }
 
     // Helper to check table existence
     $tableExists = false;
@@ -129,6 +193,22 @@ function initDB() {
     if ($tableExists) {
         // Table exists, run migrations
         runMigrations($pdo, $driver);
+        
+        // Save the updated version
+        try {
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM settings WHERE key = 'db_version'");
+            $stmt->execute();
+            $hasVersionSetting = $stmt->fetchColumn() > 0;
+            if ($hasVersionSetting) {
+                $stmt = $pdo->prepare("UPDATE settings SET value = :val WHERE key = 'db_version'");
+                $stmt->execute(['val' => (string)$expectedVersion]);
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO settings (key, value, description) VALUES ('db_version', :val, 'Database migration version')");
+                $stmt->execute(['val' => (string)$expectedVersion]);
+            }
+        } catch (Exception $versionEx) {
+            // Ignore if setting table is somehow not ready
+        }
         return;
     }
 
@@ -376,53 +456,7 @@ function initDB() {
 function runMigrations($pdo, $driver) {
     try {
         // Essential column additions to handle changes over time
-        $alterations = [
-            "ALTER TABLE users ADD COLUMN bonus NUMERIC DEFAULT 0",
-            "ALTER TABLE transactions ADD COLUMN upi_id TEXT",
-            "ALTER TABLE transactions ADD COLUMN qr_code TEXT",
-            "ALTER TABLE vouchers ADD COLUMN amount NUMERIC DEFAULT 0",
-            "ALTER TABLE user_vouchers ADD COLUMN redeemed_at TIMESTAMP",
-            "ALTER TABLE quizzes ADD COLUMN marks_per_q INTEGER DEFAULT 2",
-            "ALTER TABLE quizzes ADD COLUMN entry_type TEXT DEFAULT 'free'",
-            "ALTER TABLE quizzes ADD COLUMN entry_amount INTEGER DEFAULT 0",
-            "ALTER TABLE quizzes ADD COLUMN winner_id TEXT",
-            "ALTER TABLE quizzes ADD COLUMN hindi_title TEXT",
-            "ALTER TABLE quizzes ADD COLUMN hindi_description TEXT",
-            "ALTER TABLE questions ADD COLUMN hindi_question_text TEXT",
-            "ALTER TABLE question_options ADD COLUMN hindi_option_text TEXT",
-            "ALTER TABLE quizzes ADD COLUMN match_id TEXT",
-            "ALTER TABLE categories ADD COLUMN hindi_name TEXT",
-            "ALTER TABLE quizzes ADD COLUMN negative_marks NUMERIC DEFAULT 0.5",
-            "ALTER TABLE questions ADD COLUMN sort_order INTEGER DEFAULT 0",
-            "ALTER TABLE matches ADD COLUMN hindi_team_a TEXT",
-            "ALTER TABLE matches ADD COLUMN hindi_team_b TEXT",
-            "ALTER TABLE matches ADD COLUMN hindi_venue TEXT",
-            "ALTER TABLE submissions ADD COLUMN status TEXT DEFAULT 'completed'",
-            "ALTER TABLE submissions ADD COLUMN total_score NUMERIC DEFAULT 0",
-            "ALTER TABLE submissions ADD COLUMN correct_count INTEGER DEFAULT 0",
-            "ALTER TABLE submissions ADD COLUMN wrong_count INTEGER DEFAULT 0",
-            "ALTER TABLE submissions ADD COLUMN time_taken TEXT",
-            "ALTER TABLE submissions ADD COLUMN won_amount NUMERIC DEFAULT 0",
-            "ALTER TABLE submissions ADD COLUMN rank INTEGER",
-            "ALTER TABLE submissions ADD COLUMN started_at TIMESTAMP",
-            "ALTER TABLE users ADD COLUMN coins NUMERIC DEFAULT 0",
-            "ALTER TABLE users ADD COLUMN points INTEGER DEFAULT 0",
-            "ALTER TABLE quizzes ADD COLUMN prize_amount INTEGER DEFAULT 0",
-            "ALTER TABLE quizzes ADD COLUMN banner_url TEXT",
-            "ALTER TABLE vouchers ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
-            "ALTER TABLE vouchers ADD COLUMN expires_at TIMESTAMP",
-            "CREATE INDEX idx_quizzes_category ON quizzes(category_id)",
-            "CREATE INDEX idx_quizzes_zone ON quizzes(zone_id)",
-            "CREATE INDEX idx_quizzes_match ON quizzes(match_id)",
-            "CREATE INDEX idx_questions_quiz ON questions(quiz_id)",
-            "CREATE INDEX idx_submissions_user ON submissions(user_id)",
-            "CREATE INDEX idx_submissions_quiz ON submissions(quiz_id)",
-            "CREATE INDEX idx_otp_requests_mobile ON otp_requests(mobile)",
-            "CREATE INDEX idx_sub_answers_sub ON submission_answers(submission_id)",
-            "CREATE INDEX idx_transactions_user ON transactions(user_id)",
-            "CREATE INDEX idx_user_vouchers_user ON user_vouchers(user_id)",
-            "CREATE INDEX idx_vouchers_code ON vouchers(code)"
-        ];
+        $alterations = getAlterations();
 
         foreach ($alterations as $alteration) {
             try {
@@ -503,6 +537,20 @@ function seedData($pdo) {
                 ('welcome_bonus', '100', 'Sign up bonus amount'),
                 ('daily_login_bonus', '10', 'Daily check-in reward')
             ");
+        }
+
+        // Ensure db_version setting is set
+        $alterations = getAlterations();
+        $expectedVersion = count($alterations);
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM settings WHERE key = 'db_version'");
+        $stmt->execute();
+        $hasVersionSetting = $stmt->fetchColumn() > 0;
+        if ($hasVersionSetting) {
+            $stmt = $pdo->prepare("UPDATE settings SET value = :val WHERE key = 'db_version'");
+            $stmt->execute(['val' => (string)$expectedVersion]);
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO settings (key, value, description) VALUES ('db_version', :val, 'Database migration version')");
+            $stmt->execute(['val' => (string)$expectedVersion]);
         }
 
         // Seed Admin Account

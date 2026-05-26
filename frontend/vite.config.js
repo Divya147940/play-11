@@ -11,9 +11,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://www.quzo.in',
+        target: 'http://localhost:3005',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
     },
   },

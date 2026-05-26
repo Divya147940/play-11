@@ -8,12 +8,47 @@ class SettingsController {
             $row = $stmt->fetch();
             
             if (!$row) {
-                http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Setting not found']);
+                // Return default 0 instead of 404 so frontend doesn't error
+                echo json_encode(['success' => true, 'value' => '0']);
                 return;
             }
             
             echo json_encode(['success' => true, 'value' => $row['value']]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Fetch multiple settings in a SINGLE query.
+     * Usage: GET /api/settings/batch?keys=welcome_bonus,daily_login_bonus,...
+     * Returns: { success: true, settings: { key: value, ... } }
+     */
+    public static function getBatchSettings($queryParams) {
+        try {
+            $keysParam = isset($queryParams['keys']) ? trim($queryParams['keys']) : '';
+            
+            if (empty($keysParam)) {
+                // Return ALL settings if no specific keys requested
+                $stmt = DB::query('SELECT key, value FROM settings');
+            } else {
+                $keys = array_filter(array_map('trim', explode(',', $keysParam)));
+                if (empty($keys)) {
+                    echo json_encode(['success' => true, 'settings' => []]);
+                    return;
+                }
+                $placeholders = implode(',', array_fill(0, count($keys), '?'));
+                $stmt = DB::query("SELECT key, value FROM settings WHERE key IN ($placeholders)", $keys);
+            }
+            
+            $rows = $stmt->fetchAll();
+            $settings = [];
+            foreach ($rows as $row) {
+                $settings[$row['key']] = $row['value'];
+            }
+            
+            echo json_encode(['success' => true, 'settings' => $settings]);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);

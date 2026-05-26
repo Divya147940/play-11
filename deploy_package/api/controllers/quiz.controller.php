@@ -3,11 +3,7 @@ require_once dirname(__DIR__) . '/config/db.php';
 require_once dirname(__DIR__) . '/controllers/auth.controller.php'; // For guidv4
 
 class QuizController {
-    private static function getEffectiveBannerQuery() {
-        return "COALESCE(NULLIF(q.banner_url, ''), (SELECT value FROM settings WHERE key = 'quiz_room_banner_url' LIMIT 1), (SELECT value FROM settings WHERE key = 'home_banner_url' LIMIT 1)) as effective_banner_url";
-    }
-
-    private static function processQuizRow(&$row) {
+    private static function processQuizRow(&$row, $roomBanner = '', $homeBanner = '') {
         $now = time();
         $openAt = strtotime($row['open_at']);
         $closeAt = strtotime($row['close_at']);
@@ -25,20 +21,34 @@ class QuizController {
         if (isset($row['total_score'])) $row['total_score'] = (float)$row['total_score'];
         if (isset($row['prize_amount'])) $row['prize_amount'] = (int)$row['prize_amount'];
         if (isset($row['entry_amount'])) $row['entry_amount'] = (int)$row['entry_amount'];
+
+        // Resolve effective banner url in PHP
+        if (!empty($row['banner_url'])) {
+            $row['effective_banner_url'] = $row['banner_url'];
+        } else {
+            $row['effective_banner_url'] = !empty($roomBanner) ? $roomBanner : $homeBanner;
+        }
     }
 
     public static function getQuizzesByCategory($categoryId) {
         try {
-            $bannerQuery = self::getEffectiveBannerQuery();
+            $settingsStmt = DB::query("SELECT key, value FROM settings WHERE key IN ('quiz_room_banner_url', 'home_banner_url')");
+            $settings = [];
+            foreach ($settingsStmt->fetchAll() as $s) {
+                $settings[$s['key']] = $s['value'];
+            }
+            $roomBanner = $settings['quiz_room_banner_url'] ?? '';
+            $homeBanner = $settings['home_banner_url'] ?? '';
+
             $stmt = DB::query("
-                SELECT q.*, $bannerQuery
+                SELECT q.*
                 FROM quizzes q 
                 WHERE q.category_id = ? AND q.status = 'active'
             ", [$categoryId]);
             $quizzes = $stmt->fetchAll();
 
             foreach ($quizzes as &$quiz) {
-                self::processQuizRow($quiz);
+                self::processQuizRow($quiz, $roomBanner, $homeBanner);
             }
 
             echo json_encode(['success' => true, 'quizzes' => $quizzes]);
@@ -50,11 +60,18 @@ class QuizController {
 
     public static function getQuizzesByZone($zoneId, $user) {
         try {
+            $settingsStmt = DB::query("SELECT key, value FROM settings WHERE key IN ('quiz_room_banner_url', 'home_banner_url')");
+            $settings = [];
+            foreach ($settingsStmt->fetchAll() as $s) {
+                $settings[$s['key']] = $s['value'];
+            }
+            $roomBanner = $settings['quiz_room_banner_url'] ?? '';
+            $homeBanner = $settings['home_banner_url'] ?? '';
+
             $userId = $user ? $user['userId'] : null;
-            $bannerQuery = self::getEffectiveBannerQuery();
             
             $stmt = DB::query("
-                SELECT q.*, $bannerQuery,
+                SELECT q.*,
                 CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END as is_submitted,
                 s.submitted_at
                 FROM quizzes q
@@ -65,7 +82,7 @@ class QuizController {
             $quizzes = $stmt->fetchAll();
 
             foreach ($quizzes as &$quiz) {
-                self::processQuizRow($quiz);
+                self::processQuizRow($quiz, $roomBanner, $homeBanner);
                 $quiz['is_submitted'] = (bool)$quiz['is_submitted'];
             }
 
@@ -78,11 +95,18 @@ class QuizController {
 
     public static function getAllQuizzes($user) {
         try {
+            $settingsStmt = DB::query("SELECT key, value FROM settings WHERE key IN ('quiz_room_banner_url', 'home_banner_url')");
+            $settings = [];
+            foreach ($settingsStmt->fetchAll() as $s) {
+                $settings[$s['key']] = $s['value'];
+            }
+            $roomBanner = $settings['quiz_room_banner_url'] ?? '';
+            $homeBanner = $settings['home_banner_url'] ?? '';
+
             $userId = $user ? $user['userId'] : null;
-            $bannerQuery = self::getEffectiveBannerQuery();
 
             $stmt = DB::query("
-                SELECT q.*, $bannerQuery,
+                SELECT q.*,
                 CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END as is_submitted,
                 s.submitted_at
                 FROM quizzes q
@@ -93,7 +117,7 @@ class QuizController {
             $quizzes = $stmt->fetchAll();
 
             foreach ($quizzes as &$quiz) {
-                self::processQuizRow($quiz);
+                self::processQuizRow($quiz, $roomBanner, $homeBanner);
                 $quiz['is_submitted'] = (bool)$quiz['is_submitted'];
             }
 
@@ -106,10 +130,17 @@ class QuizController {
 
     public static function getJoinedQuizzes($user) {
         try {
+            $settingsStmt = DB::query("SELECT key, value FROM settings WHERE key IN ('quiz_room_banner_url', 'home_banner_url')");
+            $settings = [];
+            foreach ($settingsStmt->fetchAll() as $s) {
+                $settings[$s['key']] = $s['value'];
+            }
+            $roomBanner = $settings['quiz_room_banner_url'] ?? '';
+            $homeBanner = $settings['home_banner_url'] ?? '';
+
             $userId = $user['userId'];
             $stmt = DB::query("
                 SELECT q.*, 
-                COALESCE(q.banner_url, (SELECT value FROM settings WHERE key = 'home_banner_url' LIMIT 1)) as effective_banner_url,
                 'CLOSED' as status_label, 
                 1 as is_submitted, 
                 s.total_score, 
@@ -122,7 +153,7 @@ class QuizController {
             $quizzes = $stmt->fetchAll();
 
             foreach ($quizzes as &$quiz) {
-                self::processQuizRow($quiz);
+                self::processQuizRow($quiz, $roomBanner, $homeBanner);
                 $quiz['is_submitted'] = true;
             }
 
@@ -135,11 +166,18 @@ class QuizController {
 
     public static function getQuizById($id, $user) {
         try {
+            $settingsStmt = DB::query("SELECT key, value FROM settings WHERE key IN ('quiz_room_banner_url', 'home_banner_url')");
+            $settings = [];
+            foreach ($settingsStmt->fetchAll() as $s) {
+                $settings[$s['key']] = $s['value'];
+            }
+            $roomBanner = $settings['quiz_room_banner_url'] ?? '';
+            $homeBanner = $settings['home_banner_url'] ?? '';
+
             $userId = $user ? $user['userId'] : null;
-            $bannerQuery = self::getEffectiveBannerQuery();
 
             $stmt = DB::query("
-                SELECT q.*, $bannerQuery, u.name as winner_name,
+                SELECT q.*, u.name as winner_name,
                 CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END as is_submitted,
                 s.submitted_at
                 FROM quizzes q 
@@ -155,7 +193,7 @@ class QuizController {
                 return;
             }
 
-            self::processQuizRow($quiz);
+            self::processQuizRow($quiz, $roomBanner, $homeBanner);
             $quiz['is_submitted'] = (bool)$quiz['is_submitted'];
 
             echo json_encode(['success' => true, 'quiz' => $quiz]);
@@ -298,16 +336,22 @@ class QuizController {
                 [$subId, $userId, $id, 'completed', $score, $correctCount, $wrongCount, $time_taken]
             );
 
-            // 5. Insert answers
+            // 5. Insert answers using batch insert
+            $ansPlaceholders = [];
+            $ansParams = [];
             foreach ($questions as $q) {
                 $selectedValue = isset($answers[$q['id']]) ? $answers[$q['id']] : null;
                 if ($selectedValue !== null) {
                     $isCorrect = (string)$selectedValue === (string)$q['answer_value'];
-                    DB::query(
-                        'INSERT INTO submission_answers (id, submission_id, question_id, selected_value, is_correct) 
-                         VALUES (?, ?, ?, ?, ?)',
-                        [guidv4(), $subId, $q['id'], (string)$selectedValue, $isCorrect ? 1 : 0]
-                    );
+                    $ansPlaceholders[] = '(?, ?, ?, ?, ?)';
+                    array_push($ansParams, guidv4(), $subId, $q['id'], (string)$selectedValue, $isCorrect ? 1 : 0);
+                }
+            }
+            if (!empty($ansPlaceholders)) {
+                // Batch insert answers
+                foreach(array_chunk($ansPlaceholders, 100) as $chunkIdx => $chunk) {
+                    $chunkParams = array_slice($ansParams, $chunkIdx * 500, count($chunk) * 5);
+                    DB::query('INSERT INTO submission_answers (id, submission_id, question_id, selected_value, is_correct) VALUES ' . implode(',', $chunk), $chunkParams);
                 }
             }
 

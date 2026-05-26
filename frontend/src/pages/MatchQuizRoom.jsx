@@ -35,21 +35,12 @@ const MatchQuizRoom = () => {
         setTimeLeft((quizObj.timer_minutes || 10) * 60);
         setQuestions(qRes);
 
-        // Fetch global banner in background
-        import('../services/api').then(async ({ settingsService }) => {
-          const bannerData = await settingsService.getSetting('quiz_room_banner_url');
-          let bannerUrl = bannerData.success ? bannerData.value : '';
-          if (!bannerUrl) {
-            const homeBannerData = await settingsService.getSetting('home_banner_url');
-            if (homeBannerData.success) bannerUrl = homeBannerData.value;
-          }
-          setGlobalBanner(bannerUrl);
-          if (bannerUrl) {
-            localStorage.setItem('play11_quiz_room_banner', bannerUrl);
-          } else {
-            localStorage.removeItem('play11_quiz_room_banner');
-          }
-        });
+        if (quizObj.effective_banner_url) {
+          setGlobalBanner(quizObj.effective_banner_url);
+          localStorage.setItem('play11_quiz_room_banner', quizObj.effective_banner_url);
+        } else {
+          localStorage.removeItem('play11_quiz_room_banner');
+        }
       } catch (err) {
         console.error(err);
         alert(err.message || 'Failed to load quiz');

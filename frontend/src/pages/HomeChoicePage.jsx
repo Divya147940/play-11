@@ -76,31 +76,40 @@ const HomeChoicePage = () => {
   const [globalBanner, setGlobalBanner] = React.useState(localStorage.getItem('play11_home_banner') || '');
 
   React.useEffect(() => {
-    const fetchQuizzes = async () => {
+    const fetchQuizzes = async (isInitial = false) => {
       // Only show loading on initial fetch
       if (allQuizzes.length === 0) setLoading(true);
       
       const session = localStorage.getItem('play11_session');
 
       try {
-        // Fire ALL requests in parallel — much faster than sequential await
-        const [all, bannerData, joined] = await Promise.all([
+        const promises = [
           quizService.getAllQuizzes(),
-          settingsService.getSetting('home_banner_url'),
           session ? quizService.getJoinedQuizzes() : Promise.resolve([]),
-        ]);
+        ];
 
-        setAllQuizzes(all);
-
-        if (bannerData.success && bannerData.value) {
-          setGlobalBanner(bannerData.value);
-          localStorage.setItem('play11_home_banner', bannerData.value);
-        } else {
-          setGlobalBanner('');
-          localStorage.removeItem('play11_home_banner');
+        if (isInitial) {
+          promises.push(settingsService.getSetting('home_banner_url'));
         }
 
+        // Fire parallel requests
+        const results = await Promise.all(promises);
+        const all = results[0];
+        const joined = results[1];
+
+        setAllQuizzes(all);
         if (session) setJoinedQuizzes(joined);
+
+        if (isInitial) {
+          const bannerData = results[2];
+          if (bannerData && bannerData.success && bannerData.value) {
+            setGlobalBanner(bannerData.value);
+            localStorage.setItem('play11_home_banner', bannerData.value);
+          } else if (bannerData) {
+            setGlobalBanner('');
+            localStorage.removeItem('play11_home_banner');
+          }
+        }
       } catch (err) {
         console.error('Failed to fetch home data:', err);
       } finally {
@@ -108,10 +117,10 @@ const HomeChoicePage = () => {
       }
     };
 
-    fetchQuizzes();
+    fetchQuizzes(true);
     
-    // Real-time update: Refresh every 30 seconds
-    const interval = setInterval(fetchQuizzes, 30000);
+    // Real-time update: Refresh quizzes only every 30 seconds
+    const interval = setInterval(() => fetchQuizzes(false), 30000);
     return () => clearInterval(interval);
   }, []); // Only run on mount, interval handles updates
 
@@ -151,7 +160,7 @@ const HomeChoicePage = () => {
 
   return (
     <div className="quiz-room-bg">
-      <div style={{ paddingTop: '70px', paddingBottom: '6rem' }}>
+      <div style={{ paddingTop: '66px', paddingBottom: '6rem' }}>
         
         {/* Hero Banner Section */}
         <div className="quiz-banner-container animate-slide-up stagger-1" style={{ 

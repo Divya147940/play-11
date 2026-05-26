@@ -164,7 +164,7 @@ const QuizArenaPage = () => {
 
   return (
     <div className="quiz-room-bg" style={{ minHeight: '100vh' }}>
-      <div className="container" style={{ paddingTop: '80px', paddingBottom: '6rem', paddingLeft: '3%', paddingRight: '3%' }}>
+      <div className="container" style={{ paddingTop: activeBanner ? '66px' : '80px', paddingBottom: '6rem', paddingLeft: '3%', paddingRight: '3%' }}>
         
         {/* Global or Zone-Specific Banner */}
         {activeBanner && (

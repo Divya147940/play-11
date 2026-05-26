@@ -179,7 +179,7 @@ if ($uri === 'wallet/withdraw' && $method === 'POST') {
 }
 
 // --- Vouchers Routes ---
-if ($uri === 'vouchers' && $method === 'GET') {
+if (($uri === 'vouchers' || $uri === 'vouchers/my-vouchers') && $method === 'GET') {
     $user = verifyToken();
     VoucherController::getVouchers($user);
     exit;
@@ -270,6 +270,10 @@ if (matchRoute('matches/:id', $uri, $params) && $method === 'GET') {
 }
 
 // --- Settings Routes ---
+if ($uri === 'settings/batch' && $method === 'GET') {
+    SettingsController::getBatchSettings($_GET);
+    exit;
+}
 if (matchRoute('settings/:key', $uri, $params) && $method === 'GET') {
     SettingsController::getSetting($params['key']);
     exit;
@@ -375,12 +379,13 @@ if ($uri === 'admin/vouchers' && $method === 'GET') {
     AdminController::getVouchersAdmin();
     exit;
 }
-if ($uri === 'admin/vouchers/create' && $method === 'POST') {
+if (($uri === 'admin/vouchers' || $uri === 'admin/vouchers/create') && $method === 'POST') {
     verifyAdmin();
     AdminController::createVoucherAdmin($inputBody);
     exit;
 }
-if (matchRoute('admin/vouchers/:id/toggle', $uri, $params) && $method === 'POST') {
+if ((matchRoute('admin/vouchers/:id/toggle', $uri, $params) && $method === 'POST') ||
+    (matchRoute('admin/vouchers/:id/status', $uri, $params) && $method === 'PATCH')) {
     verifyAdmin();
     AdminController::toggleVoucherStatusAdmin($params['id'], $inputBody);
     exit;
