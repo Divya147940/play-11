@@ -42,25 +42,12 @@ const Header = () => {
         {/* Logo - QUZO Branding */}
         <div 
           onClick={() => navigate('/')} 
-          style={{ 
-            cursor: 'pointer', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            height: '72px',
-            width: '250px',
-            overflow: 'hidden'
-          }}
+          className="header-logo-container"
         >
           <img 
             src={logoImg} 
             alt="QUZO" 
-            style={{ 
-              height: '170px', 
-              width: 'auto', 
-              objectFit: 'contain',
-              flexShrink: 0
-            }}
+            className="header-logo-img"
           />
         </div>
 
@@ -102,20 +89,7 @@ const Header = () => {
 
       {/* Mobile Menu Backdrop */}
       {isOpen && (
-        <div 
-          className="mobile-nav-overlay"
-          style={{ 
-            position: 'fixed', 
-            top: '66px', 
-            left: 0, 
-            right: 0, 
-            bottom: 0, 
-            background: '#0d1f3c', 
-            backdropFilter: 'blur(20px)',
-            zIndex: 999,
-            padding: '2rem'
-          }}
-        >
+        <div className="mobile-nav-overlay">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {navItems.map(item => (
               <button

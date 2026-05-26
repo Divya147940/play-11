@@ -44,25 +44,12 @@ export default function LandingPage() {
         <div className="topbar-inner">
           <div 
             onClick={() => navigate("/")} 
-            style={{ 
-              cursor: 'pointer', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              height: '72px',
-              width: '250px',
-              overflow: 'hidden'
-            }}
+            className="header-logo-container"
           >
             <img 
               src={logoImg} 
               alt="QUZO" 
-              style={{ 
-                height: '170px', 
-                width: 'auto', 
-                objectFit: 'contain',
-                flexShrink: 0
-              }}
+              className="header-logo-img"
             />
           </div>
           

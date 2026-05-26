@@ -2069,3 +2069,52 @@ h2 {
     max-width: 800px;
   }
 }
+
+/* Responsive Logo and Header Overlay */
+.header-logo-container {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    height: 72px;
+    width: 250px;
+    transition: all 0.3s ease;
+}
+
+.header-logo-img {
+    height: 170px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.mobile-nav-overlay {
+    position: fixed;
+    top: 100px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #0d1f3c;
+    backdrop-filter: blur(20px);
+    z-index: 999;
+    padding: 2rem;
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 767px) {
+    .header-logo-container {
+        height: 48px;
+        width: 160px;
+    }
+    .header-logo-img {
+        height: 110px;
+    }
+    .mobile-nav-overlay {
+        top: 76px;
+    }
+    .hero {
+        padding: 90px 22px 24px;
+    }
+}
