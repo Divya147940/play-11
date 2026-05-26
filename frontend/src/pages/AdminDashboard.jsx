@@ -252,7 +252,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchData();
-    if (activeTab === 'Settings' || activeTab === 'Banners' || activeTab === 'Bonuses') {
+    if (activeTab === 'Banners' || activeTab === 'Bonuses') {
       fetchSettings();
     }
   }, [activeTab]);
@@ -1289,7 +1289,6 @@ const AdminDashboard = () => {
         <SidebarItem icon={<Users />} label="Users" />
         <SidebarItem icon={<Ticket />} label="Vouchers" />
         <SidebarItem icon={<Landmark />} label="Payments" />
-        <SidebarItem icon={<Settings />} label="Settings" />
       </div>
 
       {/* Content */}
@@ -2664,28 +2663,7 @@ const AdminDashboard = () => {
           );
         })()}
 
-        {activeTab === 'Settings' && (
-          <div style={{ background: 'white', padding: '2.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-              <div style={{ width: '48px', height: '48px', background: '#f8fafc', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Settings size={24} color="#3b82f6" />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Global App Settings</h3>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Manage application-wide configurations</p>
-              </div>
-            </div>
 
-            <div style={{ display: 'grid', gap: '1.5rem' }}>
-               <div style={{ padding: '2rem', border: '2px dashed #e2e8f0', borderRadius: '1rem', textAlign: 'center' }}>
-                  <p style={{ color: '#64748b', fontWeight: 600 }}>Banners have been moved to the <strong style={{ color: '#3b82f6', cursor: 'pointer' }} onClick={() => setActiveTab('Banners')}>Banners Section</strong>.</p>
-               </div>
-               <div style={{ padding: '2rem', border: '2px dashed #e2e8f0', borderRadius: '1rem', textAlign: 'center' }}>
-                  <p style={{ color: '#64748b', fontWeight: 600 }}>Bonus & Referral settings have been moved to the <strong style={{ color: '#3b82f6', cursor: 'pointer' }} onClick={() => setActiveTab('Bonuses')}>Bonuses Section</strong>.</p>
-               </div>
-            </div>
-          </div>
-        )}
 
         {/* Review Modal */}
         {showReviewModal && (
