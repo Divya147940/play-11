@@ -62,6 +62,7 @@ const AdminDashboard = () => {
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [showImagePasteModal, setShowImagePasteModal] = useState(false);
   const [showIngestOptions, setShowIngestOptions] = useState(false);
+  const [showFormatGuide, setShowFormatGuide] = useState(false);
   const [activeIngestFormat, setActiveIngestFormat] = useState('CSV');
   const [pastedText, setPastedText] = useState('');
   const [ingestedQuestions, setIngestedQuestions] = useState([]);
@@ -1490,6 +1491,7 @@ const AdminDashboard = () => {
                             e.stopPropagation();
                             setActiveIngestFormat(btn.label);
                             setShowIngestOptions(true);
+                            setShowFormatGuide(true);
                           }}
                           style={{ 
                             fontSize: '0.8rem', 
@@ -2901,7 +2903,86 @@ const AdminDashboard = () => {
                 <h3 style={{ fontWeight: 900, color: '#0f172a' }}>{activeIngestFormat} Ingestion Options</h3>
                 <button onClick={() => setShowIngestOptions(false)} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer' }}><X size={16} /></button>
               </div>
-              <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+              <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', maxHeight: '75vh', overflowY: 'auto' }}>
+                {/* Format Helper Guide */}
+                <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '1.25rem', border: '1px solid #e2e8f0', marginBottom: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: showFormatGuide ? '0.75rem' : '0' }} onClick={() => setShowFormatGuide(!showFormatGuide)}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      💡 Check Expected {activeIngestFormat} Format
+                    </span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#3b82f6' }}>
+                      {showFormatGuide ? 'Hide Format Guide' : 'Show Format Guide'}
+                    </span>
+                  </div>
+                  
+                  {showFormatGuide && (
+                    <div style={{ fontSize: '0.8rem', color: '#475569', lineHeight: '1.5', borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
+                      {activeIngestFormat === 'CSV' && (
+                        <div>
+                          <p style={{ fontWeight: 800, color: '#0f172a', marginBottom: '0.25rem' }}>Expected Columns:</p>
+                          <code style={{ background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px', display: 'block', margin: '0.25rem 0', wordBreak: 'break-all' }}>
+                            Question, Option A, Option B, Option C, Option D, CorrectIndex (0 to 3)
+                          </code>
+                          <p style={{ fontWeight: 800, color: '#0f172a', marginTop: '0.5rem', marginBottom: '0.25rem' }}>Example:</p>
+                          <pre style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: '8px', overflowX: 'auto', margin: '0', fontFamily: 'monospace' }}>
+                            What is HTML?,Hypertext,Coding,Styling,None,0{"\n"}
+                            What is CSS?,Database,Designing,Video,Hacking,1
+                          </pre>
+                        </div>
+                      )}
+                      
+                      {activeIngestFormat === 'JSON' && (
+                        <div>
+                          <p style={{ fontWeight: 800, color: '#0f172a', marginBottom: '0.25rem' }}>Expected JSON Array Format:</p>
+                          <pre style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: '8px', overflowX: 'auto', margin: '0', fontFamily: 'monospace' }}>
+{`[
+  {
+    "text": "What is HTML?",
+    "options": [
+      { "text": "Hypertext" },
+      { "text": "Coding" },
+      { "text": "Styling" },
+      { "text": "None" }
+    ],
+    "correctOptionIndex": 0
+  }
+]`}
+                          </pre>
+                        </div>
+                      )}
+
+                      {activeIngestFormat.includes('TXT') && (
+                        <div>
+                          <p style={{ fontWeight: 800, color: '#0f172a', marginBottom: '0.25rem' }}>Expected Plain Text Format:</p>
+                          <pre style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: '8px', overflowX: 'auto', margin: '0', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+{`Question 1
+❓ CSS ka use kis liye hota hai?
+◈ A. Database banane ke liye
+◈ B. Website design aur styling ke liye ✅
+◈ C. Video editing ke liye
+◈ D. Hacking ke liye`}
+                          </pre>
+                          <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+                            * Put ✅ or ✔️ next to the correct answer to auto-detect the answer.
+                          </p>
+                        </div>
+                      )}
+
+                      {activeIngestFormat === 'PNG/JPG' && (
+                        <div>
+                          <p style={{ fontWeight: 800, color: '#0f172a', marginBottom: '0.25rem' }}>Image OCR Guidelines:</p>
+                          <p>
+                            Upload or paste a clear screenshot of your questions. The text in the image should follow the standard **Plain Text format** (e.g. Q: Question, Options A, B, C, D).
+                          </p>
+                          <p style={{ marginTop: '0.5rem', fontWeight: 800, color: '#b45309' }}>
+                            ⚠️ Ensure text is clean, high contrast, and has no handwriting for the best results.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div 
                   onClick={() => { setShowIngestOptions(false); setShowPasteModal(true); }}
                   style={{ padding: '1.5rem', borderRadius: '1.25rem', border: '2px solid #e2e8f0', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '1rem' }}
