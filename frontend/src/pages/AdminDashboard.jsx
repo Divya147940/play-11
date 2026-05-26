@@ -936,9 +936,25 @@ const AdminDashboard = () => {
     const questions = [];
     let currentQ = null;
 
+    // Helper to identify if a line is just box borders or empty labels
+    const isDecorative = (line) => {
+      // If line contains box drawing chars or is just divider line like ____ or -----
+      if (/^[╔═╗║╚╝─┌┐└┘┬┴┼_\-=~*#\s\u2550-\u257F]+$/.test(line)) {
+        return true;
+      }
+      // If line is just "QUESTION \d" or similar with some emojis/borders and nothing else
+      const stripped = line.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}║\s]+/gu, '').trim();
+      if (/^(?:Question|Q|Prashn|Sawal)\s*\d+\s*$/i.test(stripped)) {
+        return true;
+      }
+      return false;
+    };
+
     lines.forEach(line => {
-      // 1. Clean the line and strip emojis/bullets from start for parsing
-      const cleanLine = line.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}►•*\-✓✅✔️👍]+\s*/gu, '').trim();
+      if (isDecorative(line)) return;
+
+      // 1. Clean the line and strip emojis, geometric shapes, and bullets from start for parsing
+      const cleanLine = line.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}║►•*\-✓✅✔️👍◈✦▪▫▶●○■□◆◇▲▼➔\s]+/gu, '').trim();
       
       const qWordMatch = cleanLine.match(/^(?:Question|Q|Prashn)\s*(?:\d+)?\s*[\.\-\):\]]?\s*(.*)/i);
       const qNumMatch = cleanLine.match(/^[\(\[]?\s*(\d+)\s*[\.\)\-\]:]\s*(.*)/i);
@@ -950,7 +966,12 @@ const AdminDashboard = () => {
       let isNewQuestion = false;
       let qText = cleanLine;
 
-      if (qWordMatch) {
+      const startsWithQEmoji = line.trim().startsWith('❓') || line.trim().startsWith('❔');
+
+      if (startsWithQEmoji) {
+         isNewQuestion = true;
+         qText = cleanLine;
+      } else if (qWordMatch) {
          isNewQuestion = true;
          qText = qWordMatch[1] || cleanLine;
       } else if (qNumMatch && (!currentQ || currentQ.options.length >= 2)) {
@@ -990,7 +1011,7 @@ const AdminDashboard = () => {
       if (currentQ) {
          const isCorrect = line.includes('✅') || line.includes('✔️') || line.includes('✓') || line.includes('👍') || /v\s*Correct/i.test(line) || /\(Correct\)/i.test(line);
          
-         if (currentQ.options.length === 0 && !isCorrect && !optMatch && line.length > 40) {
+         if (currentQ.options.length === 0 && !isCorrect && !optMatch) {
              // Likely a continuation of the question text
              currentQ.text = (currentQ.text + " " + line).trim();
              return;
