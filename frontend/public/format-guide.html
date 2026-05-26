@@ -230,13 +230,53 @@
     }
 
     @media (max-width: 768px) {
-      body { padding: 2rem 1rem; }
+      body { padding: 5rem 1rem 2rem; }
       h1 { font-size: 2.25rem; }
       .format-card { padding: 1.5rem; }
+    }
+
+    .floating-back-btn {
+      position: fixed;
+      top: 1.5rem;
+      left: 1.5rem;
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      padding: 0.75rem 1.25rem;
+      border-radius: 1rem;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      transition: all 0.25s ease;
+      z-index: 100;
+    }
+
+    .floating-back-btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      transform: translateX(-3px);
+      box-shadow: 0 10px 25px var(--primary-glow);
+    }
+
+    @media (max-width: 1024px) {
+      .floating-back-btn {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+      }
     }
   </style>
 </head>
 <body>
+
+  <a href="/admin" onclick="if(window.opener || window.history.length > 1){ window.close(); return false; }" class="floating-back-btn">
+    ← Back to Dashboard
+  </a>
 
   <div class="container">
     <header>
