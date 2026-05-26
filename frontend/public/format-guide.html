@@ -263,12 +263,28 @@
       box-shadow: 0 10px 25px var(--primary-glow);
     }
 
-    @media (max-width: 1024px) {
-      .floating-back-btn {
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
-      }
+    .header-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+      padding: 0.75rem 1.5rem;
+      border-radius: 1rem;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 800;
+      transition: all 0.25s ease;
+      margin-bottom: 2rem;
+    }
+
+    .header-back-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 10px 20px var(--primary-glow);
+      transform: translateY(-2px);
     }
   </style>
 </head>
@@ -280,7 +296,10 @@
 
   <div class="container">
     <header>
-      <h1>Quiz Ingestion Format Reference</h1>
+      <a href="/admin" onclick="if(window.opener || window.history.length > 1){ window.close(); return false; }" class="header-back-btn">
+        ← Back to Dashboard
+      </a>
+      <h1 style="margin-top: 1rem;">Quiz Ingestion Format Reference</h1>
       <p class="subtitle">Use this comprehensive template and format guide to ensure error-free bulk quiz upload configurations.</p>
     </header>
 
