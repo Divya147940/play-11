@@ -1477,6 +1477,15 @@ const AdminDashboard = () => {
                       </div>
                       <p style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.5rem' }}>Click, Drag or Paste Image/Text</p>
                       <p style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 600 }}>Supports CSV, JSON, PNG, JPG, TXT</p>
+                      <a 
+                        href="/format-guide.html" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ display: 'inline-block', marginTop: '0.75rem', fontSize: '0.85rem', fontWeight: 800, color: '#3b82f6', textDecoration: 'underline' }}
+                      >
+                        📖 View Ingestion Formats Guide
+                      </a>
                     </div>
                     <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
                       {[
@@ -2900,7 +2909,17 @@ const AdminDashboard = () => {
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)', zIndex: 2100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
             <div style={{ background: 'white', width: '100%', maxWidth: '600px', borderRadius: '2rem', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
               <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontWeight: 900, color: '#0f172a' }}>{activeIngestFormat} Ingestion Options</h3>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <h3 style={{ fontWeight: 900, color: '#0f172a' }}>{activeIngestFormat} Ingestion Options</h3>
+                  <a 
+                    href="/format-guide.html" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ fontSize: '0.8rem', fontWeight: 800, color: '#3b82f6', textDecoration: 'underline', marginTop: '0.25rem' }}
+                  >
+                    📖 View All Ingestion Formats Guide
+                  </a>
+                </div>
                 <button onClick={() => setShowIngestOptions(false)} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer' }}><X size={16} /></button>
               </div>
               <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', maxHeight: '75vh', overflowY: 'auto' }}>
