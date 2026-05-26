@@ -277,7 +277,7 @@ const QuizArenaPage = () => {
                     padding: '0 1rem'
                   }}
                 >
-                   <span>{quiz.is_submitted ? 'Result' : quiz.btnText}</span>
+                   <span>{quiz.is_submitted ? 'Awaiting Result' : quiz.btnText}</span>
                    <ChevronRight size={16} strokeWidth={3} />
                 </button>
                 

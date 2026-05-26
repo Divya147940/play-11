@@ -102,7 +102,7 @@ const UpcomingQuizzes = ({ quizzes = [], title = "Multiple quizzes scheduled by 
                        else navigate(`/match-quiz-room/${quiz.id}`);
                     }}
                   >
-                    {quiz.is_submitted ? 'Result' : (isLive ? 'Join Now' : (quiz.status_label === 'CLOSED' ? 'Results' : 'Details'))}
+                    {quiz.is_submitted ? 'Awaiting Result' : (isLive ? 'Join Now' : (quiz.status_label === 'CLOSED' ? 'Results' : 'Details'))}
                   </button>
               </div>
               );
