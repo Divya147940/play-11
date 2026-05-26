@@ -40,22 +40,28 @@ const Header = () => {
       <div className="topbar-inner">
         
         {/* Logo - QUZO Branding */}
-        <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          {!logoFailed ? (
-            <img 
-              src={logoImg} 
-              alt="QUZO" 
-              onError={() => setLogoFailed(true)} 
-              style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
-            />
-          ) : (
-            <div className="logo-boxes" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div className="logo-box">Q</div>
-              <div className="logo-box">U</div>
-              <div className="logo-box">Z</div>
-              <div className="logo-box">O</div>
-            </div>
-          )}
+        <div 
+          onClick={() => navigate('/')} 
+          style={{ 
+            cursor: 'pointer', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            height: '72px',
+            width: '250px',
+            overflow: 'hidden'
+          }}
+        >
+          <img 
+            src={logoImg} 
+            alt="QUZO" 
+            style={{ 
+              height: '170px', 
+              width: 'auto', 
+              objectFit: 'contain',
+              flexShrink: 0
+            }}
+          />
         </div>
 
         {/* Desktop Nav */}

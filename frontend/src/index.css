@@ -181,7 +181,7 @@ body {
 .hero {
     background: linear-gradient(180deg, #0d1f3c 0%, #10284f 45%, #12315e 100%);
     color: white;
-    padding: 36px 22px 24px;
+    padding: 120px 22px 24px;
 }
 
 .hero-grid {

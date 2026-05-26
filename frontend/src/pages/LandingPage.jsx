@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, X, Home, Trophy, Wallet, BarChart3, User, Check, ArrowRight, Zap } from "lucide-react";
+import logoImg from '../assets/quzo.png';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -41,11 +42,28 @@ export default function LandingPage() {
     <div className="page">
       <header className="topbar">
         <div className="topbar-inner">
-          <div className="logo-boxes" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-            <div className="logo-box">Q</div>
-            <div className="logo-box">U</div>
-            <div className="logo-box">Z</div>
-            <div className="logo-box">O</div>
+          <div 
+            onClick={() => navigate("/")} 
+            style={{ 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              height: '72px',
+              width: '250px',
+              overflow: 'hidden'
+            }}
+          >
+            <img 
+              src={logoImg} 
+              alt="QUZO" 
+              style={{ 
+                height: '170px', 
+                width: 'auto', 
+                objectFit: 'contain',
+                flexShrink: 0
+              }}
+            />
           </div>
           
           <nav className={`nav-links ${isMenuOpen ? "open" : ""}`}>

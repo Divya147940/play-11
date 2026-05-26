@@ -22,10 +22,10 @@ const Footer = () => {
               The ultimate platform where knowledge meets competition. Master your academic goals and sports predictions in one elite arena.
             </p>
             <div className="social-row">
-               <button className="social-icon-btn"><Mail size={18} /></button>
-               <button className="social-icon-btn"><Phone size={18} /></button>
-               <button className="social-icon-btn"><MessageSquare size={18} /></button>
-               <button className="social-icon-btn"><Globe size={18} /></button>
+              <button className="social-icon-btn"><Mail size={18} /></button>
+              <button className="social-icon-btn"><Phone size={18} /></button>
+              <button className="social-icon-btn"><MessageSquare size={18} /></button>
+              <button className="social-icon-btn"><Globe size={18} /></button>
             </div>
           </div>
 
@@ -41,36 +41,36 @@ const Footer = () => {
           </div>
 
           <div className="footer-links-col">
-             <h4>Your Profile</h4>
-             <ul>
-               <li onClick={() => navigate('/profile')}>Personal Stats</li>
-               <li onClick={() => navigate('/login')}>Access Account</li>
-             </ul>
+            <h4>Your Profile</h4>
+            <ul>
+              <li onClick={() => navigate('/profile')}>Personal Stats</li>
+              <li onClick={() => navigate('/login')}>Access Account</li>
+            </ul>
           </div>
 
           <div className="footer-links-col">
-             <h4>Company</h4>
-             <ul>
-               <li onClick={() => navigate('/legal#privacy')}>Privacy Policy</li>
-                <li onClick={() => navigate('/legal#refund')}>Refund Policy</li>
-               <li onClick={() => navigate('/legal#terms')}>Terms of Use</li>
-               <li onClick={() => navigate('/legal#refer')}>Refer & Earn</li>
-                <li onClick={() => navigate('/legal#contact')}>Contact Us</li>
-                <li onClick={() => navigate('/legal#disclaimer')}>Disclaimer</li>
-             </ul>
+            <h4>Company</h4>
+            <ul>
+              <li onClick={() => navigate('/legal#privacy')}>Privacy Policy</li>
+              <li onClick={() => navigate('/legal#refund')}>Refund Policy</li>
+              <li onClick={() => navigate('/legal#terms')}>Terms of Use</li>
+              <li onClick={() => navigate('/legal#refer')}>Refer & Earn</li>
+              <li onClick={() => navigate('/legal#contact')}>Contact Us</li>
+              <li onClick={() => navigate('/legal#disclaimer')}>Disclaimer</li>
+            </ul>
           </div>
         </div>
 
         <div className="footer-bottom-bar">
-            <div className="copyright-flex">
-               <div className="spark-circle">
-                  <Sparkles size={10} fill="currentColor" />
-               </div>
-               <span>© {year} QUZO Global Arena. All Rights Reserved.</span>
+          <div className="copyright-flex">
+            <div className="spark-circle">
+              <Sparkles size={10} fill="currentColor" />
             </div>
-            <div className="footer-info-tags">
-               <span>Secure Connection</span>
-            </div>
+            <span>© {year} QUZO Global Arena. All Rights Reserved.</span>
+          </div>
+          <div className="footer-info-tags">
+            <span>Secure Connection</span>
+          </div>
         </div>
       </div>
 

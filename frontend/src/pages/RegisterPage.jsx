@@ -27,7 +27,7 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!formData.name.trim()) return setError('Please enter your full name');
     if (formData.mobile.length !== 10) return setError('Please enter a valid 10-digit mobile number');
@@ -44,10 +44,10 @@ const RegisterPage = () => {
       localStorage.setItem('user_mobile', formData.mobile);
       localStorage.setItem('user_profession', formData.profession);
       localStorage.setItem('play11_has_account', 'true');
-      
+
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       // Redirect to login page to complete authentication via OTP
       // We DO NOT remove 'auth_redirect' here, so OtpPage can use it after login.
       navigate('/login');
@@ -68,7 +68,7 @@ const RegisterPage = () => {
             <div className="logo-box">Z</div>
             <div className="logo-box">O</div>
           </div>
-          
+
           <nav className={`nav-links ${isMenuOpen ? "open" : ""}`}>
             <a href="#home" onClick={(e) => { e.preventDefault(); navigate("/"); setIsMenuOpen(false); }}>Home</a>
             <a href="/how-it-works" onClick={(e) => { e.preventDefault(); navigate("/how-it-works"); setIsMenuOpen(false); }}>How it works</a>
@@ -85,7 +85,7 @@ const RegisterPage = () => {
                 Login
               </button>
             </>
-            
+
             <button className="menu-toggle" style={{ background: 'none', border: 'none', color: 'white' }} onClick={() => setIsMenuOpen(!isMenuOpen)}>
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -111,10 +111,10 @@ const RegisterPage = () => {
               {/* Candidate Name */}
               <div className="input-group">
                 <label><User size={16} /> Candidate Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="name"
-                  placeholder="Enter full name" 
+                  placeholder="Enter full name"
                   value={formData.name}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -126,10 +126,10 @@ const RegisterPage = () => {
                 <label><Phone size={16} /> Mobile Number</label>
                 <div className="mobile-input-wrapper">
                   <span className="prefix">+91</span>
-                  <input 
-                    type="tel" 
+                  <input
+                    type="tel"
                     name="mobile"
-                    placeholder="Enter 10-digit number" 
+                    placeholder="Enter 10-digit number"
                     value={formData.mobile}
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -143,10 +143,10 @@ const RegisterPage = () => {
               {/* Email ID */}
               <div className="input-group">
                 <label><Mail size={16} /> Mail ID</label>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   name="email"
-                  placeholder="name@example.com" 
+                  placeholder="name@example.com"
                   value={formData.email}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -156,8 +156,8 @@ const RegisterPage = () => {
               {/* DOB */}
               <div className="input-group">
                 <label><Calendar size={16} /> Date of Birth</label>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   name="dob"
                   value={formData.dob}
                   onChange={handleInputChange}
@@ -169,7 +169,7 @@ const RegisterPage = () => {
               {/* Profession Dropdown */}
               <div className="input-group full-width">
                 <label><Briefcase size={16} /> Profession</label>
-                <select 
+                <select
                   name="profession"
                   value={formData.profession}
                   onChange={handleInputChange}
@@ -187,8 +187,8 @@ const RegisterPage = () => {
             {/* 18+ Verification */}
             <div className="verification-row">
               <label className="checkbox-container">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   name="isEighteenPlus"
                   checked={formData.isEighteenPlus}
                   onChange={handleInputChange}

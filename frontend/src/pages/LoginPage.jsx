@@ -57,7 +57,7 @@ const LoginPage = () => {
             <div className="logo-box">Z</div>
             <div className="logo-box">O</div>
           </div>
-          
+
           <nav className={`nav-links ${isMenuOpen ? "open" : ""}`}>
             <a href="#home" onClick={(e) => { e.preventDefault(); navigate("/"); setIsMenuOpen(false); }}>Home</a>
             <a href="/how-it-works" onClick={(e) => { e.preventDefault(); navigate("/how-it-works"); setIsMenuOpen(false); }}>How it works</a>
@@ -74,7 +74,7 @@ const LoginPage = () => {
                 Login
               </button>
             </>
-            
+
             <button className="menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -90,7 +90,7 @@ const LoginPage = () => {
 
           <form onSubmit={(e) => { e.preventDefault(); handleSendOTP(); }} className="auth-form">
             <div className={`input-group ${mobile.length === 10 ? 'active' : ''}`}>
-              <input 
+              <input
                 type="tel"
                 placeholder="Enter mobile number"
                 value={mobile}
@@ -102,8 +102,8 @@ const LoginPage = () => {
 
             {error && <div className="error-text">{error}</div>}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="join-btn"
               disabled={isInvalid || isLoading}
             >

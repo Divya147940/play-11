@@ -56,7 +56,7 @@ const OtpPage = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ firebaseToken: idToken, mobile })
         });
-        
+
         let data;
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
@@ -65,15 +65,15 @@ const OtpPage = () => {
           const text = await response.text();
           throw new Error(response.status === 504 ? 'Auth Service Unreachable' : (text || 'Unexpected server response'));
         }
-        
+
         if (!response.ok) {
-           throw new Error(data.error || 'Backend verification failed');
+          throw new Error(data.error || 'Backend verification failed');
         }
 
         localStorage.setItem('play11_session', data.token);
         localStorage.setItem('play11_user', JSON.stringify(data.user));
         localStorage.setItem('user_mobile', mobile);
-        
+
         if (data.isNewUser) {
           navigate('/register');
         } else {
@@ -82,8 +82,8 @@ const OtpPage = () => {
         }
       } catch (err) {
         console.error('OTP Verification Error:', err);
-        setError(err.message === 'Firebase: Error (auth/invalid-verification-code).' 
-          ? 'Invalid OTP code. Please check and try again.' 
+        setError(err.message === 'Firebase: Error (auth/invalid-verification-code).'
+          ? 'Invalid OTP code. Please check and try again.'
           : err.message);
       } finally {
         setIsLoading(false);
@@ -118,7 +118,7 @@ const OtpPage = () => {
       <main className="auth-main-content">
         <div className="join-card">
           <button className="close-btn" onClick={() => navigate('/login')}>×</button>
-          
+
           <div className="card-top-logo">
             <div className="mini-box">Q</div>
             <div className="mini-box">U</div>
@@ -149,8 +149,8 @@ const OtpPage = () => {
 
             {error && <div className="error-text">{error}</div>}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="join-btn"
               disabled={isLoading || otp.join('').length < 6}
             >
@@ -162,9 +162,9 @@ const OtpPage = () => {
             {timer > 0 ? (
               <p className="timer-text">Resend code in <strong>{timer}s</strong></p>
             ) : (
-              <button 
+              <button
                 className="resend-btn"
-                onClick={() => { setTimer(30); setOtp(['','','','','','']); inputs.current[0].focus(); }}
+                onClick={() => { setTimer(30); setOtp(['', '', '', '', '', '']); inputs.current[0].focus(); }}
               >
                 <RefreshCw size={16} />
                 <span>Resend Code</span>
