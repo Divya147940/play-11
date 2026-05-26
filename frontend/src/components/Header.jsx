@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Home, BookOpen, Trophy, History, User, LogOut, Globe } from 'lucide-react';
+import logoImg from '../assets/quzo.png';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,7 +43,7 @@ const Header = () => {
         <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
           {!logoFailed ? (
             <img 
-              src="/logo.png" 
+              src={logoImg} 
               alt="QUZO" 
               onError={() => setLogoFailed(true)} 
               style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
