@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import logoImg from '../assets/quzo 1.jpeg';
+import { auth } from '../config/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 
 const LoginPage = () => {
   const [mobile, setMobile] = useState('');
@@ -22,6 +24,16 @@ const LoginPage = () => {
     if (flow !== 'register') {
       localStorage.setItem('auth_flow', 'login');
     }
+
+    // Initialize recaptcha verifier if not already present
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response) => {
+          // reCAPTCHA solved
+        }
+      });
+    }
   }, []);
 
   const handleMobileChange = (e) => {
@@ -39,24 +51,23 @@ const LoginPage = () => {
     setIsLoading(true);
     setError(null);
 
+    const fullPhoneNumber = '+91' + mobile;
+
     try {
-      const response = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        localStorage.setItem('temp_mobile', mobile);
-        navigate('/otp');
-      } else {
-        setError(data.error || 'Failed to send OTP. Please try again.');
-      }
+      const appVerifier = window.recaptchaVerifier;
+      const confirmationResult = await signInWithPhoneNumber(auth, fullPhoneNumber, appVerifier);
+      
+      window.confirmationResult = confirmationResult;
+      localStorage.setItem('temp_mobile', mobile);
+      navigate('/otp');
     } catch (err) {
-      console.error(err);
-      setError('Network error. Please check your connection.');
+      console.error('Firebase Auth Error:', err);
+      setError(err.message || 'Failed to send OTP. Please try again.');
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.render().then(widgetId => {
+          if (window.grecaptcha) window.grecaptcha.reset(widgetId);
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -129,6 +140,8 @@ const LoginPage = () => {
               {isLoading ? 'Sending...' : 'Join Now →'}
             </button>
           </form>
+
+          <div id="recaptcha-container"></div>
 
           <p className="footer-link">
             Don't have an account? <span className="link-text" onClick={() => {

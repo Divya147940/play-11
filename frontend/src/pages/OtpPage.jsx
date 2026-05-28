@@ -51,13 +51,21 @@ const OtpPage = () => {
     const name = localStorage.getItem('reg_name') || '';
 
     try {
+      if (!window.confirmationResult) {
+        throw new Error('No pending verification found. Please go back to login.');
+      }
+
+      const result = await window.confirmationResult.confirm(code);
+      const user = result.user;
+      const idToken = await user.getIdToken();
+
       // Call the real backend API to verify OTP and get JWT token
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           mobile,
-          otp_code: code,
+          firebaseToken: idToken,
           flow,
           name
         })
@@ -108,7 +116,9 @@ const OtpPage = () => {
       }
     } catch (err) {
       console.error('OTP Verify error:', err);
-      setError('Network error. Please check your connection.');
+      setError(err.message === 'Firebase: Error (auth/invalid-verification-code).'
+        ? 'Invalid OTP code. Please check and try again.'
+        : err.message);
       setIsLoading(false);
     }
   };
