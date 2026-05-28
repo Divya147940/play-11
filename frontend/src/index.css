@@ -115,7 +115,17 @@ body {
     border: none;
     color: white;
     cursor: pointer;
-    padding: 8px;
+    padding: 0 !important;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+.menu-toggle svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
 }
 
 .mobile-only { display: none; }
@@ -181,7 +191,7 @@ body {
 .hero {
     background: linear-gradient(180deg, #0d1f3c 0%, #10284f 45%, #12315e 100%);
     color: white;
-    padding: 120px 22px 24px;
+    padding: 125px 22px 24px;
 }
 
 .hero-grid {
@@ -1227,7 +1237,13 @@ h2 {
     }
     .nav-links a { font-size: 18px; font-weight: 700; }
     
-    .menu-toggle { display: block; }
+    .menu-toggle { 
+        display: flex !important; 
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
     .desktop-only { display: none; }
     .mobile-only { display: block; }
     
@@ -2074,13 +2090,13 @@ h2 {
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    height: 72px;
-    width: 250px;
+    height: 60px;
+    width: 185px;
     transition: all 0.3s ease;
 }
 
 .header-logo-img {
-    height: 170px;
+    height: 140px;
     width: auto;
     object-fit: contain;
     flex-shrink: 0;
@@ -2089,7 +2105,7 @@ h2 {
 
 .mobile-nav-overlay {
     position: fixed;
-    top: 100%;
+    top: 88px;
     left: 0;
     right: 0;
     bottom: 0;
@@ -2109,7 +2125,7 @@ h2 {
         height: 140px;
     }
     .hero {
-        padding: 90px 22px 24px;
+        padding: 115px 22px 24px;
     }
 }
 

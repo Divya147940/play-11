@@ -1,7 +1,8 @@
 import React, { useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import './index.css';
+import { Lock, UserPlus, LogIn } from 'lucide-react';
 
 // Dynamic route-based lazy loading of pages to minimize initial bundle size and optimize load times
 const SplashPage = lazy(() => import('./pages/SplashPage'));
@@ -52,7 +53,119 @@ const ProtectedRoute = ({ children }) => {
 // Strict route protection for actually playing quizzes
 const RequireAuthRoute = ({ children }) => {
   const isAuth = localStorage.getItem('play11_user') || localStorage.getItem('play11_session');
-  return isAuth ? children : <Navigate to="/login" replace />;
+  if (isAuth) return children;
+
+  // Stash target path for redirect
+  const currentPath = window.location.pathname;
+  localStorage.setItem('auth_redirect', currentPath);
+
+  const hasAccount = localStorage.getItem('play11_has_account');
+  if (hasAccount === 'true') {
+    return <Navigate to="/login" replace />;
+  } else {
+    return <Navigate to="/register" replace />;
+  }
+};
+
+const AuthRequiredPlaceholder = () => {
+  const navigate = useNavigate();
+
+  const handleAction = (type) => {
+    localStorage.setItem('auth_redirect', window.location.pathname);
+    if (type === 'login') {
+      navigate('/login');
+    } else {
+      navigate('/register');
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: '80vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '4rem 1.5rem',
+      fontFamily: "'Lexend', sans-serif"
+    }}>
+      <div className="bento-card" style={{
+        maxWidth: '480px',
+        width: '100%',
+        padding: '3rem 2rem',
+        textAlign: 'center',
+        background: 'white',
+        border: '1px solid hsl(var(--card-border))',
+        borderRadius: '2rem',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.02)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '1.5rem'
+      }}>
+        {/* Animated Lock Icon */}
+        <div style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          background: 'rgba(59, 130, 246, 0.05)',
+          color: 'hsl(var(--primary))',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1px solid rgba(59, 130, 246, 0.1)'
+        }}>
+          <Lock size={36} />
+        </div>
+
+        <div>
+          <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.75rem' }}>
+            Access Restricted
+          </h2>
+          <p style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 600, lineHeight: '1.5' }}>
+            You are not registered or logged in first. Please register or login to view your profile, leaderboard standings, and quiz activities!
+          </p>
+        </div>
+
+        {/* Buttons Grid */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', marginTop: '0.5rem' }}>
+          <button 
+            className="btn-elite btn-elite-primary" 
+            style={{ width: '100%', height: '56px', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+            onClick={() => handleAction('register')}
+          >
+            <UserPlus size={18} /> Register Now (Signup)
+          </button>
+          
+          <button 
+            className="btn-elite" 
+            style={{ 
+              width: '100%', 
+              height: '56px', 
+              fontSize: '1rem', 
+              background: 'white', 
+              border: '2px solid #e2e8f0', 
+              color: '#0f172a',
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '0.5rem',
+              boxShadow: 'none'
+            }}
+            onClick={() => handleAction('login')}
+          >
+            <LogIn size={18} /> Login to Account
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RequireAuthGate = ({ children }) => {
+  const isAuth = localStorage.getItem('play11_user') || localStorage.getItem('play11_session');
+  if (isAuth) return children;
+
+  return <Layout><AuthRequiredPlaceholder /></Layout>;
 };
 
 const App = () => {
@@ -108,15 +221,15 @@ const App = () => {
             <Route path="/dummy-quiz-flow" element={<Layout><DummyQuizFlow /></Layout>} />
             
             <Route path="/contests" element={<Layout><ContestListPage /></Layout>} />
-            <Route path="/leaderboard" element={<Layout><LeaderboardPage /></Layout>} />
-            <Route path="/leaderboard/:id" element={<Layout><LeaderboardPage /></Layout>} />
+            <Route path="/leaderboard" element={<RequireAuthGate><Layout><LeaderboardPage /></Layout></RequireAuthGate>} />
+            <Route path="/leaderboard/:id" element={<RequireAuthGate><Layout><LeaderboardPage /></Layout></RequireAuthGate>} />
             
-            <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
-            <Route path="/history" element={<Layout><HistoryPage /></Layout>} />
-            <Route path="/balance" element={<Layout><BalancePage /></Layout>} />
-            <Route path="/vouchers" element={<Layout><VouchersPage /></Layout>} />
+            <Route path="/profile" element={<RequireAuthGate><Layout><ProfilePage /></Layout></RequireAuthGate>} />
+            <Route path="/history" element={<RequireAuthGate><Layout><HistoryPage /></Layout></RequireAuthGate>} />
+            <Route path="/balance" element={<RequireAuthGate><Layout><BalancePage /></Layout></RequireAuthGate>} />
+            <Route path="/vouchers" element={<RequireAuthGate><Layout><VouchersPage /></Layout></RequireAuthGate>} />
             <Route path="/quiz-review/:id" element={<Layout><QuizReviewPage /></Layout>} />
-            <Route path="/transaction/:type" element={<Layout><TransactionPage /></Layout>} />
+            <Route path="/transaction/:type" element={<RequireAuthGate><Layout><TransactionPage /></Layout></RequireAuthGate>} />
             
             {/* Admin Panels */}
             <Route path="/admin/login" element={<Layout hideNav><AdminLoginPage /></Layout>} />

@@ -206,7 +206,7 @@ if ($uri === 'categories/game' && $method === 'GET') {
 
 // --- Quizzes Routes ---
 if ($uri === 'quizzes' && $method === 'GET') {
-    $user = verifyToken();
+    $user = optionalToken();
     QuizController::getAllQuizzes($user);
     exit;
 }

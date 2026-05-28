@@ -87,14 +87,14 @@ const Footer = () => {
           align-items: center;
           justify-content: center;
           overflow: hidden;
-          height: 72px;
-          width: 250px;
+          height: 60px;
+          width: 185px;
           transition: all 0.3s ease;
           margin-left: -40px;
         }
         
         .footer-logo-img {
-          height: 170px;
+          height: 140px;
           width: auto;
           object-fit: contain;
           flex-shrink: 0;

@@ -160,7 +160,7 @@ const HomeChoicePage = () => {
 
   return (
     <div className="quiz-room-bg">
-      <div style={{ paddingTop: '66px', paddingBottom: '6rem' }}>
+      <div className="quiz-choice-page-content" style={{ paddingBottom: '6rem' }}>
         
         {/* Hero Banner Section */}
         <div className="quiz-banner-container animate-slide-up stagger-1" style={{ 
@@ -321,6 +321,9 @@ const HomeChoicePage = () => {
       </div>
       
       <style>{`
+        .quiz-choice-page-content {
+           padding-top: 88px;
+        }
         .mobile-grid-2 {
            display: grid;
            grid-template-columns: repeat(2, 1fr);

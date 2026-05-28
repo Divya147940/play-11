@@ -164,7 +164,7 @@ const QuizArenaPage = () => {
 
   return (
     <div className="quiz-room-bg" style={{ minHeight: '100vh' }}>
-      <div className="container" style={{ paddingTop: activeBanner ? '66px' : '80px', paddingBottom: '6rem', paddingLeft: '3%', paddingRight: '3%' }}>
+      <div className={`container ${activeBanner ? 'quiz-arena-content' : 'quiz-arena-content-nobanner'}`} style={{ paddingBottom: '6rem', paddingLeft: '3%', paddingRight: '3%' }}>
         
         {/* Global or Zone-Specific Banner */}
         {activeBanner && (
@@ -310,6 +310,12 @@ const QuizArenaPage = () => {
         </div>
         
         <style>{`
+          .quiz-arena-content {
+             padding-top: 88px;
+          }
+          .quiz-arena-content-nobanner {
+             padding-top: 120px;
+          }
           .mobile-grid-2 {
              grid-template-columns: repeat(2, 1fr);
           }

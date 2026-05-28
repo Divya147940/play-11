@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Phone, Mail, Calendar, Briefcase, ShieldCheck, ArrowRight, X, Menu } from 'lucide-react';
 import logoImg from '../assets/quzo 1.jpeg';
+import { auth } from '../config/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -22,6 +24,26 @@ const RegisterPage = () => {
     if (prefillMobile) {
       setFormData(prev => ({ ...prev, mobile: prefillMobile }));
     }
+
+    // Initialize recaptcha verifier
+    const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      'size': 'invisible',
+      'callback': (response) => {
+        // reCAPTCHA solved
+      }
+    });
+    window.recaptchaVerifier = verifier;
+
+    return () => {
+      if (verifier) {
+        try {
+          verifier.clear();
+        } catch (e) {
+          console.error('Error clearing recaptcha verifier:', e);
+        }
+        window.recaptchaVerifier = null;
+      }
+    };
   }, []);
 
   const handleInputChange = (e) => {
@@ -45,22 +67,35 @@ const RegisterPage = () => {
     if (!formData.isEighteenPlus) return setError('You must be 18+ to join');
 
     setIsLoading(true);
+    setError('');
+
+    const fullPhoneNumber = '+91' + formData.mobile;
+
     try {
+      const appVerifier = window.recaptchaVerifier;
+      const confirmationResult = await signInWithPhoneNumber(auth, fullPhoneNumber, appVerifier);
+      
+      window.confirmationResult = confirmationResult;
+
       // Stash signup details in localStorage to use in OtpPage
       localStorage.setItem('reg_name', formData.name);
+      localStorage.setItem('temp_mobile', formData.mobile);
       localStorage.setItem('user_name', formData.name);
       localStorage.setItem('user_mobile', formData.mobile);
       localStorage.setItem('user_profession', formData.profession);
       localStorage.setItem('play11_has_account', 'true');
       localStorage.setItem('auth_flow', 'register');
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Redirect to login page to complete authentication via OTP
-      navigate('/login');
+      // Redirect directly to OTP page
+      navigate('/otp');
     } catch (err) {
+      console.error('Firebase Auth Error:', err);
       setError(err.message || 'Registration failed. Please try again.');
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.render().then(widgetId => {
+          if (window.grecaptcha) window.grecaptcha.reset(widgetId);
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -224,6 +259,8 @@ const RegisterPage = () => {
               )}
             </button>
           </form>
+
+          <div id="recaptcha-container"></div>
 
           <p className="footer-text">
             Already a member? <span className="link" onClick={() => navigate('/login')}>Sign In</span>

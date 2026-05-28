@@ -140,7 +140,13 @@ const GameQuizDetailPage = () => {
               onClick={() => {
                 const user = localStorage.getItem('play11_user');
                 if (!user) {
-                  navigate('/login');
+                  localStorage.setItem('auth_redirect', `/game-quiz-play/${id}`);
+                  const hasAccount = localStorage.getItem('play11_has_account');
+                  if (hasAccount === 'true') {
+                    navigate('/login');
+                  } else {
+                    navigate('/register');
+                  }
                 } else {
                   navigate(`/game-quiz-play/${id}`);
                 }

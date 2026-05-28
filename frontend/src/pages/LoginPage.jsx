@@ -25,15 +25,25 @@ const LoginPage = () => {
       localStorage.setItem('auth_flow', 'login');
     }
 
-    // Initialize recaptcha verifier if not already present
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': (response) => {
-          // reCAPTCHA solved
+    // Initialize recaptcha verifier
+    const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      'size': 'invisible',
+      'callback': (response) => {
+        // reCAPTCHA solved
+      }
+    });
+    window.recaptchaVerifier = verifier;
+
+    return () => {
+      if (verifier) {
+        try {
+          verifier.clear();
+        } catch (e) {
+          console.error('Error clearing recaptcha verifier:', e);
         }
-      });
-    }
+        window.recaptchaVerifier = null;
+      }
+    };
   }, []);
 
   const handleMobileChange = (e) => {
