@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Phone, Mail, Calendar, Briefcase, ShieldCheck, ArrowRight, X, Menu } from 'lucide-react';
+import logoImg from '../assets/quzo 1.jpeg';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -69,11 +70,15 @@ const RegisterPage = () => {
     <div className="register-wrapper">
       <header className="topbar" style={{ zIndex: 100 }}>
         <div className="topbar-inner">
-          <div className="logo-boxes" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-            <div className="logo-box">Q</div>
-            <div className="logo-box">U</div>
-            <div className="logo-box">Z</div>
-            <div className="logo-box">O</div>
+          <div
+            onClick={() => navigate('/')}
+            className="header-logo-container"
+          >
+            <img
+              src={logoImg}
+              alt="QUZO"
+              className="header-logo-img"
+            />
           </div>
 
           <nav className={`nav-links ${isMenuOpen ? "open" : ""}`}>

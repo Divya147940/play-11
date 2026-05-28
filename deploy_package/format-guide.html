@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulk Quiz Ingestion Format Guide</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Plus+Jakarta+Sans:wght@400;500;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%);
+      --card-bg: rgba(30, 41, 59, 0.45);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.35);
+      --accent: #2dd4bf;
+      --accent-glow: rgba(45, 212, 191, 0.35);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      padding: 3rem 1.5rem;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #60a5fa 0%, #2dd4bf 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      font-weight: 500;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Grid of formats */
+    .formats-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+
+    .format-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 2rem;
+      padding: 2.5rem;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .format-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--card-gradient, linear-gradient(90deg, var(--primary), var(--accent)));
+    }
+
+    .format-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .format-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .format-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .format-badge {
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-csv { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-json { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .badge-txt { background: rgba(45, 212, 191, 0.15); color: #2dd4bf; border: 1px solid rgba(45, 212, 191, 0.3); }
+    .badge-ocr { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .format-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+
+    .format-specs {
+      margin-bottom: 1.5rem;
+    }
+
+    .specs-title {
+      font-weight: 800;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-main);
+      margin-bottom: 0.75rem;
+    }
+
+    .specs-list {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .specs-list li {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .specs-list li::before {
+      content: '⚡';
+      font-size: 0.8rem;
+    }
+
+    /* Code Block Containers */
+    .code-container {
+      position: relative;
+      margin-top: 1.5rem;
+    }
+
+    .code-header {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-bottom: none;
+      border-radius: 12px 12px 0 0;
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-lang {
+      font-size: 0.75rem;
+      font-family: 'Fira Code', monospace;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    pre {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 0 0 12px 12px;
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      line-height: 1.5;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 5rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 5rem 1rem 2rem; }
+      h1 { font-size: 2.25rem; }
+      .format-card { padding: 1.5rem; }
+    }
+
+    .floating-back-btn {
+      position: fixed;
+      top: 1.5rem;
+      left: 1.5rem;
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      padding: 0.75rem 1.25rem;
+      border-radius: 1rem;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      transition: all 0.25s ease;
+      z-index: 100;
+    }
+
+    .floating-back-btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      transform: translateX(-3px);
+      box-shadow: 0 10px 25px var(--primary-glow);
+    }
+
+    .header-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+      padding: 0.6rem 1.2rem;
+      border-radius: 0.75rem;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 800;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .header-back-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 10px 20px var(--primary-glow);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <a href="/admin" class="floating-back-btn">
+    ← Back to Dashboard
+  </a>
+
+  <div class="container">
+    <header>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        <a href="/admin" class="header-back-btn">
+          ← Back
+        </a>
+        <h1 style="margin: 0;">Quiz Ingestion Format Reference</h1>
+      </div>
+      <p class="subtitle">Use this comprehensive template and format guide to ensure error-free bulk quiz upload configurations.</p>
+    </header>
+
+    <div class="formats-grid">
+      
+      <!-- CSV Card -->
+      <div class="format-card" style="--card-gradient: linear-gradient(90deg, #3b82f6, #60a5fa)">
+        <div class="format-header">
+          <div class="format-title">📁 CSV Format</div>
+          <span class="format-badge badge-csv">CSV File</span>
+        </div>
+        <p class="format-desc">Best for tabular data exported from spreadsheet editors like Excel or Google Sheets.</p>
+        
+        <div class="format-specs">
+          <div class="specs-title">Columns Layout (6 fields)</div>
+          <ul class="specs-list">
+            <li><strong>Column 1:</strong> Question Text (English)</li>
+            <li><strong>Column 2:</strong> Option A</li>
+            <li><strong>Column 3:</strong> Option B</li>
+            <li><strong>Column 4:</strong> Option C</li>
+            <li><strong>Column 5:</strong> Option D</li>
+            <li><strong>Column 6:</strong> Correct Answer Index (Must be <code>0</code>, <code>1</code>, <code>2</code>, or <code>3</code>)</li>
+          </ul>
+        </div>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">CSV Format Example</span>
+            <button class="copy-btn" onclick="copyCode('csv-code')">Copy</button>
+          </div>
+          <pre id="csv-code">"What is the capital of India?","Mumbai","New Delhi","Chennai","Kolkata",1
+"Which HTML element defines critical text?","&lt;b&gt;","&lt;i&gt;","&lt;strong&gt;","&lt;important&gt;",2</pre>
+        </div>
+      </div>
+
+      <!-- TXT Card -->
+      <div class="format-card" style="--card-gradient: linear-gradient(90deg, #2dd4bf, #059669)">
+        <div class="format-header">
+          <div class="format-title">📝 Plain Text Format (TXT)</div>
+          <span class="format-badge badge-txt">Text / Copy-Paste</span>
+        </div>
+        <p class="format-desc">Great for quick copy-pasting from word documents, chat logs, or formatted notes.</p>
+        
+        <div class="format-specs">
+          <div class="specs-title">Rules & Layout</div>
+          <ul class="specs-list">
+            <li><strong>Question:</strong> Place a <code>❓</code>, <code>Question</code>, <code>Q:</code>, or number indicator (e.g. <code>1.</code>) at the start.</li>
+            <li><strong>Options:</strong> List option lines starting with <code>A.</code>, <code>B.</code>, etc. Emojis/shapes (e.g., <code>◈</code>) before letters are allowed.</li>
+            <li><strong>Correct Option:</strong> Place a checkmark emoji <code>✅</code> or <code>✔️</code> next to the correct answer to auto-select it.</li>
+          </ul>
+        </div>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">Plain Text Example</span>
+            <button class="copy-btn" onclick="copyCode('txt-code')">Copy</button>
+          </div>
+          <pre id="txt-code" style="color: #34d399;">╔═══════════════════════════╗
+║ 📘 QUESTION 1             ║
+╚═══════════════════════════╝
+
+❓ CSS ka use kis liye hota hai?
+
+◈ A. Database banane ke liye
+◈ B. Website design aur styling ke liye ✅
+◈ C. Video editing ke liye
+◈ D. Hacking ke liye</pre>
+        </div>
+      </div>
+
+      <!-- JSON Card -->
+      <div class="format-card" style="--card-gradient: linear-gradient(90deg, #a855f7, #ec4899)">
+        <div class="format-header">
+          <div class="format-title">💻 JSON Format</div>
+          <span class="format-badge badge-json">JSON Array</span>
+        </div>
+        <p class="format-desc">Standard structured JSON schema, perfect for developers or automated exports.</p>
+        
+        <div class="format-specs">
+          <div class="specs-title">Schema Fields</div>
+          <ul class="specs-list">
+            <li><code>text</code>: The string representing the question.</li>
+            <li><code>options</code>: An array of exactly 4 items containing option texts (e.g. <code>{"text": "Option Text"}</code>).</li>
+            <li><code>correctOptionIndex</code>: The integer (0-3) indicating the correct option.</li>
+          </ul>
+        </div>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-lang">JSON Array Example</span>
+            <button class="copy-btn" onclick="copyCode('json-code')">Copy</button>
+          </div>
+          <pre id="json-code" style="color: #c084fc;">[
+  {
+    "text": "What is the result of 5 + 3?",
+    "options": [
+      { "text": "6" },
+      { "text": "7" },
+      { "text": "8" },
+      { "text": "9" }
+    ],
+    "correctOptionIndex": 2
+  }
+]</pre>
+        </div>
+      </div>
+
+      <!-- Image OCR Card -->
+      <div class="format-card" style="--card-gradient: linear-gradient(90deg, #f59e0b, #d97706)">
+        <div class="format-header">
+          <div class="format-title">📷 PNG / JPG Image format</div>
+          <span class="format-badge badge-ocr">OCR Ingestion</span>
+        </div>
+        <p class="format-desc">Scan and extract text directly from images or screenshots.</p>
+        
+        <div class="format-specs">
+          <div class="specs-title">Image Guidelines</div>
+          <ul class="specs-list">
+            <li>Ensure the image resolution is high and the text is readable.</li>
+            <li>The text in the screenshot should follow the standard <strong>Plain Text</strong> layout rules described above.</li>
+            <li>Avoid shadows, low contrast background, or handwritten text.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <footer>
+      <p>&copy; Play11 Admin Center. All formats are parsed locally on your system.</p>
+    </footer>
+  </div>
+
+  <script>
+    function copyCode(elementId) {
+      const codeElement = document.getElementById(elementId);
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = codeElement.textContent;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempTextArea);
+      
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.style.background = '#10b981';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+      }, 1500);
+    }
+  </script>
+</body>
+</html>

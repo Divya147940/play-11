@@ -20,6 +20,13 @@ const GameResultPage = () => {
   });
 
   useEffect(() => {
+    document.body.style.backgroundColor = '#0a192f';
+    return () => {
+      document.body.style.backgroundColor = '';
+    };
+  }, []);
+
+  useEffect(() => {
     const sessionRaw = localStorage.getItem('play11_session') || localStorage.getItem('play11_admin_session');
     let headers = {};
     if (sessionRaw) {
@@ -69,7 +76,8 @@ const GameResultPage = () => {
       display: 'flex',
       alignItems: 'flex-start',
       justifyContent: 'center',
-      padding: '2rem 0 0 0',
+      padding: '120px 0 0 0',
+      minHeight: '100vh',
       fontFamily: 'Inter, sans-serif'
     }}>
       <div style={{ width: '100%' }}>
@@ -207,56 +215,41 @@ const GameResultPage = () => {
           </div>
 
           {/* Return Home button */}
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="result-actions-container">
             <button
               onClick={() => navigate('/home-choice')}
+              className="result-action-btn"
               style={{
                 background: 'transparent',
                 border: '1px solid #334155',
-                color: '#475569',
-                padding: '1rem 1.5rem',
-                borderRadius: '0.75rem',
-                fontWeight: 800,
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                color: '#475569'
               }}
             >
-              Return Home
+              Home
             </button>
             <button
               onClick={() => navigate(`/quiz-review/${id}`)}
+              className="result-action-btn"
               style={{
                 background: '#3b82f6',
                 border: 'none',
                 color: '#ffffff',
-                padding: '1rem 1.5rem',
-                borderRadius: '0.75rem',
-                fontWeight: 800,
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                transition: 'all 0.2s ease'
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
               }}
             >
-              Review Performance
+              Review Quiz
             </button>
             <button
               onClick={() => navigate('/history')}
+              className="result-action-btn"
               style={{
                 background: '#f97316',
                 border: 'none',
                 color: '#ffffff',
-                padding: '1rem 1.5rem',
-                borderRadius: '0.75rem',
-                fontWeight: 800,
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
-                transition: 'all 0.2s ease'
+                boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)'
               }}
             >
-              My Activity
+              Activity
             </button>
           </div>
         </div>

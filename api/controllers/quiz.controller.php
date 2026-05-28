@@ -43,7 +43,7 @@ class QuizController {
             $stmt = DB::query("
                 SELECT q.*
                 FROM quizzes q 
-                WHERE q.category_id = ? AND q.status = 'active'
+                WHERE q.category_id = ? AND q.status IN ('active', 'completed')
             ", [$categoryId]);
             $quizzes = $stmt->fetchAll();
 
@@ -76,7 +76,7 @@ class QuizController {
                 s.submitted_at
                 FROM quizzes q
                 LEFT JOIN submissions s ON q.id = s.quiz_id AND s.user_id = ?
-                WHERE q.zone_id = ? AND q.status = 'active'
+                WHERE q.zone_id = ? AND q.status IN ('active', 'completed')
                 ORDER BY q.open_at ASC
             ", [$userId, $zoneId]);
             $quizzes = $stmt->fetchAll();
@@ -111,7 +111,7 @@ class QuizController {
                 s.submitted_at
                 FROM quizzes q
                 LEFT JOIN submissions s ON q.id = s.quiz_id AND s.user_id = ?
-                WHERE q.status = 'active'
+                WHERE q.status IN ('active', 'completed')
                 ORDER BY q.open_at ASC
             ", [$userId]);
             $quizzes = $stmt->fetchAll();
@@ -177,11 +177,16 @@ class QuizController {
             $userId = $user ? $user['userId'] : null;
 
             $stmt = DB::query("
-                SELECT q.*, u.name as winner_name,
-                CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END as is_submitted,
-                s.submitted_at
+                SELECT q.*, 
+                       u1.name as winner_name, 
+                       u2.name as winner_2_name, 
+                       u3.name as winner_3_name,
+                       CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END as is_submitted,
+                       s.submitted_at
                 FROM quizzes q 
-                LEFT JOIN users u ON q.winner_id = u.id 
+                LEFT JOIN users u1 ON q.winner_id = u1.id 
+                LEFT JOIN users u2 ON q.winner_2_id = u2.id 
+                LEFT JOIN users u3 ON q.winner_3_id = u3.id 
                 LEFT JOIN submissions s ON q.id = s.quiz_id AND s.user_id = ?
                 WHERE q.id = ?
             ", [$userId, $id]);
@@ -428,9 +433,14 @@ class QuizController {
 
             // Fetch quiz details
             $quizStmt = DB::query("
-                SELECT q.title, q.status, q.total_questions, u.name as winner_name
+                SELECT q.title, q.status, q.total_questions, 
+                       u1.name as winner_name, 
+                       u2.name as winner_2_name, 
+                       u3.name as winner_3_name
                 FROM quizzes q
-                LEFT JOIN users u ON q.winner_id = u.id
+                LEFT JOIN users u1 ON q.winner_id = u1.id
+                LEFT JOIN users u2 ON q.winner_2_id = u2.id
+                LEFT JOIN users u3 ON q.winner_3_id = u3.id
                 WHERE q.id = ?
             ", [$quizId]);
             $quiz = $quizStmt->fetch();

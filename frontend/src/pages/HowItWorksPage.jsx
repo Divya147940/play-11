@@ -10,20 +10,11 @@ const HowItWorksPage = () => {
     }, []);
 
     return (
-        <div className="page" style={{ background: '#ffffff', color: '#0f172a', minHeight: '100vh' }}>
-            <div className="topbar" style={{ 
-                background: 'white', 
-                height: '70px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                zIndex: 1000
-            }}>
-                <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+        <div className="page" style={{ minHeight: '100vh', background: '#ffffff', color: '#0f172a', paddingBottom: '100px', fontFamily: "'Outfit', sans-serif" }}>
+            <div className="container" style={{ paddingTop: '7rem', maxWidth: '800px', margin: '0 auto', paddingLeft: '1.25rem', paddingRight: '1.25rem' }}>
+                
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '3rem' }}>
                     <button 
                         onClick={() => navigate(-1)} 
                         style={{ 
@@ -40,58 +31,57 @@ const HowItWorksPage = () => {
                     >
                         <ArrowLeft size={20} color="#1e1b4b" />
                     </button>
-                    <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1e1b4b', margin: 0 }}>How it Works</h1>
-                    <div style={{ width: '45px' }}></div>
-                </div>
-            </div>
-
-            <div className="section-inner" style={{ paddingTop: '30px', paddingBottom: '60px' }}>
-                <div className="center-head">
-                    <div className="badge" style={{ margin: '0 auto 20px', background: '#f1f5f9', color: '#0369a1', borderColor: '#e0f2fe' }}>Step-by-Step Guide</div>
-                    <h1 style={{ fontSize: '3rem', marginBottom: '1rem', color: '#0f172a', fontWeight: 900 }}>How it <span style={{ color: '#0ea5e9' }}>works</span></h1>
-                    <p style={{ color: '#64748b', maxWidth: '600px', margin: '0 auto', fontSize: '1.1rem', fontWeight: 500 }}>
-                        Your journey from learning to earning starts here. Follow these 3 simple steps to join the arena.
-                    </p>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e1b4b', margin: 0 }}>How it Works</h1>
                 </div>
 
-                <div className="how-it-works-grid" style={{ marginTop: '60px', display: 'grid', gap: '40px' }}>
-                    <div className="how-step-card-long">
-                        <div className="how-step-num">1</div>
-                        <div className="how-step-content">
-                            <h3>Choose your exam</h3>
-                            <p>Select your favorite subject or target exam. We cover everything from UPSC and SSC to NEET, JEE, and Banking.</p>
-                            <div className="how-step-features">
-                                <span className="h-feat"><CheckCircle size={16} color="#0ea5e9" /> 50+ Categories</span>
-                                <span className="h-feat"><CheckCircle size={16} color="#0ea5e9" /> Real-time Matches</span>
-                            </div>
-                        </div>
-                        {/* Removed visual icon */}
+                <div className="section-inner" style={{ paddingLeft: 0, paddingRight: 0, paddingBottom: '60px' }}>
+                    <div className="center-head">
+                        <div className="badge" style={{ margin: '0 auto 20px', background: '#f1f5f9', color: '#0369a1', borderColor: '#e0f2fe' }}>Step-by-Step Guide</div>
+                        <h1 style={{ fontSize: '3rem', marginBottom: '1rem', color: '#0f172a', fontWeight: 900 }}>How it <span style={{ color: '#0ea5e9' }}>works</span></h1>
+                        <p style={{ color: '#64748b', maxWidth: '600px', margin: '0 auto', fontSize: '1.1rem', fontWeight: 500 }}>
+                            Your journey from learning to earning starts here. Follow these 3 simple steps to join the arena.
+                        </p>
                     </div>
 
-                    <div className="how-step-card-long">
-                        <div className="how-step-num">2</div>
-                        <div className="how-step-content">
-                            <h3>Pay & join</h3>
-                            <p>Join the battle with an entry fee as low as ₹1. Compete against real players in live timed quizzes.</p>
-                            <div className="how-step-features">
-                                <span className="h-feat"><ShieldCheck size={16} color="#10b981" /> Secure Payments</span>
-                                <span className="h-feat"><Clock size={16} color="#10b981" /> Fixed Schedule</span>
+                    <div className="how-it-works-grid" style={{ marginTop: '60px', display: 'grid', gap: '40px' }}>
+                        <div className="how-step-card-long">
+                            <div className="how-step-num">1</div>
+                            <div className="how-step-content">
+                                <h3>Choose your exam</h3>
+                                <p>Select your favorite subject or target exam. We cover everything from UPSC and SSC to NEET, JEE, and Banking.</p>
+                                <div className="how-step-features">
+                                    <span className="h-feat"><CheckCircle size={16} color="#0ea5e9" /> 50+ Categories</span>
+                                    <span className="h-feat"><CheckCircle size={16} color="#0ea5e9" /> Real-time Matches</span>
+                                </div>
                             </div>
+                            {/* Removed visual icon */}
                         </div>
-                        {/* Removed visual icon */}
-                    </div>
 
-                    <div className="how-step-card-long">
-                        <div className="how-step-num">3</div>
-                        <div className="how-step-content">
-                            <h3>Rank & win</h3>
-                            <p>Answer fast and accurately to climb the leaderboard. Top rankers win real cash prizes instantly credited to their wallet.</p>
-                            <div className="how-step-features">
-                                <span className="h-feat"><Trophy size={16} color="#f59e0b" /> Instant Rewards</span>
-                                <span className="h-feat"><CheckCircle size={16} color="#f59e0b" /> Verified Results</span>
+                        <div className="how-step-card-long">
+                            <div className="how-step-num">2</div>
+                            <div className="how-step-content">
+                                <h3>Pay & join</h3>
+                                <p>Join the battle with an entry fee as low as ₹1. Compete against real players in live timed quizzes.</p>
+                                <div className="how-step-features">
+                                    <span className="h-feat"><ShieldCheck size={16} color="#10b981" /> Secure Payments</span>
+                                    <span className="h-feat"><Clock size={16} color="#10b981" /> Fixed Schedule</span>
+                                </div>
                             </div>
+                            {/* Removed visual icon */}
                         </div>
-                        {/* Removed visual icon */}
+
+                        <div className="how-step-card-long">
+                            <div className="how-step-num">3</div>
+                            <div className="how-step-content">
+                                <h3>Rank & win</h3>
+                                <p>Answer fast and accurately to climb the leaderboard. Top rankers win real cash prizes instantly credited to their wallet.</p>
+                                <div className="how-step-features">
+                                    <span className="h-feat"><Trophy size={16} color="#f59e0b" /> Instant Rewards</span>
+                                    <span className="h-feat"><CheckCircle size={16} color="#f59e0b" /> Verified Results</span>
+                                </div>
+                            </div>
+                            {/* Removed visual icon */}
+                        </div>
                     </div>
                 </div>
             </div>

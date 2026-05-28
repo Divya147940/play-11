@@ -25,6 +25,7 @@ const StudyListPage = () => {
           btnText: q.is_submitted ? 'View Result' : 'Join Live Quiz',
           is_submitted: q.is_submitted,
           submitted_at: q.submitted_at,
+          winner_id: q.winner_id,
           active: true
         }));
         setQuizzes(formatted);
@@ -83,14 +84,25 @@ const StudyListPage = () => {
               <div key={quiz.id} className="game-zone-card" style={{ padding: '0.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                    <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#94a3b8', letterSpacing: '0.1em' }}>{quiz.tag}</div>
-                   <div className={`badge-${quiz.statusColor}-mini`}>{quiz.status}</div>
+                   {quiz.winner_id ? (
+                     <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#10b981', background: '#dcfce7', padding: '4px 8px', borderRadius: '6px' }}>RESULT DECLARED</div>
+                   ) : (
+                     <div className={`badge-${quiz.statusColor}-mini`}>{quiz.status}</div>
+                   )}
                 </div>
 
                 <h3 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.4rem', lineHeight: 1.2 }}>{quiz.title}</h3>
 
-                <div className="game-status-box">
-                   <p style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.4rem', letterSpacing: '0.05em' }}>{quiz.timerLabel}</p>
-                   <p style={{ fontSize: '1.5rem', fontWeight: 950, color: quiz.status === 'LIVE' ? '#ef4444' : '#3b82f6' }}>{quiz.timer}</p>
+                <div className="game-status-box" style={{
+                  background: quiz.winner_id ? '#e6fffa' : 'rgba(15, 23, 42, 0.02)',
+                  borderColor: quiz.winner_id ? '#b2f5ea' : '#f1f5f9'
+                }}>
+                   <p style={{ fontSize: '0.6rem', fontWeight: 800, color: quiz.winner_id ? '#0d9488' : '#94a3b8', textTransform: 'uppercase', marginBottom: '0.4rem', letterSpacing: '0.05em' }}>
+                      {quiz.winner_id ? 'RESULT STATUS' : quiz.timerLabel}
+                   </p>
+                   <p style={{ fontSize: '1.5rem', fontWeight: 950, color: quiz.winner_id ? '#0d9488' : (quiz.status === 'LIVE' ? '#ef4444' : '#3b82f6') }}>
+                      {quiz.winner_id ? 'DECLARED' : quiz.timer}
+                   </p>
                 </div>
 
                 <div style={{ background: '#fff', borderRadius: '1rem' }}>
@@ -110,15 +122,15 @@ const StudyListPage = () => {
 
                   {quiz.is_submitted ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <Clock size={12} /> Submitted: {new Date(quiz.submitted_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                      <p style={{ fontSize: '0.7rem', fontWeight: 800, color: quiz.winner_id ? '#10b981' : '#16a34a', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Clock size={12} /> {quiz.winner_id ? 'Result has been declared!' : `Submitted: ${new Date(quiz.submitted_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`}
                       </p>
                       <button 
                         className="quiz-join-btn" 
-                        style={{ background: '#10b981', color: 'white' }}
+                        style={{ background: quiz.winner_id ? '#10b981' : '#64748b', color: 'white' }}
                         onClick={() => navigate(`/study-result/${quiz.id}`)}
                       >
-                        View Result <CheckCircle size={16} />
+                        {quiz.winner_id ? 'View Results' : 'Awaiting Result'} <CheckCircle size={16} />
                       </button>
                     </div>
                   ) : (

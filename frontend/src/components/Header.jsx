@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Home, BookOpen, Trophy, History, User, LogOut, Globe } from 'lucide-react';
-import logoImg from '../assets/quzo.png';
+import logoImg from '../assets/quzo 1.jpeg';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,15 +38,15 @@ const Header = () => {
   return (
     <nav className="topbar">
       <div className="topbar-inner">
-        
+
         {/* Logo - QUZO Branding */}
-        <div 
-          onClick={() => navigate('/')} 
+        <div
+          onClick={() => navigate('/')}
           className="header-logo-container"
         >
-          <img 
-            src={logoImg} 
-            alt="QUZO" 
+          <img
+            src={logoImg}
+            alt="QUZO"
             className="header-logo-img"
           />
         </div>
@@ -62,25 +62,12 @@ const Header = () => {
               {item.name}
             </button>
           ))}
-          
-          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }}></div>
-          
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-              <button 
-                onClick={() => navigate('/history')}
-                className="user-profile-btn"
-              >
-                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #38bdf8, #1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <User size={14} color="white" />
-                </div>
-                <span style={{ fontWeight: 800, fontSize: '0.8rem' }}>My Activity</span>
-              </button>
-            </div>
+
         </div>
 
         {/* Mobile Hamburger Toggle */}
-        <button 
-          className="menu-toggle" 
+        <button
+          className="menu-toggle"
           onClick={() => setIsOpen(!isOpen)}
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -109,37 +96,18 @@ const Header = () => {
                   color: isActive(item.path) ? '#38bdf8' : 'white'
                 }}
               >
-                 {item.icon}
-                 {item.name}
+                {item.icon}
+                {item.name}
               </button>
             ))}
-            
-            <hr style={{ border: 'none', height: '1px', background: 'rgba(255,255,255,0.1)', margin: '1rem 0' }} />
-            
-            <button
-              onClick={() => { navigate('/history'); setIsOpen(false); }}
-              style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: 'none',
-                padding: '1.25rem',
-                borderRadius: '1.25rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                fontSize: '1.1rem',
-                fontWeight: 800,
-                color: 'white'
-              }}
-            >
-               <User size={20} /> My Activity
-            </button>
-            
+
+
           </div>
         </div>
       )}
 
       <style>{`
-        @media (min-width: 1024px) {
+        @media (min-width: 961px) {
           .desktop-nav { display: flex !important; }
           .menu-toggle { display: none !important; }
         }

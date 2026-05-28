@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import logoImg from '../assets/quzo 1.jpeg';
 
 const LoginPage = () => {
   const [mobile, setMobile] = useState('');
@@ -15,7 +16,7 @@ const LoginPage = () => {
     if (savedMobile) {
       setMobile(savedMobile);
     }
-    
+
     // Set default flow to login unless redirected from signup
     const flow = localStorage.getItem('auth_flow');
     if (flow !== 'register') {
@@ -65,11 +66,15 @@ const LoginPage = () => {
     <div className="leadnius-auth-wrapper">
       <header className="topbar">
         <div className="topbar-inner">
-          <div className="logo-boxes" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-            <div className="logo-box">Q</div>
-            <div className="logo-box">U</div>
-            <div className="logo-box">Z</div>
-            <div className="logo-box">O</div>
+          <div
+            onClick={() => navigate('/')}
+            className="header-logo-container"
+          >
+            <img
+              src={logoImg}
+              alt="QUZO"
+              className="header-logo-img"
+            />
           </div>
 
           <nav className={`nav-links ${isMenuOpen ? "open" : ""}`}>

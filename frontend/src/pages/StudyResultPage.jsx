@@ -86,7 +86,7 @@ const StudyResultPage = () => {
         display: 'flex', 
         alignItems: 'flex-start', 
         justifyContent: 'center',
-        padding: '3rem 1rem'
+        padding: '120px 1rem 3rem 1rem'
       }}>
         <div style={{ width: '100%', maxWidth: '800px' }}>
 
@@ -226,56 +226,41 @@ const StudyResultPage = () => {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="result-actions-container">
             <button
               onClick={() => navigate('/home-choice')}
+              className="result-action-btn"
               style={{
                 background: '#f8fafc',
                 border: '1px solid #cbd5e1',
-                color: '#0f172a',
-                padding: '1rem 1.5rem',
-                borderRadius: '0.75rem',
-                fontWeight: 800,
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                color: '#0f172a'
               }}
             >
-              Return Home
+              Home
             </button>
             <button
               onClick={() => navigate(`/quiz-review/${id}`)}
+              className="result-action-btn"
               style={{
                 background: '#3b82f6',
                 border: 'none',
                 color: '#ffffff',
-                padding: '1rem 1.5rem',
-                borderRadius: '0.75rem',
-                fontWeight: 800,
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                transition: 'all 0.2s ease'
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
               }}
             >
-              Review Performance
+              Review Quiz
             </button>
             <button
               onClick={() => navigate('/history')}
+              className="result-action-btn"
               style={{
                 background: '#f97316',
                 border: 'none',
                 color: '#ffffff',
-                padding: '1rem 1.5rem',
-                borderRadius: '0.75rem',
-                fontWeight: 800,
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
-                transition: 'all 0.2s ease'
+                boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)'
               }}
             >
-              My Activity
+              Activity
             </button>
           </div>
         </div>

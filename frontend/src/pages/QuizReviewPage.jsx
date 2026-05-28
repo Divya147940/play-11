@@ -97,7 +97,15 @@ const QuizReviewPage = () => {
   }
 
   const { submission, review } = data;
-  const isWinner = submission.quiz_winner_id === submission.user_id;
+  const isWinner = submission.quiz_winner_id === submission.user_id ||
+                   submission.quiz_winner_2_id === submission.user_id ||
+                   submission.quiz_winner_3_id === submission.user_id;
+
+  const userRank = submission.quiz_winner_id === submission.user_id ? 1 : 
+                   (submission.quiz_winner_2_id === submission.user_id ? 2 : 
+                   (submission.quiz_winner_3_id === submission.user_id ? 3 : null));
+
+  const displayPrize = submission.won_amount || '0';
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', paddingBottom: '5rem' }}>
@@ -138,7 +146,7 @@ const QuizReviewPage = () => {
               </h2>
               <p style={{ fontSize: '0.95rem', opacity: 0.95, fontWeight: 500, marginBottom: '1.5rem', color: '#f8fafc' }}>
                 {isWinner 
-                  ? `Incredible! You secured Rank #1 in this battle and won a prize of ₹${submission.prize_amount || '0'}!` 
+                  ? `Incredible! You secured Rank #${userRank} in this battle and won a prize of ₹${displayPrize}!` 
                   : `The results are officially declared. You completed the quiz with an excellent effort!`}
               </p>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>

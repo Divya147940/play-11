@@ -215,7 +215,7 @@ const HomeChoicePage = () => {
         </div>
 
         {/* Welcome Header */}
-        <div className="container animate-slide-up" style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'flex-start', paddingLeft: '4%', paddingRight: '4%' }}>
+        <div className="container animate-slide-up" style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', paddingLeft: '4%', paddingRight: '4%', textAlign: 'center', width: '100%' }}>
            <div>
              <h1 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.8rem)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>Choose your contest room</h1>
            </div>
@@ -223,7 +223,7 @@ const HomeChoicePage = () => {
 
         <div className="container" style={{ paddingLeft: 'clamp(0rem, 2vw, 3%)', paddingRight: 'clamp(0rem, 2vw, 3%)' }}>
         {/* Navigation Tabs */}
-        <div style={{ margin: '3rem 0', display: 'flex', gap: '1rem', flexWrap: 'wrap' }} className="animate-slide-up stagger-2">
+        <div style={{ margin: '1.5rem 0', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }} className="animate-slide-up stagger-2">
           {tabs.map((tab) => (
             <button 
               key={tab} 

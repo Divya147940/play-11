@@ -256,10 +256,15 @@ class AdminController {
     public static function getQuizzesWithStats() {
         try {
             $stmt = DB::query("
-                SELECT q.*, u.name as winner_name, 
+                SELECT q.*, 
+                       u1.name as winner_name, 
+                       u2.name as winner_2_name, 
+                       u3.name as winner_3_name, 
                        (SELECT COUNT(*) FROM submissions s WHERE s.quiz_id = q.id) as participants_count
                 FROM quizzes q 
-                LEFT JOIN users u ON q.winner_id = u.id
+                LEFT JOIN users u1 ON q.winner_id = u1.id
+                LEFT JOIN users u2 ON q.winner_2_id = u2.id
+                LEFT JOIN users u3 ON q.winner_3_id = u3.id
                 ORDER BY q.open_at DESC
             ");
             $quizzes = $stmt->fetchAll();
@@ -312,9 +317,19 @@ class AdminController {
 
     public static function declareWinner($id, $data) {
         $winner_id = $data['winner_id'] ?? null;
+        $winner_2_id = $data['winner_2_id'] ?? null;
+        $winner_3_id = $data['winner_3_id'] ?? null;
+
         if (!$winner_id) {
             http_response_code(400);
-            echo json_encode(['error' => 'Winner user ID required']);
+            echo json_encode(['error' => 'Winner (1st Rank) user ID required']);
+            return;
+        }
+
+        if (($winner_2_id && $winner_2_id === $winner_id) || 
+            ($winner_3_id && ($winner_3_id === $winner_id || $winner_3_id === $winner_2_id))) {
+            http_response_code(400);
+            echo json_encode(['error' => 'A user cannot be declared for multiple ranks in the same quiz.']);
             return;
         }
 
@@ -322,8 +337,26 @@ class AdminController {
             $stmt = DB::query("SELECT id FROM submissions WHERE quiz_id = ? AND user_id = ?", [$id, $winner_id]);
             if (!$stmt->fetch()) {
                 http_response_code(400);
-                echo json_encode(['error' => 'This user did not participate in the quiz and cannot be declared winner.']);
+                echo json_encode(['error' => '1st Rank winner did not participate in the quiz.']);
                 return;
+            }
+
+            if ($winner_2_id) {
+                $stmt = DB::query("SELECT id FROM submissions WHERE quiz_id = ? AND user_id = ?", [$id, $winner_2_id]);
+                if (!$stmt->fetch()) {
+                    http_response_code(400);
+                    echo json_encode(['error' => '2nd Rank winner did not participate in the quiz.']);
+                    return;
+                }
+            }
+
+            if ($winner_3_id) {
+                $stmt = DB::query("SELECT id FROM submissions WHERE quiz_id = ? AND user_id = ?", [$id, $winner_3_id]);
+                if (!$stmt->fetch()) {
+                    http_response_code(400);
+                    echo json_encode(['error' => '3rd Rank winner did not participate in the quiz.']);
+                    return;
+                }
             }
 
             $pdo = DB::getPdo();
@@ -332,21 +365,59 @@ class AdminController {
             $quiz = DB::query("SELECT title, prize_amount FROM quizzes WHERE id = ?", [$id])->fetch();
             $prizeAmount = $quiz ? (float)$quiz['prize_amount'] : 0;
 
-            DB::query("UPDATE quizzes SET winner_id = ?, status = 'completed' WHERE id = ?", [$winner_id, $id]);
+            DB::query("UPDATE quizzes SET winner_id = ?, winner_2_id = ?, winner_3_id = ?, status = 'completed' WHERE id = ?", [$winner_id, $winner_2_id, $winner_3_id, $id]);
 
+            // Rank 1 Winner (50%)
             if ($prizeAmount > 0) {
-                DB::query("UPDATE users SET coins = coins + ? WHERE id = ?", [$prizeAmount, $winner_id]);
-                DB::query("UPDATE submissions SET won_amount = ? WHERE quiz_id = ? AND user_id = ?", [$prizeAmount, $id, $winner_id]);
+                $p1 = round($prizeAmount * 0.5, 2);
+                DB::query("UPDATE users SET coins = coins + ? WHERE id = ?", [$p1, $winner_id]);
+                DB::query("UPDATE submissions SET won_amount = ? WHERE quiz_id = ? AND user_id = ?", [$p1, $id, $winner_id]);
 
-                $txId = 'tx-' . substr(guidv4(), 0, 8);
+                $txId1 = 'tx-' . substr(guidv4(), 0, 8);
                 DB::query(
                     'INSERT INTO transactions (id, user_id, title, amount, type, category, status, reference_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                    [$txId, $winner_id, 'Quiz Won: ' . ($quiz['title'] ?? 'Contest'), $prizeAmount, 'credit', 'win', 'success', $id]
+                    [$txId1, $winner_id, 'Quiz Won (Rank 1): ' . ($quiz['title'] ?? 'Contest'), $p1, 'credit', 'win', 'success', $id]
                 );
+            } else {
+                DB::query("UPDATE submissions SET won_amount = 0 WHERE quiz_id = ? AND user_id = ?", [$id, $winner_id]);
+            }
+
+            // Rank 2 Winner (30%)
+            if ($winner_2_id) {
+                if ($prizeAmount > 0) {
+                    $p2 = round($prizeAmount * 0.3, 2);
+                    DB::query("UPDATE users SET coins = coins + ? WHERE id = ?", [$p2, $winner_2_id]);
+                    DB::query("UPDATE submissions SET won_amount = ? WHERE quiz_id = ? AND user_id = ?", [$p2, $id, $winner_2_id]);
+
+                    $txId2 = 'tx-' . substr(guidv4(), 0, 8);
+                    DB::query(
+                        'INSERT INTO transactions (id, user_id, title, amount, type, category, status, reference_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                        [$txId2, $winner_2_id, 'Quiz Won (Rank 2): ' . ($quiz['title'] ?? 'Contest'), $p2, 'credit', 'win', 'success', $id]
+                    );
+                } else {
+                    DB::query("UPDATE submissions SET won_amount = 0 WHERE quiz_id = ? AND user_id = ?", [$id, $winner_2_id]);
+                }
+            }
+
+            // Rank 3 Winner (20%)
+            if ($winner_3_id) {
+                if ($prizeAmount > 0) {
+                    $p3 = round($prizeAmount * 0.2, 2);
+                    DB::query("UPDATE users SET coins = coins + ? WHERE id = ?", [$p3, $winner_3_id]);
+                    DB::query("UPDATE submissions SET won_amount = ? WHERE quiz_id = ? AND user_id = ?", [$p3, $id, $winner_3_id]);
+
+                    $txId3 = 'tx-' . substr(guidv4(), 0, 8);
+                    DB::query(
+                        'INSERT INTO transactions (id, user_id, title, amount, type, category, status, reference_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                        [$txId3, $winner_3_id, 'Quiz Won (Rank 3): ' . ($quiz['title'] ?? 'Contest'), $p3, 'credit', 'win', 'success', $id]
+                    );
+                } else {
+                    DB::query("UPDATE submissions SET won_amount = 0 WHERE quiz_id = ? AND user_id = ?", [$id, $winner_3_id]);
+                }
             }
 
             $pdo->commit();
-            echo json_encode(['success' => true, 'message' => "Winner declared and reward of ₹{$prizeAmount} added to user wallet."]);
+            echo json_encode(['success' => true, 'message' => "Winners declared and reward distributed successfully."]);
         } catch (Exception $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             http_response_code(500);
@@ -504,7 +575,7 @@ class AdminController {
                   zone_id = ?, category_id = ?, match_id = ?, title = ?, hindi_title = ?, 
                   description = ?, hindi_description = ?, total_questions = ?, timer_minutes = ?, 
                   entry_amount = ?, prize_amount = ?, open_at = ?, close_at = ?, marks_per_q = ?, banner_url = ?,
-                  status = 'active', winner_id = NULL
+                  status = 'active', winner_id = NULL, winner_2_id = NULL, winner_3_id = NULL
                 WHERE id = ?",
                 [$zone_id, $category_id, $match_id, $title, $hindiTitle, $description, $hindiDescription, $total_questions, $timer_minutes, $entry_amount, $prize_amount, $open_at, $close_at, $marks_per_q, $banner_url, $id]
             );
@@ -753,20 +824,61 @@ class AdminController {
         $code = $data['code'] ?? '';
         $discount_text = $data['discount_text'] ?? '';
         $amount = (float)($data['amount'] ?? 0);
-        $type = $data['type'] ?? '';
+        $type = $data['type'] ?? 'bonus';
         $color = $data['color'] ?? '#7c3aed';
         $expiry_days = (int)($data['expiry_days'] ?? 30);
         $expires_at = $data['expires_at'] ?? null;
+        $mobile = isset($data['mobile']) ? trim($data['mobile']) : null;
+        $external_code = isset($data['external_code']) && $data['external_code'] !== '' ? trim($data['external_code']) : null;
+        $user_id = null;
+
+        // Self-healing: ensure user_id & external_code columns exist
+        try {
+            $pdo = DB::getPdo();
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'pgsql') {
+                $pdo->exec("ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS user_id VARCHAR(255) DEFAULT NULL");
+                $pdo->exec("ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS external_code TEXT DEFAULT NULL");
+            } elseif ($driver === 'sqlite') {
+                try { $pdo->exec("ALTER TABLE vouchers ADD COLUMN user_id VARCHAR(255) DEFAULT NULL"); } catch (Exception $e) {}
+                try { $pdo->exec("ALTER TABLE vouchers ADD COLUMN external_code TEXT DEFAULT NULL"); } catch (Exception $e) {}
+            } else {
+                $pdo->exec("ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS user_id VARCHAR(255) DEFAULT NULL");
+                $pdo->exec("ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS external_code TEXT DEFAULT NULL");
+            }
+        } catch (Exception $e) {
+            // Columns already exist — safe to ignore
+        }
 
         try {
+            if (!empty($mobile)) {
+                $user = DB::query("SELECT id FROM users WHERE mobile = ?", [$mobile])->fetch();
+                if ($user) {
+                    $user_id = $user['id'];
+                } else {
+                    http_response_code(404);
+                    echo json_encode(['error' => "User with mobile number $mobile not found."]);
+                    return;
+                }
+            }
+
             DB::query(
-                "INSERT INTO vouchers (id, title, code, discount_text, amount, type, color, expiry_days, status, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)",
-                [$id, $title, $code, $discount_text, $amount, $type, $color, $expiry_days, $expires_at]
+                "INSERT INTO vouchers (id, title, code, discount_text, amount, type, color, expiry_days, status, expires_at, user_id, external_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)",
+                [$id, $title, $code, $discount_text, $amount, $type, $color, $expiry_days, $expires_at, $user_id, $external_code]
             );
             echo json_encode(['success' => true, 'id' => $id]);
         } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['error' => $e->getMessage()]);
+            // Fallback without new columns (if DB still doesn't have them)
+            try {
+                DB::query(
+                    "INSERT INTO vouchers (id, title, code, discount_text, amount, type, color, expiry_days, status, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)",
+                    [$id, $title, $code, $discount_text, $amount, $type, $color, $expiry_days, $expires_at]
+                );
+                echo json_encode(['success' => true, 'id' => $id]);
+            } catch (Exception $e2) {
+                http_response_code(500);
+                echo json_encode(['error' => $e2->getMessage()]);
+            }
         }
     }
 

@@ -49,6 +49,12 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Strict route protection for actually playing quizzes
+const RequireAuthRoute = ({ children }) => {
+  const isAuth = localStorage.getItem('play11_user') || localStorage.getItem('play11_session');
+  return isAuth ? children : <Navigate to="/login" replace />;
+};
+
 const App = () => {
   useEffect(() => {
     // Ensure a persistent guest ID exists for anonymous tracking
@@ -88,17 +94,17 @@ const App = () => {
             {/* Study Pages */}
             <Route path="/study-category/:id" element={<Layout><StudyCategoryPage /></Layout>} />
             <Route path="/study-quiz-detail/:id" element={<Layout><StudyQuizDetailPage /></Layout>} />
-            <Route path="/study-quiz-play/:id" element={<Layout hideNav><StudyQuestionPage /></Layout>} />
+            <Route path="/study-quiz-play/:id" element={<RequireAuthRoute><Layout hideNav><StudyQuestionPage /></Layout></RequireAuthRoute>} />
             <Route path="/study-review/:id" element={<Layout><StudyReviewPage /></Layout>} />
             <Route path="/study-result/:id" element={<Layout><StudyResultPage /></Layout>} />
             
             {/* Game Pages */}
             <Route path="/match-list" element={<Layout><MatchListPage /></Layout>} />
             <Route path="/game-quiz-detail/:id" element={<Layout><GameQuizDetailPage /></Layout>} />
-            <Route path="/game-quiz-play/:id" element={<Layout hideNav><GameQuestionPage /></Layout>} />
+            <Route path="/game-quiz-play/:id" element={<RequireAuthRoute><Layout hideNav><GameQuestionPage /></Layout></RequireAuthRoute>} />
             <Route path="/game-review/:id" element={<Layout><GameReviewPage /></Layout>} />
             <Route path="/game-result/:id" element={<Layout><GameResultPage /></Layout>} />
-            <Route path="/match-quiz-room/:id" element={<ProtectedRoute><Layout><MatchQuizRoom /></Layout></ProtectedRoute>} />
+            <Route path="/match-quiz-room/:id" element={<RequireAuthRoute><Layout><MatchQuizRoom /></Layout></RequireAuthRoute>} />
             <Route path="/dummy-quiz-flow" element={<Layout><DummyQuizFlow /></Layout>} />
             
             <Route path="/contests" element={<Layout><ContestListPage /></Layout>} />

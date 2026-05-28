@@ -137,7 +137,14 @@ const GameQuizDetailPage = () => {
             <button 
               className="btn-elite btn-elite-primary" 
               style={{ width: '100%', height: '72px', fontSize: '1.25rem', background: 'linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--primary)))', boxShadow: '0 20px 40px -10px hsl(var(--secondary) / 0.3)' }}
-              onClick={() => navigate(`/game-quiz-play/${id}`)}
+              onClick={() => {
+                const user = localStorage.getItem('play11_user');
+                if (!user) {
+                  navigate('/login');
+                } else {
+                  navigate(`/game-quiz-play/${id}`);
+                }
+              }}
             >
               Predict Hub Entrance <Zap size={24} style={{ marginLeft: '0.75rem' }} />
             </button>

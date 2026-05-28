@@ -280,7 +280,7 @@ class AuthController {
             $query = "
               SELECT s.*, q.title, q.zone_id, q.winner_id as quiz_winner_id, q.prize_amount, 
                      COALESCE(u.name, 'Admin Declared') as winner_name,
-                     CASE WHEN s.user_id = q.winner_id THEN q.prize_amount ELSE 0 END as display_won_amount,
+                      COALESCE(s.won_amount, 0) as display_won_amount,
                      (
                        SELECT COUNT(*) + 1
                        FROM submissions s2
@@ -320,9 +320,8 @@ class AuthController {
         $userId = $user['userId'];
 
         try {
-            // Get submission details
             $stmt = DB::query(
-                'SELECT s.*, q.title, q.winner_id as quiz_winner_id, q.status as quiz_status, q.prize_amount 
+                'SELECT s.*, q.title, q.winner_id as quiz_winner_id, q.winner_2_id as quiz_winner_2_id, q.winner_3_id as quiz_winner_3_id, q.status as quiz_status, q.prize_amount 
                  FROM submissions s 
                  JOIN quizzes q ON s.quiz_id = q.id 
                  WHERE s.id = ? AND s.user_id = ?',
@@ -331,9 +330,8 @@ class AuthController {
             $submission = $stmt->fetch();
 
             if (!$submission) {
-                // Try querying assuming the ID passed is a quiz ID
                 $stmt = DB::query(
-                    'SELECT s.*, q.title, q.winner_id as quiz_winner_id, q.status as quiz_status, q.prize_amount 
+                    'SELECT s.*, q.title, q.winner_id as quiz_winner_id, q.winner_2_id as quiz_winner_2_id, q.winner_3_id as quiz_winner_3_id, q.status as quiz_status, q.prize_amount 
                      FROM submissions s 
                      JOIN quizzes q ON s.quiz_id = q.id 
                      WHERE s.quiz_id = ? AND s.user_id = ?

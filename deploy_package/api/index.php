@@ -319,7 +319,7 @@ if (matchRoute('admin/quizzes/:id/participants', $uri, $params) && $method === '
     AdminController::getQuizParticipants($params['id']);
     exit;
 }
-if (matchRoute('admin/quizzes/:id/winner', $uri, $params) && $method === 'POST') {
+if ((matchRoute('admin/quizzes/:id/winner', $uri, $params) || matchRoute('admin/quizzes/:id/declare-winner', $uri, $params)) && $method === 'POST') {
     verifyAdmin();
     AdminController::declareWinner($params['id'], $inputBody);
     exit;

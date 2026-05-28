@@ -105,21 +105,11 @@ const VouchersPage = () => {
       if (data.success) {
         setVouchers(data.vouchers.map(v => {
           const isExpired = v.user_status === 'expired' || (v.expires_at && new Date(v.expires_at) < new Date());
-          
-          let displayDiscount = v.discount_text;
-          if (v.type === 'cash') {
-            displayDiscount = `₹${v.discount_text} Real Cash`;
-          } else if (v.type === 'bonus') {
-            displayDiscount = `₹${v.discount_text} Bonus Cash`;
-          } else if (v.type === 'free_quiz') {
-            displayDiscount = `FREE Quiz Entry (₹${v.discount_text})`;
-          }
 
           return {
             ...v,
             status: isExpired ? 'expired' : (v.user_status || 'active'),
             expiry: isExpired ? 'Expired' : (v.expires_at ? '' : `Expires in ${v.expiry_days} days`),
-            discount: displayDiscount
           };
         }));
       }
@@ -305,8 +295,8 @@ const VouchersPage = () => {
               </div>
 
               <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                  <p style={{ fontSize: '0.8rem', color: v.status === 'used' ? '#10b981' : v.color, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{v.type}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1e1b4b', margin: 0 }}>{v.title}</h3>
                   
                   {v.status === 'used' ? (
                     <div style={{ 
@@ -331,13 +321,42 @@ const VouchersPage = () => {
                     </div>
                   )}
                 </div>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#475569', marginBottom: '6px', textTransform: 'capitalize' }}>{v.title}</h4>
-                <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#1e1b4b', marginBottom: '6px' }}>{v.discount}</h3>
+                <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', marginBottom: '6px', letterSpacing: '-0.5px' }}>
+                  {v.amount > 0 ? `₹${v.amount}` : v.title}
+                </h2>
                 <p style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700, margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Ticket size={12} color="#64748b" />
                   <span>Received on: {new Date(v.acquired_at || v.created_at || new Date()).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                 </p>
                 
+                {/* External Coupon Code (Amazon/Flipkart/etc.) */}
+                {v.external_code && (
+                  <div style={{
+                    background: 'linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%)',
+                    border: '2px solid #f59e0b',
+                    borderRadius: '14px',
+                    padding: '12px 16px',
+                    marginBottom: '10px'
+                  }}>
+                    <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                      🌐 Use this code anywhere — Amazon, Flipkart, etc.
+                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: '1.15rem', fontWeight: 900, color: '#78350f', letterSpacing: '2px' }}>
+                        {v.external_code}
+                      </span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleCopy(v.external_code); }}
+                        style={{ background: '#f59e0b', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem' }}
+                      >
+                        {copiedCode === v.external_code ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                        {copiedCode === v.external_code ? 'COPIED!' : 'COPY'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Internal App Redeem Code */}
                 <div style={{ background: '#f8fafc', padding: '10px 16px', borderRadius: '12px', border: '1.5px dashed #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 800, color: '#0d1f3c', letterSpacing: '2px' }}>{v.code}</span>
                   <button 

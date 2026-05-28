@@ -152,7 +152,11 @@ function getAlterations() {
         "CREATE INDEX idx_transactions_user ON transactions(user_id)",
         "CREATE INDEX idx_user_vouchers_user ON user_vouchers(user_id)",
         "CREATE INDEX idx_vouchers_code ON vouchers(code)",
-        "CREATE INDEX idx_question_options_q ON question_options(question_id)"
+        "CREATE INDEX idx_question_options_q ON question_options(question_id)",
+        "ALTER TABLE quizzes ADD COLUMN winner_2_id TEXT",
+        "ALTER TABLE quizzes ADD COLUMN winner_3_id TEXT",
+        "ALTER TABLE vouchers ADD COLUMN user_id VARCHAR(255) DEFAULT NULL",
+        "ALTER TABLE vouchers ADD COLUMN external_code TEXT DEFAULT NULL"
     ];
 }
 
@@ -280,7 +284,10 @@ function initDB() {
         close_at TIMESTAMP NULL,
         result_at TIMESTAMP NULL,
         marks_per_q INTEGER DEFAULT 2,
-        negative_marks NUMERIC DEFAULT 0.5
+        negative_marks NUMERIC DEFAULT 0.5,
+        winner_id TEXT,
+        winner_2_id TEXT,
+        winner_3_id TEXT
       );
 
       CREATE TABLE IF NOT EXISTS questions (

@@ -126,7 +126,14 @@ const StudyQuizDetailPage = () => {
             <button 
               className="btn-elite btn-elite-primary" 
               style={{ width: '100%', height: '72px', fontSize: '1.25rem' }}
-              onClick={() => navigate(`/study-quiz-play/${id}`)}
+              onClick={() => {
+                const user = localStorage.getItem('play11_user');
+                if (!user) {
+                  navigate('/login');
+                } else {
+                  navigate(`/study-quiz-play/${id}`);
+                }
+              }}
             >
               Enter Arena <PlayCircle size={24} style={{ marginLeft: '0.75rem' }} />
             </button>

@@ -5,13 +5,30 @@ require_once dirname(__DIR__) . '/controllers/auth.controller.php'; // For guidv
 class VoucherController {
     public static function getVouchers($user) {
         $userId = $user['userId'];
+
+        // Self-healing: ensure user_id column exists
+        try {
+            $pdo = DB::getPdo();
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'pgsql') {
+                $pdo->exec("ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS user_id VARCHAR(255) DEFAULT NULL");
+            } elseif ($driver === 'sqlite') {
+                $pdo->exec("ALTER TABLE vouchers ADD COLUMN user_id VARCHAR(255) DEFAULT NULL");
+            } else {
+                $pdo->exec("ALTER TABLE vouchers ADD COLUMN IF NOT EXISTS user_id VARCHAR(255) DEFAULT NULL");
+            }
+        } catch (Exception $e) {
+            // Column already exists — safe to ignore
+        }
+
         try {
             $stmt = DB::query("
                 SELECT v.*, uv.status as user_status, uv.redeemed_at, uv.expires_at as user_expires_at, uv.created_at as acquired_at
                 FROM vouchers v
                 LEFT JOIN user_vouchers uv ON v.id = uv.voucher_id AND uv.user_id = ?
-                WHERE v.status = 'active'
-            ", [$userId]);
+                WHERE v.status = 'active' AND (v.user_id IS NULL OR v.user_id = ?)
+                ORDER BY v.created_at DESC
+            ", [$userId, $userId]);
             $vouchers = $stmt->fetchAll();
 
             foreach ($vouchers as &$voucher) {
@@ -21,8 +38,25 @@ class VoucherController {
 
             echo json_encode(['success' => true, 'vouchers' => $vouchers]);
         } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            // Fallback: query without user_id filter (column may not exist yet)
+            try {
+                $stmt = DB::query("
+                    SELECT v.*, uv.status as user_status, uv.redeemed_at, uv.expires_at as user_expires_at, uv.created_at as acquired_at
+                    FROM vouchers v
+                    LEFT JOIN user_vouchers uv ON v.id = uv.voucher_id AND uv.user_id = ?
+                    WHERE v.status = 'active'
+                    ORDER BY v.created_at DESC
+                ", [$userId]);
+                $vouchers = $stmt->fetchAll();
+                foreach ($vouchers as &$voucher) {
+                    $voucher['amount'] = (float)$voucher['amount'];
+                    $voucher['expiry_days'] = (int)$voucher['expiry_days'];
+                }
+                echo json_encode(['success' => true, 'vouchers' => $vouchers]);
+            } catch (Exception $e2) {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => $e2->getMessage()]);
+            }
         }
     }
 
@@ -40,8 +74,8 @@ class VoucherController {
         try {
             $pdo->beginTransaction();
 
-            // 1. Find the voucher
-            $stmt = DB::query("SELECT * FROM vouchers WHERE code = ? AND status = 'active'", [$code]);
+            // 1. Find the voucher (checking if it belongs to this user or is global)
+            $stmt = DB::query("SELECT * FROM vouchers WHERE code = ? AND status = 'active' AND (user_id IS NULL OR user_id = ?)", [$code, $userId]);
             $voucher = $stmt->fetch();
 
             if (!$voucher) {

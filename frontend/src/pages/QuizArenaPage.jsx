@@ -139,10 +139,10 @@ const QuizArenaPage = () => {
           fetch('/api/settings/home_banner_url').then(r => r.json()).catch(() => ({}))
         ]);
 
-        if (zoneData.success && zoneData.value) {
+        if (zoneData.success && zoneData.value && zoneData.value !== '0') {
           setActiveBanner(zoneData.value);
           localStorage.setItem(`play11_arena_banner_${zoneId}`, zoneData.value);
-        } else if (globalData.success && globalData.value) {
+        } else if (globalData.success && globalData.value && globalData.value !== '0') {
           setActiveBanner(globalData.value);
           localStorage.setItem('play11_home_banner', globalData.value);
         } else {
@@ -224,21 +224,25 @@ const QuizArenaPage = () => {
               <div key={quiz.id} className="game-zone-card" style={{ padding: '0.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                    <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#94a3b8', letterSpacing: '0.1em' }}>{quiz.tag}</div>
-                   <div className={`badge-${quiz.statusColor}-mini`}>{quiz.status_label || 'LIVE'}</div>
+                   {quiz.winner_id ? (
+                     <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#10b981', background: '#dcfce7', padding: '4px 8px', borderRadius: '6px' }}>RESULT DECLARED</div>
+                   ) : (
+                     <div className={`badge-${quiz.statusColor}-mini`}>{quiz.status_label || 'LIVE'}</div>
+                   )}
                 </div>
 
                 <h3 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.4rem', lineHeight: 1.2 }}>{quiz.title}</h3>
 
                 <div className="game-status-box" style={{ 
-                  background: quiz.is_submitted ? '#f0fdf4' : 'rgba(15, 23, 42, 0.02)',
-                  borderColor: quiz.is_submitted ? '#bbf7d0' : '#f1f5f9',
+                  background: quiz.winner_id ? '#e6fffa' : (quiz.is_submitted ? '#f0fdf4' : 'rgba(15, 23, 42, 0.02)'),
+                  borderColor: quiz.winner_id ? '#b2f5ea' : (quiz.is_submitted ? '#bbf7d0' : '#f1f5f9'),
                   padding: '0.5rem'
                 }}>
-                   <p style={{ fontSize: '0.55rem', fontWeight: 800, color: quiz.is_submitted ? '#16a34a' : '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem', letterSpacing: '0.05em' }}>
-                      {quiz.is_submitted ? 'RESULT' : quiz.timerLabel}
+                   <p style={{ fontSize: '0.55rem', fontWeight: 800, color: quiz.winner_id ? '#0d9488' : (quiz.is_submitted ? '#16a34a' : '#94a3b8'), textTransform: 'uppercase', marginBottom: '0.25rem', letterSpacing: '0.05em' }}>
+                      {quiz.winner_id ? 'RESULT STATUS' : (quiz.is_submitted ? 'RESULT' : quiz.timerLabel)}
                    </p>
-                   <p style={{ fontSize: '1.1rem', fontWeight: 900, color: quiz.is_submitted ? '#16a34a' : '#ef4444' }}>
-                      {quiz.is_submitted ? 'Done' : quiz.timerValue}
+                   <p style={{ fontSize: '1.1rem', fontWeight: 900, color: quiz.winner_id ? '#0d9488' : (quiz.is_submitted ? '#16a34a' : '#ef4444') }}>
+                      {quiz.winner_id ? 'DECLARED' : (quiz.is_submitted ? 'Done' : quiz.timerValue)}
                    </p>
                 </div>
 
@@ -258,32 +262,38 @@ const QuizArenaPage = () => {
                 </div>
 
                 <button 
-                  className={`shimmer-btn ${quiz.is_submitted ? 'bg-slate-500' : ''}`}
+                  className={`shimmer-btn ${quiz.is_submitted && !quiz.winner_id ? 'bg-slate-500' : ''}`}
                   onClick={() => {
                     if (quiz.is_submitted || quiz.status_label === 'CLOSED') {
                       navigate(zoneId === 'study-zone' ? `/study-result/${quiz.id}` : `/game-result/${quiz.id}`);
                     } else if (quiz.status_label === 'UPCOMING') {
                       navigate(zoneId === 'study-zone' ? `/study-quiz-detail/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
                     } else {
-                      navigate(zoneId === 'study-zone' ? `/study-quiz-play/${quiz.id}` : `/game-quiz-play/${quiz.id}`);
+                      // It's a live quiz, check for login first
+                      const user = localStorage.getItem('play11_user');
+                      if (!user) {
+                        navigate('/login');
+                      } else {
+                        navigate(zoneId === 'study-zone' ? `/study-quiz-play/${quiz.id}` : `/game-quiz-play/${quiz.id}`);
+                      }
                     }
                   }}
                   style={{ 
                     marginTop: 'auto', 
                     height: '44px',
-                    background: quiz.is_submitted ? '#64748b' : config.themeColor,
-                    boxShadow: quiz.is_submitted ? 'none' : `0 6px 12px -3px ${config.themeColor}4D`,
+                    background: quiz.winner_id ? '#10b981' : (quiz.is_submitted ? '#64748b' : config.themeColor),
+                    boxShadow: quiz.winner_id ? '0 6px 12px -3px rgba(16, 185, 129, 0.3)' : (quiz.is_submitted ? 'none' : `0 6px 12px -3px ${config.themeColor}4D`),
                     fontSize: '0.8rem',
                     padding: '0 1rem'
                   }}
                 >
-                   <span>{quiz.is_submitted ? 'Awaiting Result' : quiz.btnText}</span>
+                   <span>{quiz.winner_id ? 'View Results' : (quiz.is_submitted ? 'Awaiting Result' : quiz.btnText)}</span>
                    <ChevronRight size={16} strokeWidth={3} />
                 </button>
                 
                 {quiz.is_submitted && (
-                  <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.7rem', color: '#16a34a', fontWeight: 800 }}>
-                    Successfully submitted on {new Date(quiz.submitted_at).toLocaleDateString()}
+                  <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.7rem', color: quiz.winner_id ? '#10b981' : '#16a34a', fontWeight: 800 }}>
+                    {quiz.winner_id ? 'Result has been declared!' : `Successfully submitted on ${new Date(quiz.submitted_at).toLocaleDateString()}`}
                   </p>
                 )}
               </div>

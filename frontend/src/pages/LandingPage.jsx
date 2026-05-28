@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, X, Home, Trophy, Wallet, BarChart3, User, Check, ArrowRight, Zap } from "lucide-react";
-import logoImg from '../assets/quzo.png';
+import logoImg from '../assets/quzo 1.jpeg';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -42,17 +42,17 @@ export default function LandingPage() {
     <div className="page">
       <header className="topbar">
         <div className="topbar-inner">
-          <div 
-            onClick={() => navigate("/")} 
+          <div
+            onClick={() => navigate("/")}
             className="header-logo-container"
           >
-            <img 
-              src={logoImg} 
-              alt="QUZO" 
+            <img
+              src={logoImg}
+              alt="QUZO"
               className="header-logo-img"
             />
           </div>
-          
+
           <nav className={`nav-links ${isMenuOpen ? "open" : ""}`}>
             <a href="#home" onClick={(e) => { e.preventDefault(); navigate("/"); setIsMenuOpen(false); }}>Home</a>
             <a href="/how-it-works" onClick={(e) => { e.preventDefault(); navigate("/how-it-works"); setIsMenuOpen(false); }}>How it works</a>
@@ -70,7 +70,7 @@ export default function LandingPage() {
                 Login
               </button>
             </>
-            
+
             <button className="menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -192,7 +192,7 @@ export default function LandingPage() {
           <div className="features-grid">
             <div className="feature-card">
               <div className="feature-icon">🧠</div>
-              <h3 style={{ marginTop: "14px" }}>Skill-based competitions</h3>
+              <h3 style={{ marginTop: "14px" }}>Knowledge & Skill-based competitions</h3>
               <p>Compete through timed live quizzes where rankings depend on accuracy and time efficiency.</p>
             </div>
             <div className="feature-card">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, ChevronRight, ShieldCheck, History, Award, Wallet, Trophy, Ticket, Gamepad2, MoreHorizontal, Headphones, FileText } from 'lucide-react';
+import { User, ChevronRight, ShieldCheck, History, Award, Wallet, Trophy, Ticket, Gamepad2, MoreHorizontal, Headphones, FileText, LogOut } from 'lucide-react';
 import { settingsService } from '../services/api';
 
 // ─── Tiny persistent cache helper (same pattern as api.js) ──────────────────
@@ -27,7 +27,30 @@ const ProfilePage = () => {
     return 'Scholar';
   };
 
+  const getInitialMobile = () => {
+    const storedMobile = localStorage.getItem('user_mobile');
+    if (storedMobile) return storedMobile;
+    try {
+      const sessionRaw = localStorage.getItem('play11_session');
+      if (sessionRaw) {
+        const parsed = JSON.parse(sessionRaw);
+        return parsed.user?.mobile || parsed.user?.phone || '';
+      }
+    } catch (e) {}
+    return '';
+  };
+
+  const formatMobile = (num) => {
+    if (!num) return '';
+    const clean = num.replace(/\s+/g, '');
+    if (clean.startsWith('+')) return clean;
+    if (clean.length === 10) return `+91 ${clean}`;
+    if (clean.length === 12 && clean.startsWith('91')) return `+91 ${clean.substring(2)}`;
+    return num;
+  };
+
   const [name, setName] = React.useState(getInitialName());
+  const [mobileNum] = React.useState(getInitialMobile());
   const [isEditing, setIsEditing] = React.useState(false);
   const [showMore, setShowMore] = React.useState(false);
   const [userStats, setUserStats] = React.useState({ quizzes: 0, wins: 0, points: 0 });
@@ -152,9 +175,9 @@ const ProfilePage = () => {
   };
 
   const stats = [
-    { label: 'QUIZZES', value: userStats.quizzes.toString(), icon: <History size={24} />, bgColor: '#f3f0ff', iconColor: '#7c3aed' },
-    { label: 'WINS', value: userStats.wins.toString(), icon: <Award size={24} />, bgColor: '#fffbeb', iconColor: '#f59e0b' },
-    { label: 'POINTS', value: userStats.points.toString(), icon: <ShieldCheck size={24} />, bgColor: '#f0fdf4', iconColor: '#10b981' }
+    { label: 'QUIZZES', value: userStats.quizzes.toString(), icon: <History />, bgColor: '#f3f0ff', iconColor: '#7c3aed' },
+    { label: 'WINS', value: userStats.wins.toString(), icon: <Award />, bgColor: '#fffbeb', iconColor: '#f59e0b' },
+    { label: 'POINTS', value: userStats.points.toString(), icon: <ShieldCheck />, bgColor: '#f0fdf4', iconColor: '#10b981' }
   ];
 
   const menuItems = [
@@ -216,7 +239,26 @@ const ProfilePage = () => {
         onClick: () => navigate('/legal'),
         isSubsection: true
       }
-    ] : [])
+    ] : []),
+    { 
+      icon: <LogOut size={20} color="#ef4444" />, 
+      title: <span style={{ color: '#ef4444' }}>Log Out</span>, 
+      subtext: <span style={{ color: '#ef4444' }}>Sign out of your account securely</span>, 
+      onClick: () => {
+        if(window.confirm('Are you sure you want to log out?')) {
+          localStorage.removeItem('play11_session');
+          localStorage.removeItem('play11_user');
+          localStorage.removeItem('user_name');
+          localStorage.removeItem('user_mobile');
+          // Clear any user-specific caches if needed
+          Object.keys(sessionStorage).forEach(key => {
+            if(key.startsWith('play11_cache:')) sessionStorage.removeItem(key);
+          });
+          navigate('/');
+        }
+      },
+      bgIcon: <LogOut size={64} color="#ef4444" style={{ opacity: 0.05, position: 'absolute', right: '40px', transform: 'rotate(-10deg)' }} />
+    }
   ];
 
   return (
@@ -244,7 +286,7 @@ const ProfilePage = () => {
               }}
             />
           ) : (
-            <div style={{ display: 'inline-block', position: 'relative' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <h1 
                 onClick={() => setIsEditing(true)}
                 style={{ 
@@ -252,48 +294,37 @@ const ProfilePage = () => {
                   fontWeight: 800, 
                   color: '#1e1b4b',
                   cursor: 'pointer',
-                  marginBottom: '8px'
+                  marginBottom: '4px'
                 }}
               >
                 {name}
               </h1>
-              <div style={{ width: '40px', height: '4px', background: '#7c3aed', borderRadius: '2px', margin: '0 auto' }}></div>
+              {mobileNum && (
+                <div style={{ 
+                  fontSize: '1rem', 
+                  fontWeight: 600, 
+                  color: '#64748b', 
+                  marginBottom: '12px' 
+                }}>
+                  {formatMobile(mobileNum)}
+                </div>
+              )}
+              <div style={{ width: '40px', height: '4px', background: '#7c3aed', borderRadius: '2px' }}></div>
             </div>
           )}
         </div>
 
         {/* Stats Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.75rem', marginBottom: '2.5rem' }}>
+        <div className="profile-stats-grid">
           {stats.map((stat, i) => (
-            <div key={i} style={{ 
-              background: 'white', 
-              padding: '1.25rem', 
-              borderRadius: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-              border: '1px solid #f8fafc'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ 
-                  width: '48px', 
-                  height: '48px', 
-                  borderRadius: '1rem', 
-                  backgroundColor: stat.bgColor, 
-                  color: stat.iconColor,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {stat.icon}
-                </div>
-                <div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1e1b4b', lineHeight: 1.1 }}>{stat.value}</div>
-                  <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#94a3b8', marginTop: '2px' }}>{stat.label}</div>
-                </div>
+            <div key={i} className="profile-stat-card">
+              <div className="profile-stat-icon-wrapper" style={{ backgroundColor: stat.bgColor, color: stat.iconColor }}>
+                {stat.icon}
               </div>
-              <ChevronRight size={16} color="#e2e8f0" strokeWidth={3} />
+              <div className="profile-stat-info">
+                <div className="profile-stat-value">{stat.value}</div>
+                <div className="profile-stat-label">{stat.label}</div>
+              </div>
             </div>
           ))}
         </div>

@@ -28,11 +28,16 @@ const AdminDashboard = () => {
     type: 'bonus',
     color: '#7c3aed',
     expiry_days: 30,
-    expires_at: ''
+    expires_at: '',
+    mobile: '',
+    external_code: ''
   });
   const [expiryType, setExpiryType] = useState('days');
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [participants, setParticipants] = useState([]);
+  const [rank1Winner, setRank1Winner] = useState('');
+  const [rank2Winner, setRank2Winner] = useState('');
+  const [rank3Winner, setRank3Winner] = useState('');
   const [categories, setCategories] = useState([]);
   const [serverTime, setServerTime] = useState(new Date());
   const [isParsing, setIsParsing] = useState(false);
@@ -58,6 +63,7 @@ const AdminDashboard = () => {
 
 
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [showIngestionPreview, setShowIngestionPreview] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [showImagePasteModal, setShowImagePasteModal] = useState(false);
@@ -462,6 +468,57 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeclareThreeWinners = async (quizId) => {
+    if (!rank1Winner) {
+      alert('Please select at least the 1st Rank winner.');
+      return;
+    }
+    if (!window.confirm('Declare the selected users as winners?')) return;
+
+    try {
+      const token = localStorage.getItem('play11_admin_session');
+      const res = await fetch(`/api/admin/quizzes/${quizId}/declare-winner`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          winner_id: rank1Winner,
+          winner_2_id: rank2Winner || null,
+          winner_3_id: rank3Winner || null
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || 'Winners declared successfully!');
+        
+        // Find winner names to update local state dynamically
+        const w1 = participants.find(p => p.user_id === rank1Winner)?.name || rank1Winner;
+        const w2 = participants.find(p => p.user_id === rank2Winner)?.name || '';
+        const w3 = participants.find(p => p.user_id === rank3Winner)?.name || '';
+
+        setSelectedQuiz(prev => ({ 
+          ...prev, 
+          winner_id: rank1Winner,
+          winner_name: w1,
+          winner_2_id: rank2Winner || null,
+          winner_2_name: w2,
+          winner_3_id: rank3Winner || null,
+          winner_3_name: w3
+        }));
+        
+        fetchData(); // Refresh global list
+        fetchParticipants(quizId); // Refresh participants list
+      } else {
+        alert(data.error || 'Failed to declare winners');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred while declaring winners.');
+    }
+  };
+
   const fetchSubmissionReview = async (submissionId) => {
     setReviewLoading(true);
     setShowReviewModal(true);
@@ -532,7 +589,9 @@ const AdminDashboard = () => {
           type: 'bonus',
           color: '#7c3aed',
           expiry_days: 30,
-          expires_at: ''
+          expires_at: '',
+          mobile: '',
+          external_code: ''
         });
         setExpiryType('days');
         fetchData();
@@ -1912,8 +1971,16 @@ const AdminDashboard = () => {
                 <div key={q.id} className="admin-quiz-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h4 style={{ fontWeight: 800 }}>{q.title || 'Untitled Quiz'}</h4>
-                  <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                    {q.participants_count || 0} Participants • {(q.status || 'unknown').toUpperCase()} • {(q.zone_id || 'general').toUpperCase()}
+                  <p style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <span>{q.participants_count || 0} Participants</span>
+                    <span>•</span>
+                    {q.winner_id ? (
+                      <span style={{ color: '#10b981', background: '#dcfce7', padding: '2px 8px', borderRadius: '4px', fontWeight: 900 }}>RESULT DECLARED</span>
+                    ) : (
+                      <span>{(q.status || 'unknown').toUpperCase()}</span>
+                    )}
+                    <span>•</span>
+                    <span>{(q.zone_id || 'general').toUpperCase()}</span>
                   </p>
                 </div>
                 <div className="admin-quiz-card-actions" style={{ display: 'flex', gap: '0.75rem' }}>
@@ -1958,10 +2025,90 @@ const AdminDashboard = () => {
 
         {activeTab === 'Quizzes' && selectedQuiz && (
           <div>
-            <button onClick={() => setSelectedQuiz(null)} style={{ marginBottom: '1.5rem', fontWeight: 800, color: '#3b82f6', border: 'none', background: 'none', cursor: 'pointer' }}>â† Back to Quiz List</button>
+            <button onClick={() => { setSelectedQuiz(null); setRank1Winner(''); setRank2Winner(''); setRank3Winner(''); }} style={{ marginBottom: '1.5rem', fontWeight: 800, color: '#3b82f6', border: 'none', background: 'none', cursor: 'pointer' }}>← Back to Quiz List</button>
             <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.5rem' }}>{selectedQuiz.title}</h3>
-              <p style={{ marginBottom: '2rem', color: '#64748b' }}>Winner: {selectedQuiz.winner_id || 'Not Declared'}</p>
+              
+              {selectedQuiz.winner_id ? (
+                <div style={{ padding: '1.25rem 1.75rem', borderRadius: '1.25rem', background: '#f0fdf4', border: '1px solid #dcfce7', marginBottom: '2rem' }}>
+                  <h4 style={{ fontWeight: 900, color: '#166534', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <Award size={20} /> Winners Officially Declared
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <p style={{ fontWeight: 700, fontSize: '0.95rem', color: '#14532d' }}>
+                      🥇 1st Rank: <span style={{ fontWeight: 900 }}>{selectedQuiz.winner_name || selectedQuiz.winner_id}</span> (Won 50%)
+                    </p>
+                    {selectedQuiz.winner_2_id && (
+                      <p style={{ fontWeight: 700, fontSize: '0.95rem', color: '#14532d' }}>
+                        🥈 2nd Rank: <span style={{ fontWeight: 900 }}>{selectedQuiz.winner_2_name || selectedQuiz.winner_2_id}</span> (Won 30%)
+                      </p>
+                    )}
+                    {selectedQuiz.winner_3_id && (
+                      <p style={{ fontWeight: 700, fontSize: '0.95rem', color: '#14532d' }}>
+                        🥉 3rd Rank: <span style={{ fontWeight: 900 }}>{selectedQuiz.winner_3_name || selectedQuiz.winner_3_id}</span> (Won 20%)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '1.5rem', borderRadius: '1.5rem', marginBottom: '2rem' }}>
+                  <h4 style={{ fontWeight: 900, color: '#92400e', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    🏆 Declare Rank 1, 2 & 3 Winners
+                  </h4>
+                  <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#b45309', marginBottom: '1.25rem' }}>
+                    Select winners directly by clicking 🥇, 🥈, or 🥉 buttons next to users in the table below, or click "Auto-Select Top 3" to immediately assign the highest scores.
+                  </p>
+                  
+                  <div style={{ display: 'flex', gap: '1.25rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ background: 'white', padding: '0.75rem 1.25rem', borderRadius: '0.75rem', border: '1px solid #fecaca', minWidth: '200px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#dc2626', display: 'block' }}>🥇 1ST RANK (50%)</span>
+                      <p style={{ fontWeight: 900, fontSize: '0.95rem', marginTop: '0.25rem', color: '#1e293b' }}>
+                        {rank1Winner ? (participants.find(p => p.user_id === rank1Winner)?.name || 'Selected') : <span style={{ color: '#94a3b8', fontWeight: 500 }}>Not Selected</span>}
+                      </p>
+                    </div>
+                    <div style={{ background: 'white', padding: '0.75rem 1.25rem', borderRadius: '0.75rem', border: '1px solid #bfdbfe', minWidth: '200px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#2563eb', display: 'block' }}>🥈 2ND RANK (30%)</span>
+                      <p style={{ fontWeight: 900, fontSize: '0.95rem', marginTop: '0.25rem', color: '#1e293b' }}>
+                        {rank2Winner ? (participants.find(p => p.user_id === rank2Winner)?.name || 'Selected') : <span style={{ color: '#94a3b8', fontWeight: 500 }}>Not Selected</span>}
+                      </p>
+                    </div>
+                    <div style={{ background: 'white', padding: '0.75rem 1.25rem', borderRadius: '0.75rem', border: '1px solid #fef3c7', minWidth: '200px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#d97706', display: 'block' }}>🥉 3RD RANK (20%)</span>
+                      <p style={{ fontWeight: 900, fontSize: '0.95rem', marginTop: '0.25rem', color: '#1e293b' }}>
+                        {rank3Winner ? (participants.find(p => p.user_id === rank3Winner)?.name || 'Selected') : <span style={{ color: '#94a3b8', fontWeight: 500 }}>Not Selected</span>}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                    <button 
+                      onClick={() => {
+                        if (participants.length > 0) setRank1Winner(participants[0].user_id);
+                        if (participants.length > 1) setRank2Winner(participants[1].user_id);
+                        if (participants.length > 2) setRank3Winner(participants[2].user_id);
+                      }}
+                      style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      ⚡ Auto-Select Top 3
+                    </button>
+                    <button 
+                      onClick={() => handleDeclareThreeWinners(selectedQuiz.id)}
+                      className="admin-winner-btn" 
+                      style={{ background: '#d97706', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      Confirm & Declare Winners
+                    </button>
+                    {(rank1Winner || rank2Winner || rank3Winner) && (
+                      <button 
+                        onClick={() => { setRank1Winner(''); setRank2Winner(''); setRank3Winner(''); }}
+                        style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '10px 20px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}
+                      >
+                        Clear Selection
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <h4 style={{ fontWeight: 800, marginBottom: '1rem' }}>Participants (Leaderboard)</h4>
               <div style={{ overflowX: 'auto' }}>
@@ -1994,16 +2141,99 @@ const AdminDashboard = () => {
                           <button onClick={() => fetchSubmissionReview(p.id)} style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer' }}>View Answers</button>
                         </td>
                         <td style={{ padding: '1rem' }}>
-                          {!selectedQuiz.winner_id && (
-                            <button onClick={() => handleDeclareWinner(selectedQuiz.id, p.user_id)} className="admin-winner-btn">Declare Winner</button>
-                          )}
                           {selectedQuiz.winner_id === p.user_id && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontWeight: 900 }}>
-                              <Award size={16} /> WON ðŸŽ‰
+                              🥇 1st Rank
                             </div>
                           )}
-                          {selectedQuiz.winner_id && selectedQuiz.winner_id !== p.user_id && (
+                          {selectedQuiz.winner_2_id === p.user_id && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#3b82f6', fontWeight: 900 }}>
+                              🥈 2nd Rank
+                            </div>
+                          )}
+                          {selectedQuiz.winner_3_id === p.user_id && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f59e0b', fontWeight: 900 }}>
+                              🥉 3rd Rank
+                            </div>
+                          )}
+                          {selectedQuiz.winner_id && 
+                           selectedQuiz.winner_id !== p.user_id && 
+                           selectedQuiz.winner_2_id !== p.user_id && 
+                           selectedQuiz.winner_3_id !== p.user_id && (
                             <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Ended</span>
+                          )}
+                          {!selectedQuiz.winner_id && (
+                            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                              <button 
+                                onClick={() => {
+                                  if (rank1Winner === p.user_id) setRank1Winner('');
+                                  else {
+                                    setRank1Winner(p.user_id);
+                                    if (rank2Winner === p.user_id) setRank2Winner('');
+                                    if (rank3Winner === p.user_id) setRank3Winner('');
+                                  }
+                                }}
+                                style={{
+                                  padding: '6px 10px',
+                                  borderRadius: '8px',
+                                  border: '1px solid #fca5a5',
+                                  background: rank1Winner === p.user_id ? '#fca5a5' : 'white',
+                                  color: '#b91c1c',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  fontSize: '0.7rem'
+                                }}
+                                title="Set 1st Rank"
+                              >
+                                🥇 1st
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  if (rank2Winner === p.user_id) setRank2Winner('');
+                                  else {
+                                    setRank2Winner(p.user_id);
+                                    if (rank1Winner === p.user_id) setRank1Winner('');
+                                    if (rank3Winner === p.user_id) setRank3Winner('');
+                                  }
+                                }}
+                                style={{
+                                  padding: '6px 10px',
+                                  borderRadius: '8px',
+                                  border: '1px solid #93c5fd',
+                                  background: rank2Winner === p.user_id ? '#93c5fd' : 'white',
+                                  color: '#1d4ed8',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  fontSize: '0.7rem'
+                                }}
+                                title="Set 2nd Rank"
+                              >
+                                🥈 2nd
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  if (rank3Winner === p.user_id) setRank3Winner('');
+                                  else {
+                                    setRank3Winner(p.user_id);
+                                    if (rank1Winner === p.user_id) setRank1Winner('');
+                                    if (rank2Winner === p.user_id) setRank2Winner('');
+                                  }
+                                }}
+                                style={{
+                                  padding: '6px 10px',
+                                  borderRadius: '8px',
+                                  border: '1px solid #fde047',
+                                  background: rank3Winner === p.user_id ? '#fde047' : 'white',
+                                  color: '#a16207',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  fontSize: '0.7rem'
+                                }}
+                                title="Set 3rd Rank"
+                              >
+                                🥉 3rd
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -2159,6 +2389,37 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
+              {/* Show banner only when gifting to a specific user (pre-filled from Users tab) */}
+              {newVoucher.mobile && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  background: '#eff6ff',
+                  border: '1.5px solid #bfdbfe',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  marginBottom: '1.5rem'
+                }}>
+                  <span style={{ fontSize: '1.1rem' }}>🎁</span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontWeight: 800, color: '#1d4ed8', fontSize: '0.85rem', margin: 0 }}>
+                      Gifting to Specific User
+                    </p>
+                    <p style={{ fontSize: '0.75rem', color: '#3b82f6', margin: 0, fontWeight: 600 }}>
+                      Mobile: {newVoucher.mobile} — This voucher will only be visible to this user.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setNewVoucher(prev => ({ ...prev, mobile: '' }))}
+                    style={{ background: '#fee2e2', border: 'none', borderRadius: '8px', padding: '4px 10px', color: '#ef4444', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}
+                  >
+                    ✕ Remove
+                  </button>
+                </div>
+              )}
+
               <form onSubmit={handleCreateVoucher} className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
                 <div className="form-group">
                   <label>Voucher Title</label>
@@ -2180,16 +2441,7 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Display Text</label>
-                  <input 
-                    className="admin-input" 
-                    placeholder="e.g. ₹100 Bonus Cash" 
-                    value={newVoucher.discount_text}
-                    onChange={e => setNewVoucher({...newVoucher, discount_text: e.target.value})}
-                    required
-                  />
-                </div>
+
                 <div className="form-group">
                   <label>Amount (₹)</label>
                   <input 
@@ -2200,17 +2452,22 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label>Type</label>
-                  <select 
-                    className="admin-input"
-                    value={newVoucher.type}
-                    onChange={e => setNewVoucher({...newVoucher, type: e.target.value})}
-                  >
-                    <option value="bonus">Bonus Cash</option>
-                    <option value="cash">Real Cash (Deposit)</option>
-                  </select>
+
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🌐 External Coupon Code
+                    <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#94a3b8', background: '#f1f5f9', padding: '2px 8px', borderRadius: '6px' }}>
+                      Optional — Amazon / Flipkart / Any Platform
+                    </span>
+                  </label>
+                  <input 
+                    className="admin-input" 
+                    placeholder="e.g. AMZN-XYZW-1234-ABCD (User will see & copy this code)"
+                    value={newVoucher.external_code || ''}
+                    onChange={e => setNewVoucher({...newVoucher, external_code: e.target.value})}
+                  />
                 </div>
+
                 <div className="form-group">
                   <label>Color (Hex)</label>
                   <input 
@@ -2312,8 +2569,18 @@ const AdminDashboard = () => {
                   {vouchers.map(v => (
                     <tr key={v.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '1.25rem' }}>
-                        <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontWeight: 900, color: v.color }}>{v.code}</code>
-                        <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>{v.title}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontWeight: 900, color: v.color }}>{v.code}</code>
+                          {v.user_id && (
+                            <span style={{ fontSize: '0.65rem', background: '#eff6ff', color: '#2563eb', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                              🔒 SPECIFIC USER
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+                          {v.title}
+                          {v.user_id && ` (Assign User ID: ${v.user_id})`}
+                        </p>
                       </td>
                       <td style={{ padding: '1.25rem', fontWeight: 800 }}>{v.discount_text}</td>
                       <td style={{ padding: '1.25rem' }}>
@@ -2344,48 +2611,124 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'Users' && (
+        {activeTab === 'Users' && (() => {
+          const filteredUsers = allUsers.filter(u => 
+            (u.name || '').toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+            (u.mobile || '').includes(userSearchQuery)
+          );
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Search Bar */}
+              <div style={{ display: 'flex', gap: '1rem', background: 'white', padding: '1.25rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0', alignItems: 'center' }}>
+                <Search size={20} color="#94a3b8" />
+                <input
+                  type="text"
+                  placeholder="Search users by name or mobile number..."
+                  value={userSearchQuery}
+                  onChange={e => setUserSearchQuery(e.target.value)}
+                  style={{
+                    flex: 1,
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '0.95rem',
+                    fontWeight: 600,
+                    color: '#1e293b'
+                  }}
+                />
+                {userSearchQuery && (
+                  <button 
+                    onClick={() => setUserSearchQuery('')}
+                    style={{ background: '#f1f5f9', border: 'none', padding: '4px 10px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 800, color: '#64748b' }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
 
-          <div style={{ background: 'white', borderRadius: '1.5rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead style={{ background: '#f8fafc' }}>
-                <tr style={{ textAlign: 'left' }}>
-                  <th style={{ padding: '1.25rem' }}>Name</th>
-                  <th style={{ padding: '1.25rem' }}>Mobile</th>
-                  <th style={{ padding: '1.25rem' }}>Referral Code</th>
-                  <th style={{ padding: '1.25rem' }}>Bonus</th>
-                  <th style={{ padding: '1.25rem' }}>Wallet</th>
-                  <th style={{ padding: '1.25rem' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allUsers.map(u => (
-                  <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '1.25rem', fontWeight: 700 }}>{u.name || 'N/A'}</td>
-                    <td style={{ padding: '1.25rem' }}>{u.mobile}</td>
-                    <td style={{ padding: '1.25rem' }}>
-                      <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontWeight: 800, color: '#3b82f6' }}>{u.referral_code || '---'}</code>
-                    </td>
-                    <td style={{ padding: '1.25rem', fontWeight: 800, color: '#10b981' }}>₹{u.bonus || 0}</td>
-                    <td style={{ padding: '1.25rem', fontWeight: 800, color: '#0f172a' }}>₹{u.wallet || 0}</td>
-                    <td style={{ padding: '1.25rem' }}>
-                      <span style={{
-                        padding: '4px 12px',
-                        borderRadius: '999px',
-                        fontSize: '0.7rem',
-                        fontWeight: 900,
-                        background: u.status === 'active' ? '#dcfce7' : '#fee2e2',
-                        color: u.status === 'active' ? '#15803d' : '#b91c1c'
-                      }}>
-                        {u.status.toUpperCase()}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              {/* Users Table */}
+              <div style={{ background: 'white', borderRadius: '1.5rem', border: '1px solid #e2e8f0', overflowX: 'auto' }}>
+                <table style={{ width: '100%', minWidth: '750px', borderCollapse: 'collapse' }}>
+                  <thead style={{ background: '#f8fafc' }}>
+                    <tr style={{ textAlign: 'left' }}>
+                      <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Name</th>
+                      <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Mobile</th>
+                      <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Referral Code</th>
+                      <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Bonus</th>
+                      <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Wallet</th>
+                      <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Status</th>
+                      <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map(u => (
+                      <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '1rem 1.25rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{u.name || 'N/A'}</td>
+                        <td style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>{u.mobile}</td>
+                        <td style={{ padding: '1rem 1.25rem' }}>
+                          <code style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontWeight: 800, color: '#3b82f6' }}>{u.referral_code || '---'}</code>
+                        </td>
+                        <td style={{ padding: '1rem 1.25rem', fontWeight: 800, color: '#10b981', whiteSpace: 'nowrap' }}>₹{u.bonus || 0}</td>
+                        <td style={{ padding: '1rem 1.25rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap' }}>₹{u.wallet || 0}</td>
+                        <td style={{ padding: '1rem 1.25rem' }}>
+                          <span style={{
+                            padding: '4px 12px',
+                            borderRadius: '999px',
+                            fontSize: '0.7rem',
+                            fontWeight: 900,
+                            whiteSpace: 'nowrap',
+                            background: u.status === 'active' ? '#dcfce7' : '#fee2e2',
+                            color: u.status === 'active' ? '#15803d' : '#b91c1c'
+                          }}>
+                            {u.status.toUpperCase()}
+                          </span>
+                        </td>
+                        <td style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>
+                          <button
+                            title={`Gift a voucher to ${u.name || u.mobile}`}
+                            onClick={() => {
+                              const uniqueSuffix = Math.floor(1000 + Math.random() * 9000);
+                              setNewVoucher(prev => ({
+                                ...prev,
+                                mobile: u.mobile,
+                                title: `Gift for ${u.name || 'User'}`,
+                                code: `GIFT-${u.mobile}-${uniqueSuffix}`
+                              }));
+                              setActiveTab('Vouchers');
+                            }}
+                            style={{
+                              padding: '6px 14px',
+                              background: '#eff6ff',
+                              color: '#2563eb',
+                              border: '1.5px solid #bfdbfe',
+                              borderRadius: '8px',
+                              fontWeight: 800,
+                              fontSize: '0.75rem',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              whiteSpace: 'nowrap',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <Ticket size={13} /> 🎁 Gift
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredUsers.length === 0 && (
+                      <tr>
+                        <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
+                          No users found matching "{userSearchQuery}"
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
 
         {activeTab === 'Banners' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Mail, Phone, MessageSquare, Globe } from 'lucide-react';
+import logoImg from '../assets/quzo 1.jpeg';
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -12,11 +13,16 @@ const Footer = () => {
         <div className="footer-grid">
           {/* Brand Info */}
           <div className="footer-brand">
-            <div className="logo-boxes" onClick={() => navigate('/')} style={{ cursor: 'pointer', marginBottom: '1.25rem' }}>
-              <div className="logo-box">Q</div>
-              <div className="logo-box">U</div>
-              <div className="logo-box">Z</div>
-              <div className="logo-box">O</div>
+            <div
+              onClick={() => navigate('/')}
+              className="footer-logo-container"
+              style={{ cursor: 'pointer', marginBottom: '1.25rem' }}
+            >
+              <img
+                src={logoImg}
+                alt="QUZO"
+                className="footer-logo-img"
+              />
             </div>
             <p className="footer-desc">
               The ultimate platform where knowledge meets competition. Master your academic goals and sports predictions in one elite arena.
@@ -75,13 +81,34 @@ const Footer = () => {
       </div>
 
       <style>{`
+        .footer-logo-container {
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          height: 72px;
+          width: 250px;
+          transition: all 0.3s ease;
+          margin-left: -40px;
+        }
+        
+        .footer-logo-img {
+          height: 170px;
+          width: auto;
+          object-fit: contain;
+          flex-shrink: 0;
+          transition: all 0.3s ease;
+        }
+
         .site-footer {
-          background: #020617; /* Deep Black */
+          background: #0d1f3c; /* Navy Blue */
           color: #94a3b8;
           padding: 3.5rem 0 2rem;
           margin-top: 0;
           border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
+
         
         .footer-grid {
           display: grid;
@@ -175,7 +202,7 @@ const Footer = () => {
           .footer-brand { grid-column: 1 / -1; }
         }
         @media (max-width: 640px) {
-          .site-footer { padding: 2.5rem 0 1.5rem; }
+          .site-footer { padding: 2.5rem 0 90px; }
           .footer-grid { 
             grid-template-columns: repeat(2, 1fr); 
             gap: 2rem 1rem; 
@@ -188,7 +215,7 @@ const Footer = () => {
             flex-direction: column;
             align-items: center;
           }
-          .logo-boxes { justify-content: center; }
+          .footer-logo-container { margin: 0 auto 1.25rem; }
           .social-row { justify-content: center; width: 100%; }
           .footer-brand .footer-desc { 
             margin-left: auto; 
