@@ -34,7 +34,11 @@ if ($dbUrl && (strpos($dbUrl, 'postgres://') === 0 || strpos($dbUrl, 'postgresql
     if (empty($optionsParam) && strpos($host, 'neon.tech') !== false) {
         $hostParts = explode('.', $host);
         $endpointId = $hostParts[0];
-        $optionsParam = ";options='endpoint=$endpointId'";
+        if (str_ends_with($endpointId, '-pooler')) {
+            $optionsParam = '';
+        } else {
+            $optionsParam = ";options='endpoint=$endpointId'";
+        }
     }
 
     try {
@@ -156,7 +160,11 @@ function getAlterations() {
         "ALTER TABLE quizzes ADD COLUMN winner_2_id TEXT",
         "ALTER TABLE quizzes ADD COLUMN winner_3_id TEXT",
         "ALTER TABLE vouchers ADD COLUMN user_id VARCHAR(255) DEFAULT NULL",
-        "ALTER TABLE vouchers ADD COLUMN external_code TEXT DEFAULT NULL"
+        "ALTER TABLE vouchers ADD COLUMN external_code TEXT DEFAULT NULL",
+        "DROP TABLE IF EXISTS admin_users",
+        "CREATE TABLE IF NOT EXISTS quiz_registrations (id VARCHAR(255) PRIMARY KEY, user_id VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE, quiz_id VARCHAR(255) NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+        "CREATE INDEX idx_quiz_reg_user ON quiz_registrations(user_id)",
+        "CREATE INDEX idx_quiz_reg_quiz ON quiz_registrations(quiz_id)"
     ];
 }
 

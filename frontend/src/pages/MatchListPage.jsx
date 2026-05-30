@@ -37,7 +37,7 @@ const MatchListPage = () => {
         {/* Website Header Bar */}
         <div className="animate-slide-up" style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '4rem' }}>
           <button 
-            onClick={() => navigate('/game-home')} 
+            onClick={() => navigate('/quiz-arena/sport-zone')} 
             className="flex-center glass-card" 
             style={{ color: 'hsl(var(--foreground))', width: '60px', height: '60px', borderRadius: '1.75rem', flexShrink: 0 }}
           >

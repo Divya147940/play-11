@@ -128,4 +128,37 @@ class WalletController {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
+    public static function creditCoins($data, $user) {
+        $userId = $user['userId'];
+        $amount = isset($data['amount']) ? (float)$data['amount'] : 0;
+
+        if ($amount <= 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid amount']);
+            return;
+        }
+
+        $pdo = DB::getPdo();
+        try {
+            $pdo->beginTransaction();
+
+            // Credit coins
+            DB::query("UPDATE users SET coins = coins + ? WHERE id = ?", [$amount, $userId]);
+
+            // Create successful transaction
+            $txId = 'tx-' . substr(guidv4(), 0, 8);
+            DB::query(
+                "INSERT INTO transactions (id, user_id, title, amount, type, category, status) VALUES (?, ?, ?, ?, 'credit', 'deposit', 'success')",
+                [$txId, $userId, 'Simulated Payment Gateway Deposit', $amount]
+            );
+
+            $pdo->commit();
+            echo json_encode(['success' => true, 'message' => 'Coins credited successfully', 'transactionId' => $txId]);
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
 }

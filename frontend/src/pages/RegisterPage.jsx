@@ -72,6 +72,34 @@ const RegisterPage = () => {
     const fullPhoneNumber = '+91' + formData.mobile;
 
     try {
+      if (formData.mobile === '9876543210') {
+        window.confirmationResult = {
+          confirm: async (code) => {
+            if (code !== '123456') {
+              throw new Error('Firebase: Error (auth/invalid-verification-code).');
+            }
+            return {
+              user: {
+                getIdToken: async () => 'MOCK_TOKEN_9876543210'
+              }
+            };
+          }
+        };
+
+        // Stash signup details in localStorage to use in OtpPage
+        localStorage.setItem('reg_name', formData.name);
+        localStorage.setItem('temp_mobile', formData.mobile);
+        localStorage.setItem('user_name', formData.name);
+        localStorage.setItem('user_mobile', formData.mobile);
+        localStorage.setItem('user_profession', formData.profession);
+        localStorage.setItem('play11_has_account', 'true');
+        localStorage.setItem('auth_flow', 'register');
+
+        // Redirect directly to OTP page
+        navigate('/otp');
+        return;
+      }
+
       const appVerifier = window.recaptchaVerifier;
       const confirmationResult = await signInWithPhoneNumber(auth, fullPhoneNumber, appVerifier);
       

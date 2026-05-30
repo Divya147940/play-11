@@ -1,4 +1,7 @@
 <?php
+// Set default timezone to Indian Standard Time (IST)
+date_default_timezone_set('Asia/Kolkata');
+
 // PHP Front Controller Router for Play 11 API
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Guest-Id");
@@ -172,6 +175,11 @@ if ($uri === 'wallet/deposit' && $method === 'POST') {
     WalletController::addMoney($inputBody, $user);
     exit;
 }
+if ($uri === 'wallet/credit-coins' && $method === 'POST') {
+    $user = verifyToken();
+    WalletController::creditCoins($inputBody, $user);
+    exit;
+}
 if ($uri === 'wallet/withdraw' && $method === 'POST') {
     $user = verifyToken();
     WalletController::withdrawMoney($inputBody, $user);
@@ -226,7 +234,12 @@ if (matchRoute('quizzes/zone/:zoneId', $uri, $params) && $method === 'GET') {
 }
 if (matchRoute('quizzes/:id/questions', $uri, $params) && $method === 'GET') {
     $user = verifyToken();
-    QuizController::getQuizQuestions($params['id']);
+    QuizController::getQuizQuestions($params['id'], $user);
+    exit;
+}
+if (matchRoute('quizzes/:id/register', $uri, $params) && $method === 'POST') {
+    $user = verifyToken();
+    QuizController::registerQuiz($params['id'], $user);
     exit;
 }
 if (matchRoute('quizzes/:id/submit', $uri, $params) && $method === 'POST') {

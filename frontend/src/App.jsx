@@ -30,7 +30,7 @@ const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage'));
 const MatchQuizRoom = lazy(() => import('./pages/MatchQuizRoom'));
-const DummyQuizFlow = lazy(() => import('./pages/DummyQuizFlow'));
+
 const LegalPage = lazy(() => import('./pages/LegalPage'));
 const HowItWorksPage = lazy(() => import('./pages/HowItWorksPage'));
 const BalancePage = lazy(() => import('./pages/BalancePage'));
@@ -218,7 +218,7 @@ const App = () => {
             <Route path="/game-review/:id" element={<Layout><GameReviewPage /></Layout>} />
             <Route path="/game-result/:id" element={<Layout><GameResultPage /></Layout>} />
             <Route path="/match-quiz-room/:id" element={<RequireAuthRoute><Layout><MatchQuizRoom /></Layout></RequireAuthRoute>} />
-            <Route path="/dummy-quiz-flow" element={<Layout><DummyQuizFlow /></Layout>} />
+
             
             <Route path="/contests" element={<Layout><ContestListPage /></Layout>} />
             <Route path="/leaderboard" element={<RequireAuthGate><Layout><LeaderboardPage /></Layout></RequireAuthGate>} />

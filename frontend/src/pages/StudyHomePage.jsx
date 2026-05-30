@@ -18,6 +18,8 @@ const StudyHomePage = () => {
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
 
+  const [featuredQuiz, setFeaturedQuiz] = useState(null);
+
   useEffect(() => {
     fetch('/api/categories/study')
       .then(res => res.json())
@@ -30,6 +32,16 @@ const StudyHomePage = () => {
             count: `${c.quiz_count || 0} Quizzes` 
           }));
           setCategories(mappedCats);
+        }
+      })
+      .catch(console.error);
+
+    fetch('/api/quizzes/zone/study-zone')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.quizzes && data.quizzes.length > 0) {
+          const activeOrUpcoming = data.quizzes.find(q => q.status_label === 'LIVE' || q.status_label === 'UPCOMING');
+          setFeaturedQuiz(activeOrUpcoming || data.quizzes[0]);
         }
       })
       .catch(console.error);
@@ -86,44 +98,81 @@ const StudyHomePage = () => {
         </div>
 
         {/* Featured Card */}
-        <div className="glass-card animate-slide-up stagger-2" style={{ 
-          padding: 'clamp(1.5rem, 5vw, 3.5rem)', 
-          marginBottom: 'clamp(3rem, 8vw, 4.5rem)', 
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, white 100%)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 'clamp(2rem, 5vw, 3rem)',
-          border: '1px solid #e2e8f0',
-          borderRadius: '2.5rem',
-          boxShadow: '0 20px 40px -15px rgba(0,0,0,0.05)'
-        }}>
-          <div style={{ flex: 1, minWidth: 'min(300px, 100%)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1.5rem' }}>
-                <div style={{ width: '10px', height: '10px', background: '#3b82f6', borderRadius: '50%', boxShadow: '0 0 15px rgba(59, 130, 246, 0.4)' }}></div>
-                <span style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#3b82f6' }}>Prime Intel Arena</span>
+        {featuredQuiz ? (
+          <div className="glass-card animate-slide-up stagger-2" style={{ 
+            padding: 'clamp(1.5rem, 5vw, 3.5rem)', 
+            marginBottom: 'clamp(3rem, 8vw, 4.5rem)', 
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, white 100%)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 'clamp(2rem, 5vw, 3rem)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '2.5rem',
+            boxShadow: '0 20px 40px -15px rgba(0,0,0,0.05)'
+          }}>
+            <div style={{ flex: 1, minWidth: 'min(300px, 100%)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1.5rem' }}>
+                  <div style={{ width: '10px', height: '10px', background: '#3b82f6', borderRadius: '50%', boxShadow: '0 0 15px rgba(59, 130, 246, 0.4)' }}></div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#3b82f6' }}>Featured mock</span>
+              </div>
+              <h3 style={{ fontSize: 'clamp(1.6rem, 5vw, 2.5rem)', fontWeight: 950, fontFamily: 'Lexend', marginBottom: '0.75rem', color: '#0f172a', letterSpacing: '-0.04em' }}>{featuredQuiz.title}</h3>
+              <p style={{ fontSize: 'clamp(0.95rem, 3vw, 1.15rem)', color: '#64748b', fontWeight: 600, marginBottom: '2rem', opacity: 0.9 }}>
+                {featuredQuiz.total_questions} Questions • {featuredQuiz.timer_minutes} Mins • {featuredQuiz.reward_text || 'Knowledge points'}
+              </p>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                 <div style={{ background: '#f1f5f9', padding: '6px 14px', borderRadius: '1rem', fontSize: '0.7rem', fontWeight: 950, color: '#0f172a', border: '1px solid #e2e8f0' }}>#VerifiedMock</div>
+                 <div style={{ background: '#f1f5f9', padding: '6px 14px', borderRadius: '1rem', fontSize: '0.7rem', fontWeight: 950, color: '#0f172a', border: '1px solid #e2e8f0' }}>#{featuredQuiz.status_label || 'ACTIVE'}</div>
+              </div>
             </div>
-            <h3 style={{ fontSize: 'clamp(1.6rem, 5vw, 2.5rem)', fontWeight: 950, fontFamily: 'Lexend', marginBottom: '0.75rem', color: '#0f172a', letterSpacing: '-0.04em' }}>Current Affairs 2024</h3>
-            <p style={{ fontSize: 'clamp(0.95rem, 3vw, 1.15rem)', color: '#64748b', fontWeight: 600, marginBottom: '2rem', opacity: 0.9 }}>15 Top Tier Questions • 10 Mins • Elite Status Boost</p>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-               <div style={{ background: '#f1f5f9', padding: '6px 14px', borderRadius: '1rem', fontSize: '0.7rem', fontWeight: 950, color: '#0f172a', border: '1px solid #e2e8f0' }}>#DailyPulse</div>
-               <div style={{ background: '#f1f5f9', padding: '6px 14px', borderRadius: '1rem', fontSize: '0.7rem', fontWeight: 950, color: '#0f172a', border: '1px solid #e2e8f0' }}>#VerifiedMock</div>
-            </div>
+            <button 
+              className="quiz-join-btn blue" 
+              style={{ padding: '1.25rem 2.5rem', fontSize: '1rem', width: 'fit-content', border: 'none' }} 
+              onClick={() => navigate(`/study-quiz-detail/${featuredQuiz.id}`)}
+            >
+              <span>Initiate Mastery</span>
+              <ArrowRight size={22} strokeWidth={3} style={{ marginLeft: '0.5rem' }} />
+            </button>
           </div>
-          <button 
-            className="quiz-join-btn blue" 
-            style={{ padding: '1.25rem 2.5rem', fontSize: '1rem', width: 'fit-content', border: 'none' }} 
-            onClick={() => navigate('/study-quiz-detail/daily')}
-          >
-            <span>Initiate Mastery</span>
-            <ArrowRight size={22} strokeWidth={3} style={{ marginLeft: '0.5rem' }} />
-          </button>
-        </div>
+        ) : (
+          <div className="glass-card animate-slide-up stagger-2" style={{ 
+            padding: 'clamp(1.5rem, 5vw, 3.5rem)', 
+            marginBottom: 'clamp(3rem, 8vw, 4.5rem)', 
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, white 100%)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 'clamp(2rem, 5vw, 3rem)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '2.5rem',
+            boxShadow: '0 20px 40px -15px rgba(0,0,0,0.05)'
+          }}>
+            <div style={{ flex: 1, minWidth: 'min(300px, 100%)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1.5rem' }}>
+                  <div style={{ width: '10px', height: '10px', background: '#3b82f6', borderRadius: '50%', boxShadow: '0 0 15px rgba(59, 130, 246, 0.4)' }}></div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#3b82f6' }}>Prime Intel Arena</span>
+              </div>
+              <h3 style={{ fontSize: 'clamp(1.6rem, 5vw, 2.5rem)', fontWeight: 950, fontFamily: 'Lexend', marginBottom: '0.75rem', color: '#0f172a', letterSpacing: '-0.04em' }}>Start Exam Preparation</h3>
+              <p style={{ fontSize: 'clamp(0.95rem, 3vw, 1.15rem)', color: '#64748b', fontWeight: 600, marginBottom: '2rem', opacity: 0.9 }}>
+                Select a curated specialization category below to practice high-fidelity mock tests.
+              </p>
+            </div>
+            <button 
+              className="quiz-join-btn blue" 
+              style={{ padding: '1.25rem 2.5rem', fontSize: '1rem', width: 'fit-content', border: 'none' }} 
+              onClick={() => document.getElementById('specializations')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              <span>Explore Categories</span>
+              <ArrowRight size={22} strokeWidth={3} style={{ marginLeft: '0.5rem' }} />
+            </button>
+          </div>
+        )}
 
         {/* Section Title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: 'clamp(2rem, 5vw, 3.5rem)' }}>
-           <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 950, fontFamily: 'Lexend', letterSpacing: '-0.03em', whiteSpace: 'nowrap', color: '#0f172a' }}>Curated <span className="text-gradient">Specializations</span></h2>
+           <h2 id="specializations" style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 950, fontFamily: 'Lexend', letterSpacing: '-0.03em', whiteSpace: 'nowrap', color: '#0f172a' }}>Curated <span className="text-gradient">Specializations</span></h2>
            <div style={{ flex: 1, height: '1.5px', background: 'linear-gradient(90deg, #e2e8f0, transparent)' }}></div>
         </div>
 

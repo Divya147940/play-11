@@ -68,7 +68,7 @@ const HomeChoicePage = () => {
     },
   ];
 
-  const tabs = ['All Rooms', 'Live', 'Upcoming', 'My Joined'];
+  const tabs = ['All Rooms', 'Upcoming', 'Live', 'Completed'];
   const [selectedTab, setSelectedTab] = React.useState(location.state?.tab || 'All Rooms');
   const [allQuizzes, setAllQuizzes] = React.useState([]);
   const [joinedQuizzes, setJoinedQuizzes] = React.useState([]);
@@ -119,10 +119,10 @@ const HomeChoicePage = () => {
 
     fetchQuizzes(true);
     
-    // Real-time update: Refresh quizzes only every 30 seconds
-    const interval = setInterval(() => fetchQuizzes(false), 30000);
+    // Real-time update: Refresh quizzes every 10 seconds for snappy updates
+    const interval = setInterval(() => fetchQuizzes(false), 10000);
     return () => clearInterval(interval);
-  }, []); // Only run on mount, interval handles updates
+  }, [selectedTab]); // Runs on mount and refreshes instantly when switching tabs
 
   const getFilteredQuizzes = () => {
     if (!Array.isArray(allQuizzes)) return [];
@@ -134,10 +134,13 @@ const HomeChoicePage = () => {
       return allQuizzes.filter(q => q.status_label?.toUpperCase() === 'LIVE');
     }
     if (selectedTab === 'Upcoming') {
-      return allQuizzes.filter(q => q.status_label?.toUpperCase() === 'UPCOMING');
+      return allQuizzes.filter(q => q.status_label?.toUpperCase() === 'UPCOMING' && q.is_registered);
     }
-    if (selectedTab === 'My Joined') {
-      return joinedQuizzes;
+    if (selectedTab === 'Completed') {
+      const joinedIds = new Set(joinedQuizzes.map(q => q.id));
+      const newlyBookedQuizzes = allQuizzes.filter(q => q.is_registered && !joinedIds.has(q.id));
+      const combined = [...joinedQuizzes, ...newlyBookedQuizzes];
+      return combined.filter(q => q.is_submitted || q.status_label?.toUpperCase() === 'CLOSED');
     }
     return [];
   };
@@ -145,6 +148,20 @@ const HomeChoicePage = () => {
   const getLiveCount = (zoneId) => {
     if (!Array.isArray(allQuizzes)) return 0;
     return allQuizzes.filter(q => q.zone_id === zoneId && q.status_label?.toUpperCase() === 'LIVE').length;
+  };
+
+  const getMaxPrize = (zoneId) => {
+    if (!Array.isArray(allQuizzes) || allQuizzes.length === 0) return '₹0';
+    const zoneQuizzes = allQuizzes.filter(q => q.zone_id === zoneId);
+    if (zoneQuizzes.length === 0) return '₹0';
+    
+    // Find the maximum prize_amount or return a formatted value
+    const maxPrize = Math.max(...zoneQuizzes.map(q => q.prize_amount || 0));
+    if (maxPrize > 0) return `₹${maxPrize}`;
+    
+    // If prize_amount is 0 or not found, try to look at reward_text
+    const firstWithReward = zoneQuizzes.find(q => q.reward_text);
+    return firstWithReward ? firstWithReward.reward_text : 'Free';
   };
 
   const getUpcomingTime = (zoneId) => {
@@ -272,7 +289,7 @@ const HomeChoicePage = () => {
                   </div>
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 6px', fontSize: '0.6rem', fontWeight: 700, color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase' }}>
-                       <span>WIN UPTO {room.prize}</span>
+                       <span>WIN UPTO {getMaxPrize(room.id)}</span>
                        {loading ? (
                          <span style={{ color: '#94a3b8' }}>● ...</span>
                        ) : getLiveCount(room.id) > 0 ? (
@@ -313,8 +330,20 @@ const HomeChoicePage = () => {
         ) : (
           <UpcomingQuizzes 
             quizzes={filteredQuizzes} 
-            title={selectedTab === 'My Joined' ? 'Quizzes you have participated in' : `Currently ${selectedTab.toLowerCase()} quiz battles`}
-            subtitle={selectedTab === 'My Joined' ? 'YOUR PARTICIPATION HISTORY' : `${selectedTab.toUpperCase()} QUIZ ARENA`}
+            title={
+              selectedTab === 'Completed' 
+                ? 'Quizzes you have participated in' 
+                : selectedTab === 'Upcoming'
+                ? 'Upcoming quizzes you have joined'
+                : `Currently ${selectedTab.toLowerCase()} quiz battles`
+            }
+            subtitle={
+              selectedTab === 'Completed' 
+                ? 'YOUR PARTICIPATION HISTORY' 
+                : selectedTab === 'Upcoming'
+                ? 'YOUR UPCOMING JOINED'
+                : `${selectedTab.toUpperCase()} QUIZ ARENA`
+            }
           />
         )}
         </div>

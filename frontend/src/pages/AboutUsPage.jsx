@@ -104,8 +104,8 @@ const AboutUsPage = () => {
         {/* Footer info */}
         <div style={{ marginTop: '4rem', textAlign: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '2rem' }}>
           <p style={{ color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600 }}>
-            © 2024 QUZO Arena. All Rights Reserved. <br />
-            Powered by Play11 Technology.
+            © {new Date().getFullYear()} QUZO Arena. All Rights Reserved. <br />
+            Powered by QUZO Technology.
           </p>
         </div>
       </div>

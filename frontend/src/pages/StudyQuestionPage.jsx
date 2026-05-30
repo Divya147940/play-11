@@ -6,8 +6,14 @@ import { ChevronLeft, ChevronRight, Clock, Send, Trophy, Info } from 'lucide-rea
 const StudyQuestionPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [answers, setAnswers] = useState({});
+  const [currentIdx, setCurrentIdx] = useState(() => {
+    const saved = localStorage.getItem(`quiz_idx_${id}`);
+    return saved ? parseInt(saved) : 0;
+  });
+  const [answers, setAnswers] = useState(() => {
+    const saved = localStorage.getItem(`quiz_answers_${id}`);
+    return saved ? JSON.parse(saved) : {};
+  });
   const [timeLeft, setTimeLeft] = useState(600); // Default 10m
   const [questions, setQuestions] = useState([]);
   const [quizDetails, setQuizDetails] = useState(null);
@@ -42,9 +48,16 @@ const StudyQuestionPage = () => {
             return;
           }
           setQuizDetails(quizData.quiz);
-          if (quizData.quiz.timer_minutes) {
-            setTimeLeft(quizData.quiz.timer_minutes * 60);
-            setInitialTime(quizData.quiz.timer_minutes * 60);
+          const durationSec = (quizData.quiz.timer_minutes || 10) * 60;
+          setInitialTime(durationSec);
+          
+          const savedEndTime = localStorage.getItem(`quiz_end_${id}`);
+          if (savedEndTime) {
+            const remaining = Math.max(0, Math.floor((parseInt(savedEndTime) - Date.now()) / 1000));
+            setTimeLeft(remaining);
+          } else {
+            localStorage.setItem(`quiz_end_${id}`, Date.now() + durationSec * 1000);
+            setTimeLeft(durationSec);
           }
         }
 
@@ -133,8 +146,10 @@ const StudyQuestionPage = () => {
         alert("Network error: Could not submit quiz. Please check your connection.");
       }
     }
-
     setSubmittedSuccessfully(true);
+    localStorage.removeItem(`quiz_end_${id}`);
+    localStorage.removeItem(`quiz_answers_${id}`);
+    localStorage.removeItem(`quiz_idx_${id}`);
 
     // Remove the 2s artificial delay for instant loading
     setTimeout(() => {
@@ -161,10 +176,18 @@ const StudyQuestionPage = () => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  useEffect(() => {
+    if (!loading && !isFinished) {
+      localStorage.setItem(`quiz_idx_${id}`, currentIdx);
+    }
+  }, [currentIdx, id, loading, isFinished]);
+
   const handleOptionSelect = (optionIdx) => {
     if (isFinished) return;
     // Use currentIdx as the key for 100% reliability in UI highlighting
-    setAnswers({ ...answers, [currentIdx]: optionIdx });
+    const newAnswers = { ...answers, [currentIdx]: optionIdx };
+    setAnswers(newAnswers);
+    localStorage.setItem(`quiz_answers_${id}`, JSON.stringify(newAnswers));
   };
 
   if (loading) {

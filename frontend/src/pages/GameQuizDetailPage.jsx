@@ -88,13 +88,13 @@ const GameQuizDetailPage = () => {
           <div className="bento-card" style={{ padding: '1.25rem', background: 'white', border: '1px solid hsl(var(--card-border))' }}>
             <p style={{ fontSize: '0.65rem', color: 'hsl(var(--muted-foreground))', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Reward Pool</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 900, color: '#10b981', fontSize: '1.4rem' }}>
-              <TrendingUp size={20} /> ₹50,000
+              <TrendingUp size={20} /> {match.prize_amount > 0 ? `₹${match.prize_amount}` : (match.reward_text || 'Free')}
             </div>
           </div>
           <div className="bento-card" style={{ padding: '1.25rem', background: 'white', border: '1px solid hsl(var(--card-border))' }}>
             <p style={{ fontSize: '0.65rem', color: 'hsl(var(--muted-foreground))', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Total Spots</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 900, fontSize: '1.4rem', fontFamily: 'Lexend', color: 'hsl(var(--foreground))' }}>
-              <Zap size={20} color="hsl(var(--secondary))" /> 5,000
+              <Zap size={20} color="hsl(var(--secondary))" /> {match.total_spots || '5,000'}
             </div>
           </div>
         </div>

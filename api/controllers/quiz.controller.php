@@ -21,6 +21,7 @@ class QuizController {
         if (isset($row['total_score'])) $row['total_score'] = (float)$row['total_score'];
         if (isset($row['prize_amount'])) $row['prize_amount'] = (int)$row['prize_amount'];
         if (isset($row['entry_amount'])) $row['entry_amount'] = (int)$row['entry_amount'];
+        if (isset($row['players_count'])) $row['players_count'] = (int)$row['players_count'];
 
         // Resolve effective banner url in PHP
         if (!empty($row['banner_url'])) {
@@ -73,17 +74,21 @@ class QuizController {
             $stmt = DB::query("
                 SELECT q.*,
                 CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END as is_submitted,
-                s.submitted_at
+                s.submitted_at,
+                CASE WHEN r.id IS NOT NULL THEN 1 ELSE 0 END as is_registered,
+                (SELECT COUNT(*) FROM quiz_registrations qr WHERE qr.quiz_id = q.id) as players_count
                 FROM quizzes q
                 LEFT JOIN submissions s ON q.id = s.quiz_id AND s.user_id = ?
+                LEFT JOIN quiz_registrations r ON q.id = r.quiz_id AND r.user_id = ?
                 WHERE q.zone_id = ? AND q.status IN ('active', 'completed')
                 ORDER BY q.open_at ASC
-            ", [$userId, $zoneId]);
+            ", [$userId, $userId, $zoneId]);
             $quizzes = $stmt->fetchAll();
 
             foreach ($quizzes as &$quiz) {
                 self::processQuizRow($quiz, $roomBanner, $homeBanner);
                 $quiz['is_submitted'] = (bool)$quiz['is_submitted'];
+                $quiz['is_registered'] = (bool)$quiz['is_registered'];
             }
 
             echo json_encode(['success' => true, 'quizzes' => $quizzes]);
@@ -108,17 +113,21 @@ class QuizController {
             $stmt = DB::query("
                 SELECT q.*,
                 CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END as is_submitted,
-                s.submitted_at
+                s.submitted_at,
+                CASE WHEN r.id IS NOT NULL THEN 1 ELSE 0 END as is_registered,
+                (SELECT COUNT(*) FROM quiz_registrations qr WHERE qr.quiz_id = q.id) as players_count
                 FROM quizzes q
                 LEFT JOIN submissions s ON q.id = s.quiz_id AND s.user_id = ?
+                LEFT JOIN quiz_registrations r ON q.id = r.quiz_id AND r.user_id = ?
                 WHERE q.status IN ('active', 'completed')
                 ORDER BY q.open_at ASC
-            ", [$userId]);
+            ", [$userId, $userId]);
             $quizzes = $stmt->fetchAll();
 
             foreach ($quizzes as &$quiz) {
                 self::processQuizRow($quiz, $roomBanner, $homeBanner);
                 $quiz['is_submitted'] = (bool)$quiz['is_submitted'];
+                $quiz['is_registered'] = (bool)$quiz['is_registered'];
             }
 
             echo json_encode(['success' => true, 'quizzes' => $quizzes]);
@@ -182,14 +191,16 @@ class QuizController {
                        u2.name as winner_2_name, 
                        u3.name as winner_3_name,
                        CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END as is_submitted,
-                       s.submitted_at
+                       s.submitted_at,
+                       CASE WHEN r.id IS NOT NULL THEN 1 ELSE 0 END as is_registered
                 FROM quizzes q 
                 LEFT JOIN users u1 ON q.winner_id = u1.id 
                 LEFT JOIN users u2 ON q.winner_2_id = u2.id 
                 LEFT JOIN users u3 ON q.winner_3_id = u3.id 
                 LEFT JOIN submissions s ON q.id = s.quiz_id AND s.user_id = ?
+                LEFT JOIN quiz_registrations r ON q.id = r.quiz_id AND r.user_id = ?
                 WHERE q.id = ?
-            ", [$userId, $id]);
+            ", [$userId, $userId, $id]);
             $quiz = $stmt->fetch();
 
             if (!$quiz) {
@@ -200,6 +211,7 @@ class QuizController {
 
             self::processQuizRow($quiz, $roomBanner, $homeBanner);
             $quiz['is_submitted'] = (bool)$quiz['is_submitted'];
+            $quiz['is_registered'] = (bool)$quiz['is_registered'];
 
             echo json_encode(['success' => true, 'quiz' => $quiz]);
         } catch (Exception $e) {
@@ -208,8 +220,33 @@ class QuizController {
         }
     }
 
-    public static function getQuizQuestions($id) {
+    public static function getQuizQuestions($id, $user) {
         try {
+            // Check if user is registered for paid quizzes
+            $quizStmt = DB::query("SELECT entry_amount, open_at FROM quizzes WHERE id = ?", [$id]);
+            $quiz = $quizStmt->fetch();
+            if (!$quiz) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Quiz not found']);
+                return;
+            }
+
+            $entryAmount = (int)($quiz['entry_amount'] ?? 0);
+            if ($entryAmount > 0) {
+                $userId = $user ? $user['userId'] : null;
+                if (!$userId) {
+                    http_response_code(401);
+                    echo json_encode(['success' => false, 'error' => 'Authentication required.']);
+                    return;
+                }
+                $regStmt = DB::query("SELECT id FROM quiz_registrations WHERE user_id = ? AND quiz_id = ?", [$userId, $id]);
+                if (!$regStmt->fetch()) {
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'error' => 'You must register and pay the entry fee for this quiz first.']);
+                    return;
+                }
+            }
+
             // Fetch questions
             $stmt = DB::query("
                 SELECT q.id, q.quiz_id, q.question_text, q.hindi_question_text, q.marks
@@ -286,7 +323,7 @@ class QuizController {
             $questions = $stmt->fetchAll();
 
             // 3. Fetch Quiz details
-            $stmt = DB::query('SELECT marks_per_q, negative_marks, open_at, close_at FROM quizzes WHERE id = ?', [$id]);
+            $stmt = DB::query('SELECT marks_per_q, negative_marks, open_at, close_at, entry_amount FROM quizzes WHERE id = ?', [$id]);
             $quiz = $stmt->fetch();
 
             if (!$quiz) {
@@ -294,6 +331,18 @@ class QuizController {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'error' => 'Quiz not found.']);
                 return;
+            }
+
+            // Check registration for paid quizzes
+            $entryAmount = (int)($quiz['entry_amount'] ?? 0);
+            if ($entryAmount > 0) {
+                $regStmt = DB::query("SELECT id FROM quiz_registrations WHERE user_id = ? AND quiz_id = ?", [$userId, $id]);
+                if (!$regStmt->fetch()) {
+                    $pdo->rollBack();
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'error' => 'You must register and pay the entry fee for this quiz first.']);
+                    return;
+                }
             }
 
             $now = time();
@@ -560,6 +609,83 @@ class QuizController {
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['error' => $e->getMessage()]);
+        }
+    }
+
+    public static function registerQuiz($id, $user) {
+        $userId = $user ? $user['userId'] : null;
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'error' => 'Authentication required.']);
+            return;
+        }
+
+        $pdo = DB::getPdo();
+        try {
+            $pdo->beginTransaction();
+
+            // 1. Fetch the quiz and check validation
+            $stmt = DB::query("SELECT id, entry_amount, open_at, close_at FROM quizzes WHERE id = ?", [$id]);
+            $quiz = $stmt->fetch();
+            if (!$quiz) {
+                $pdo->rollBack();
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Quiz not found.']);
+                return;
+            }
+
+            // Check if user is already registered
+            $regStmt = DB::query("SELECT id FROM quiz_registrations WHERE user_id = ? AND quiz_id = ?", [$userId, $id]);
+            if ($regStmt->fetch()) {
+                $pdo->rollBack();
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'You are already registered for this quiz.']);
+                return;
+            }
+
+            // 2. Debit coins if entry fee > 0
+            $entryAmount = (int)($quiz['entry_amount'] ?? 0);
+            if ($entryAmount > 0) {
+                // Fetch user coins
+                $userStmt = DB::query("SELECT coins FROM users WHERE id = ?", [$userId]);
+                $userData = $userStmt->fetch();
+                if (!$userData || (int)$userData['coins'] < $entryAmount) {
+                    $pdo->rollBack();
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => 'Insufficient coins to register for this quiz.']);
+                    return;
+                }
+
+                // Deduct coins
+                DB::query("UPDATE users SET coins = coins - ? WHERE id = ?", [$entryAmount, $userId]);
+
+                // Create transaction
+                $txId = 'tx-' . substr(md5(uniqid(mt_rand(), true)), 0, 8);
+                DB::query("
+                    INSERT INTO transactions (id, user_id, title, amount, type, category, status)
+                    VALUES (?, ?, ?, ?, 'debit', 'quiz_entry', 'success')
+                ", [$txId, $userId, 'Entry Fee Charged', $entryAmount]);
+            }
+
+            // 3. Register user
+            $regId = 'reg-' . substr(md5(uniqid(mt_rand(), true)), 0, 8);
+            DB::query("
+                INSERT INTO quiz_registrations (id, user_id, quiz_id, created_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ", [$regId, $userId, $id]);
+
+            $pdo->commit();
+            echo json_encode([
+                'success' => true,
+                'message' => 'Successfully registered for the quiz',
+                'entry_fee_charged' => $entryAmount
+            ]);
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
     }
 }

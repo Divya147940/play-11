@@ -71,12 +71,12 @@ const ProfilePage = () => {
       const sessionRaw = localStorage.getItem('play11_session');
       if (sessionRaw) {
         const parsed = JSON.parse(sessionRaw);
-        return parsed.user?.referral_code || 'PLAY11';
+        return parsed.user?.referral_code || 'QUZO';
       }
     } catch (e) {
       console.error(e);
     }
-    return 'PLAY11';
+    return 'QUZO';
   };
   const referralCode = getReferralCode();
 

@@ -40,7 +40,7 @@ const Footer = () => {
             <h4>Explore Zones</h4>
             <ul>
               <li onClick={() => navigate('/study-home')}>Study Arena</li>
-              <li onClick={() => navigate('/game-home')}>Game Arena</li>
+              <li onClick={() => navigate('/quiz-arena/sport-zone')}>Game Arena</li>
 
               <li onClick={() => navigate('/history')}>History & Archives</li>
             </ul>

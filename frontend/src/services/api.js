@@ -225,6 +225,16 @@ export const quizService = {
       body: JSON.stringify({ answers }),
     });
     return handleResponse(response);
+  },
+  registerQuiz: async (quizId) => {
+    const response = await cachedFetch(`${API_BASE}/quizzes/${quizId}/register`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        ...getAuthHeader()
+      }
+    });
+    return handleResponse(response);
   }
 };
 

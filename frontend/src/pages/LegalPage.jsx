@@ -120,7 +120,7 @@ const LegalPage = () => {
           <>
             <p>We are here to help you. If you have any questions, concerns, or feedback, please reach out to us.</p>
             <h3>Support Email</h3>
-            <p>📧 <a href="mailto:support@play11.games" style={{ color: '#38bdf8', fontWeight: 700 }}>support@play11.games</a></p>
+            <p>📧 <a href="mailto:support@quzo.in" style={{ color: '#38bdf8', fontWeight: 700 }}>support@quzo.in</a></p>
           </>
         )
       }
@@ -227,7 +227,7 @@ const LegalPage = () => {
           <>
             <p>हम आपकी सहायता के लिए यहाँ हैं। यदि आपके कोई प्रश्न, चिंता या प्रतिक्रिया है, तो कृपया हमसे संपर्क करें।</p>
             <h3>सहायता ईमेल</h3>
-            <p>📧 <a href="mailto:support@play11.games" style={{ color: '#38bdf8', fontWeight: 700 }}>support@play11.games</a></p>
+            <p>📧 <a href="mailto:support@quzo.in" style={{ color: '#38bdf8', fontWeight: 700 }}>support@quzo.in</a></p>
           </>
         )
       }

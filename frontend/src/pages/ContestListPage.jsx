@@ -42,7 +42,7 @@ export default function ContestListPage() {
 
             <div className="contest-card-metrics">
               <div className="metric-item">
-                Prize <strong>₹{quiz.total_questions * 50}</strong>
+                Prize <strong>{quiz.prize_amount > 0 ? `₹${quiz.prize_amount}` : (quiz.reward_text || 'Free')}</strong>
               </div>
               <div className="metric-item">
                 Entry <strong>₹{quiz.entry_amount || 0}</strong>
@@ -67,14 +67,39 @@ export default function ContestListPage() {
                   </button>
                 </div>
               ) : (
-                <button
-                  className="btn-join-outline"
-                  style={{ width: '100%' }}
-                  onClick={() => navigate(`/game-quiz-detail/${quiz.id}`)}
-                  disabled={quiz.status_label === 'CLOSED'}
-                >
-                  {quiz.status_label === 'CLOSED' ? 'Contest Closed' : 'Join Contest'}
-                </button>
+                (() => {
+                  let btnText = 'Details';
+                  if (quiz.status_label === 'CLOSED') {
+                    btnText = 'Contest Closed';
+                  } else if (quiz.status_label === 'UPCOMING') {
+                    if (quiz.is_registered) {
+                      btnText = 'Joined ✓';
+                    } else {
+                      btnText = quiz.entry_amount > 0 ? `Join (₹${quiz.entry_amount})` : 'Join (Free)';
+                    }
+                  } else if (quiz.status_label === 'LIVE') {
+                    btnText = 'Join Now';
+                  }
+
+                  return (
+                    <button
+                      className="btn-join-outline"
+                      style={{ 
+                        width: '100%', 
+                        background: quiz.is_registered ? '#10b981' : (quiz.status_label === 'CLOSED' ? 'transparent' : '#0f172a'),
+                        color: quiz.is_registered ? 'white' : (quiz.status_label === 'CLOSED' ? '#64748b' : 'white'),
+                        border: quiz.is_registered || quiz.status_label !== 'CLOSED' ? 'none' : '1px solid #e2e8f0',
+                        padding: '12px',
+                        borderRadius: '12px',
+                        fontWeight: 800
+                      }}
+                      onClick={() => navigate(`/match-quiz-room/${quiz.id}`)}
+                      disabled={quiz.status_label === 'CLOSED'}
+                    >
+                      {btnText}
+                    </button>
+                  );
+                })()
               )}
               
               <button

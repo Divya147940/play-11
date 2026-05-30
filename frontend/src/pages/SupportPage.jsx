@@ -13,7 +13,7 @@ const SupportPage = () => {
     },
     { 
       q: "My quiz got stuck. What should I do?", 
-      a: "Don't worry. If it was a technical issue on our end, your entry fee will be refunded within 24 hours. Please take a screenshot and send it to support@play11.global." 
+      a: "Don't worry. If it was a technical issue on our end, your entry fee will be refunded within 24 hours. Please take a screenshot and send it to support@quzo.in." 
     },
     { 
       q: "How is the ranking calculated?", 
@@ -90,14 +90,14 @@ const SupportPage = () => {
 
         {/* Contact Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '4rem' }}>
-          <a href="mailto:support@play11.global" style={{ textDecoration: 'none' }}>
+          <a href="mailto:support@quzo.in" style={{ textDecoration: 'none' }}>
             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', textAlign: 'center', border: '1px solid #f1f5f9' }}>
               <Mail size={28} color="#7c3aed" style={{ margin: '0 auto 10px' }} />
               <h4 style={{ fontWeight: 800, color: '#1e1b4b', marginBottom: '4px' }}>Email Us</h4>
               <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Response in 2 hrs</p>
             </div>
           </a>
-          <a href="https://wa.me/911234567890" style={{ textDecoration: 'none' }}>
+          <a href="mailto:support@quzo.in" style={{ textDecoration: 'none' }}>
             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', textAlign: 'center', border: '1px solid #f1f5f9' }}>
               <MessageCircle size={28} color="#10b981" style={{ margin: '0 auto 10px' }} />
               <h4 style={{ fontWeight: 800, color: '#1e1b4b', marginBottom: '4px' }}>WhatsApp</h4>
