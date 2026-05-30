@@ -84,18 +84,31 @@ const HomeChoicePage = () => {
 
       try {
         const promises = [
-          quizService.getAllQuizzes(),
-          session ? quizService.getJoinedQuizzes() : Promise.resolve([]),
+          quizService.getAllQuizzes().catch(err => {
+            console.error('Failed to fetch all quizzes:', err);
+            return [];
+          }),
+          session ? quizService.getJoinedQuizzes().catch(err => {
+            console.error('Failed to fetch joined quizzes:', err);
+            // Handle expired session token
+            if (err.message && err.message.toLowerCase().includes('expired')) {
+              localStorage.removeItem('play11_session');
+            }
+            return [];
+          }) : Promise.resolve([]),
         ];
 
         if (isInitial) {
-          promises.push(settingsService.getSetting('home_banner_url'));
+          promises.push(settingsService.getSetting('home_banner_url').catch(err => {
+            console.error('Failed to fetch home banner setting:', err);
+            return null;
+          }));
         }
 
         // Fire parallel requests
         const results = await Promise.all(promises);
-        const all = results[0];
-        const joined = results[1];
+        const all = results[0] || [];
+        const joined = results[1] || [];
 
         setAllQuizzes(all);
         if (session) setJoinedQuizzes(joined);

@@ -220,7 +220,8 @@ const AdminDashboard = () => {
           headers: { 'Authorization': `Bearer ${token}` },
           cache: 'no-store'
         });
-        if (quizRes.status === 401) {
+        if (quizRes.status === 401 || quizRes.status === 403) {
+          localStorage.removeItem('play11_admin_session');
           window.location.href = '/admin/login';
           return;
         }

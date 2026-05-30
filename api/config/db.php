@@ -50,6 +50,7 @@ if ($dbUrl && (strpos($dbUrl, 'postgres://') === 0 || strpos($dbUrl, 'postgresql
         ]);
     } catch (PDOException $e) {
         error_log("PostgreSQL connection failed: " . $e->getMessage());
+        http_response_code(500);
         die(json_encode(["error" => "Database connection failed", "message" => $e->getMessage()]));
     }
 } elseif ($dbUrl && (strpos($dbUrl, 'mysql://') === 0 || strpos($dbUrl, 'mysqli://') === 0)) {
@@ -70,6 +71,7 @@ if ($dbUrl && (strpos($dbUrl, 'postgres://') === 0 || strpos($dbUrl, 'postgresql
         ]);
     } catch (PDOException $e) {
         error_log("MySQL connection failed: " . $e->getMessage());
+        http_response_code(500);
         die(json_encode(["error" => "Database connection failed", "message" => $e->getMessage()]));
     }
 } else {
@@ -84,6 +86,7 @@ if ($dbUrl && (strpos($dbUrl, 'postgres://') === 0 || strpos($dbUrl, 'postgresql
         $pdo->exec("PRAGMA foreign_keys = ON;");
     } catch (PDOException $e) {
         error_log("SQLite connection failed: " . $e->getMessage());
+        http_response_code(500);
         die(json_encode(["error" => "Database connection failed", "message" => $e->getMessage()]));
     }
 }
