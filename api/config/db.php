@@ -34,11 +34,7 @@ if ($dbUrl && (strpos($dbUrl, 'postgres://') === 0 || strpos($dbUrl, 'postgresql
     if (empty($optionsParam) && strpos($host, 'neon.tech') !== false) {
         $hostParts = explode('.', $host);
         $endpointId = $hostParts[0];
-        if (str_ends_with($endpointId, '-pooler')) {
-            $optionsParam = '';
-        } else {
-            $optionsParam = ";options='endpoint=$endpointId'";
-        }
+        $optionsParam = ";options='endpoint=$endpointId'";
     }
 
     try {
