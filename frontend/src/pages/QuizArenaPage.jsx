@@ -154,7 +154,12 @@ const QuizArenaPage = () => {
                 btnText = q.entry_amount > 0 ? `Join (₹${q.entry_amount})` : 'Join (Free)';
               }
             } else if (q.status_label === 'LIVE') {
-              btnText = 'Play Quiz';
+              if (q.is_registered) {
+                btnText = 'Play Quiz';
+              } else {
+                const entryFee = parseInt(q.entry_amount || 0);
+                btnText = entryFee > 0 ? 'Not Registered' : 'Play Quiz';
+              }
             }
 
             return {
@@ -376,6 +381,20 @@ const QuizArenaPage = () => {
                    <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#94a3b8', letterSpacing: '0.1em' }}>{quiz.tag}</div>
                    {quiz.winner_id ? (
                      <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#10b981', background: '#dcfce7', padding: '4px 8px', borderRadius: '6px' }}>RESULT DECLARED</div>
+                   ) : quiz.status_label === 'LIVE' ? (
+                     quiz.is_registered ? (
+                       <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#15803d', background: '#dcfce7', padding: '4px 10px', borderRadius: '6px', border: '1px solid #bbf7d0', textTransform: 'uppercase' }}>
+                         LIVE (JOINED ✓)
+                       </div>
+                     ) : (
+                       parseInt(quiz.entry_amount || 0) > 0 ? (
+                         <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#991b1b', background: '#fee2e2', padding: '4px 10px', borderRadius: '6px', border: '1px solid #fca5a5', textTransform: 'uppercase' }}>
+                           LIVE (NOT JOINED)
+                         </div>
+                       ) : (
+                         <div className={`badge-${quiz.statusColor}-mini`}>LIVE</div>
+                       )
+                     )
                    ) : (
                      <div className={`badge-${quiz.statusColor}-mini`}>{quiz.status_label || 'LIVE'}</div>
                    )}
@@ -446,54 +465,51 @@ const QuizArenaPage = () => {
                    </div>
                 </div>
 
-                 <button 
-                  className={`shimmer-btn ${quiz.is_submitted && !quiz.winner_id ? 'bg-slate-500' : ''}`}
-                  onClick={() => {
-                    const user = localStorage.getItem('play11_user');
-                    if (quiz.is_submitted || quiz.status_label === 'CLOSED') {
-                      navigate(zoneId === 'study-zone' ? `/study-result/${quiz.id}` : `/game-result/${quiz.id}`);
-                    } else if (quiz.status_label === 'UPCOMING') {
-                      if (quiz.is_registered) {
-                        navigate(zoneId === 'study-zone' ? `/study-quiz-detail/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
-                      } else {
-                        if (!user) {
-                          localStorage.setItem('auth_redirect', window.location.pathname);
-                          navigate('/login');
-                        } else {
-                          setBookingQuiz(quiz);
-                        }
-                      }
-                    } else {
-                      // Live quiz
-                      if (quiz.entry_amount > 0 && !quiz.is_registered) {
-                        if (!user) {
-                          localStorage.setItem('auth_redirect', window.location.pathname);
-                          navigate('/login');
-                        } else {
-                          setBookingQuiz(quiz);
-                        }
-                      } else {
-                        if (!user) {
-                          localStorage.setItem('auth_redirect', zoneId === 'study-zone' ? `/study-quiz-play/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
-                          navigate('/login');
-                        } else {
-                          navigate(zoneId === 'study-zone' ? `/study-quiz-play/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
-                        }
-                      }
-                    }
-                  }}
-                  style={{ 
-                    marginTop: 'auto', 
-                    height: '44px',
-                    background: quiz.winner_id ? '#10b981' : (quiz.is_submitted ? '#64748b' : config.themeColor),
-                    boxShadow: quiz.winner_id ? '0 6px 12px -3px rgba(16, 185, 129, 0.3)' : (quiz.is_submitted ? 'none' : `0 6px 12px -3px ${config.themeColor}4D`),
-                    fontSize: '0.8rem',
-                    padding: '0 1rem'
-                  }}
-                >
-                   <span>{quiz.winner_id ? 'View Results' : (quiz.is_submitted ? 'Awaiting Result' : quiz.btnText)}</span>
-                   <ChevronRight size={16} strokeWidth={3} />
-                </button>
+                <button 
+                   disabled={quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered}
+                   className={`shimmer-btn ${quiz.is_submitted && !quiz.winner_id ? 'bg-slate-500' : ''}`}
+                   onClick={() => {
+                     const isLiveUnregisteredPaid = quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered;
+                     if (isLiveUnregisteredPaid) return;
+
+                     const user = localStorage.getItem('play11_user');
+                     if (quiz.is_submitted || quiz.status_label === 'CLOSED') {
+                       navigate(zoneId === 'study-zone' ? `/study-result/${quiz.id}` : `/game-result/${quiz.id}`);
+                     } else if (quiz.status_label === 'UPCOMING') {
+                       if (quiz.is_registered) {
+                         navigate(zoneId === 'study-zone' ? `/study-quiz-detail/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
+                       } else {
+                         if (!user) {
+                           localStorage.setItem('auth_redirect', window.location.pathname);
+                           navigate('/login');
+                         } else {
+                           setBookingQuiz(quiz);
+                         }
+                       }
+                     } else {
+                       // Live quiz
+                       if (!user) {
+                         localStorage.setItem('auth_redirect', zoneId === 'study-zone' ? `/study-quiz-play/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
+                         navigate('/login');
+                       } else {
+                         navigate(zoneId === 'study-zone' ? `/study-quiz-play/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
+                       }
+                     }
+                   }}
+                   style={{ 
+                     marginTop: 'auto', 
+                     height: '44px',
+                     background: (quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered) ? '#cbd5e1' : (quiz.winner_id ? '#10b981' : (quiz.is_submitted ? '#64748b' : config.themeColor)),
+                     boxShadow: (quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered) ? 'none' : (quiz.winner_id ? '0 6px 12px -3px rgba(16, 185, 129, 0.3)' : (quiz.is_submitted ? 'none' : `0 6px 12px -3px ${config.themeColor}4D`)),
+                     fontSize: '0.8rem',
+                     padding: '0 1rem',
+                     cursor: (quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered) ? 'not-allowed' : 'pointer',
+                     color: (quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered) ? '#64748b' : '#ffffff'
+                   }}
+                 >
+                    <span>{quiz.winner_id ? 'View Results' : (quiz.is_submitted ? 'Awaiting Result' : quiz.btnText)}</span>
+                    {!(quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered) && <ChevronRight size={16} strokeWidth={3} />}
+                 </button>
                 
                 {quiz.is_submitted && (
                   <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.7rem', color: quiz.winner_id ? '#10b981' : '#16a34a', fontWeight: 800 }}>
