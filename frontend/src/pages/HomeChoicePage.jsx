@@ -178,7 +178,13 @@ const HomeChoicePage = () => {
 
   const getLiveCount = (zoneId) => {
     if (!Array.isArray(allQuizzes)) return 0;
-    return allQuizzes.filter(q => q.zone_id === zoneId && q.status_label?.toUpperCase() === 'LIVE').length;
+    return allQuizzes.filter(q => {
+      if (q.zone_id !== zoneId) return false;
+      if (q.status_label?.toUpperCase() !== 'LIVE') return false;
+      const entryFee = parseInt(q.entry_amount || 0);
+      if (entryFee === 0) return true; // Free quizzes can always be played live
+      return q.is_registered; // Paid quizzes require registration
+    }).length;
   };
 
   const getMaxPrize = (zoneId) => {
