@@ -10,11 +10,50 @@ const parseUtcDate = (dateStr) => {
   return new Date(zStr);
 };
 
+const formatDuration = (timeStr) => {
+  if (!timeStr) return 'Completed';
+  if (typeof timeStr === 'string') {
+    if (timeStr.includes('AM') || timeStr.includes('PM')) {
+      return 'Completed';
+    }
+    const parts = timeStr.split(':');
+    if (parts.length === 2) {
+      const minutes = parseInt(parts[0], 10);
+      const seconds = parseInt(parts[1], 10);
+      if (!isNaN(minutes) && !isNaN(seconds)) {
+        return `${minutes} min ${seconds} sec`;
+      }
+    }
+    if (parts.length === 3) {
+      const hours = parseInt(parts[0], 10);
+      const minutes = parseInt(parts[1], 10);
+      const seconds = parseInt(parts[2], 10);
+      if (!isNaN(hours) && !isNaN(minutes) && !isNaN(seconds)) {
+        if (hours > 2) return 'Completed';
+        if (hours === 0) {
+          return `${minutes} min ${seconds} sec`;
+        }
+        return `${hours} hr ${minutes} min ${seconds} sec`;
+      }
+    }
+  }
+  return timeStr;
+};
+
 const GameResultPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const [resultData, setResultData] = useState(location.state || { score: 0, total: 0, rank: '-', time: '00:00' });
+  const [resultData, setResultData] = useState(() => {
+    const sState = location.state;
+    if (sState) {
+      return {
+        ...sState,
+        time: formatDuration(sState.time)
+      };
+    }
+    return { score: 0, total: 0, rank: '-', time: '00:00' };
+  });
   const [quizTitle, setQuizTitle] = useState('Game Arena');
   const [loading, setLoading] = useState(!location.state);
 
@@ -58,7 +97,7 @@ const GameResultPage = () => {
                 score: data.result.total_score,
                 total: data.quiz.total_questions,
                 rank: data.result.rank,
-                time: data.result.time_taken || (data.result.submitted_at ? parseUtcDate(data.result.submitted_at).toLocaleTimeString() : 'Completed')
+                time: formatDuration(data.result.time_taken || data.result.submitted_at)
               });
               setQuizTitle(data.quiz.title);
             }
