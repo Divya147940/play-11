@@ -156,18 +156,17 @@ const StudyResultPage = () => {
             padding: '1.25rem 1.5rem',
             color: '#15803d',
             fontWeight: 800,
-            fontSize: '0.95rem',
+            fontSize: '1.05rem',
             textAlign: 'center',
             margin: '1rem auto 2rem auto',
             maxWidth: '480px',
             boxShadow: '0 4px 12px rgba(22, 163, 74, 0.08)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.3rem'
+            gap: '0.4rem'
           }}>
             <span style={{ fontSize: '1.3rem' }}>✅</span>
-            <span>आपने सफलतापूर्वक क्विज़ सबमिट कर दिया है।</span>
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, opacity: 0.9 }}>You have successfully submitted the quiz.</span>
+            <span>You have successfully submitted the quiz.</span>
           </div>
 
           {/* Stats row - 4 Columns like in the image */}
