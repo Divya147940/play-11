@@ -566,9 +566,6 @@ class AdminController {
         try {
             $pdo->beginTransaction();
 
-            // 1. Reset all previous submissions
-            DB::query('DELETE FROM submissions WHERE quiz_id = ?', [$id]);
-
             // 2. Update Quiz
             DB::query(
                 "UPDATE quizzes SET 
@@ -581,56 +578,132 @@ class AdminController {
             );
 
             if (is_array($questions)) {
-                // 3. Delete existing questions
-                DB::query("DELETE FROM questions WHERE quiz_id = ?", [$id]);
+                // Fetch existing questions
+                $existingQStmt = DB::query("SELECT id FROM questions WHERE quiz_id = ?", [$id]);
+                $existingQs = $existingQStmt->fetchAll(PDO::FETCH_ASSOC);
+                $existingQIds = array_column($existingQs, 'id');
+                $deletedQIds = $existingQIds;
 
-                // 4. Re-insert questions/options using batch inserts
-                $qParams = [];
-                $qPlaceholders = [];
-                $optParams = [];
-                $optPlaceholders = [];
-                $caParams = [];
-                $caPlaceholders = [];
+                // Collect new questions to batch insert
+                $newQParams = [];
+                $newQPlaceholders = [];
+                
+                $newOptParams = [];
+                $newOptPlaceholders = [];
+
+                $newCaParams = [];
+                $newCaPlaceholders = [];
 
                 foreach ($questions as $qIdx => $q) {
-                    $qId = guidv4();
                     $qText = $q['text'] ?? '';
                     $qHindiText = !empty($q['hindiText']) ? $q['hindiText'] : null;
-
-                    $qPlaceholders[] = '(?, ?, ?, ?, ?, ?)';
-                    array_push($qParams, $qId, $id, $qText, $qHindiText, $marks_per_q, $qIdx);
-
-                    if (isset($q['options']) && is_array($q['options'])) {
-                        foreach ($q['options'] as $oIdx => $opt) {
-                            $optId = guidv4();
-                            $text = is_array($opt) ? ($opt['text'] ?? '') : $opt;
-                            $hindiText = is_array($opt) ? (!empty($opt['hindiText']) ? $opt['hindiText'] : null) : null;
-                            
-                            $optPlaceholders[] = '(?, ?, ?, ?, ?)';
-                            array_push($optParams, $optId, $qId, $text, $hindiText, (string)$oIdx);
-                        }
-                    }
-
                     $correctOptionIndex = (string)($q['correctOptionIndex'] ?? '0');
-                    $caPlaceholders[] = '(?, ?, ?)';
-                    array_push($caParams, guidv4(), $qId, $correctOptionIndex);
+
+                    // If question has an ID and exists, update in-place
+                    if (isset($q['id']) && in_array($q['id'], $existingQIds)) {
+                        $qId = $q['id'];
+                        // Remove from deleted list
+                        $deletedQIds = array_diff($deletedQIds, [$qId]);
+
+                        // Update question details
+                        DB::query(
+                            "UPDATE questions SET question_text = ?, hindi_question_text = ?, marks = ?, sort_order = ? WHERE id = ?",
+                            [$qText, $qHindiText, $marks_per_q, $qIdx, $qId]
+                        );
+
+                        // Update or insert correct answer
+                        $caExists = DB::query("SELECT 1 FROM correct_answers WHERE question_id = ?", [$qId])->fetchColumn();
+                        if ($caExists) {
+                            DB::query("UPDATE correct_answers SET answer_value = ? WHERE question_id = ?", [$correctOptionIndex, $qId]);
+                        } else {
+                            DB::query("INSERT INTO correct_answers (id, question_id, answer_value) VALUES (?, ?, ?)", [guidv4(), $qId, $correctOptionIndex]);
+                        }
+
+                        // Handle options for this existing question
+                        $existingOptStmt = DB::query("SELECT id FROM question_options WHERE question_id = ?", [$qId]);
+                        $existingOpts = $existingOptStmt->fetchAll(PDO::FETCH_ASSOC);
+                        $existingOptIds = array_column($existingOpts, 'id');
+                        $deletedOptIds = $existingOptIds;
+
+                        if (isset($q['options']) && is_array($q['options'])) {
+                            foreach ($q['options'] as $oIdx => $opt) {
+                                $optText = is_array($opt) ? ($opt['text'] ?? '') : $opt;
+                                $optHindiText = is_array($opt) ? (!empty($opt['hindiText']) ? $opt['hindiText'] : null) : null;
+                                
+                                if (is_array($opt) && isset($opt['id']) && in_array($opt['id'], $existingOptIds)) {
+                                    $optId = $opt['id'];
+                                    $deletedOptIds = array_diff($deletedOptIds, [$optId]);
+                                    
+                                    // Update option in-place
+                                    DB::query(
+                                        "UPDATE question_options SET option_text = ?, hindi_option_text = ?, option_value = ? WHERE id = ?",
+                                        [$optText, $optHindiText, (string)$oIdx, $optId]
+                                    );
+                                } else {
+                                    // Insert new option
+                                    $optId = guidv4();
+                                    DB::query(
+                                        "INSERT INTO question_options (id, question_id, option_text, hindi_option_text, option_value) VALUES (?, ?, ?, ?, ?)",
+                                        [$optId, $qId, $optText, $optHindiText, (string)$oIdx]
+                                    );
+                                }
+                            }
+                        }
+
+                        // Delete removed options
+                        if (!empty($deletedOptIds)) {
+                            $placeholders = implode(',', array_fill(0, count($deletedOptIds), '?'));
+                            DB::query("DELETE FROM question_options WHERE id IN ($placeholders)", array_values($deletedOptIds));
+                        }
+
+                    } else {
+                        // This is a new question, prepare for batch insert
+                        $qId = guidv4();
+                        $newQPlaceholders[] = '(?, ?, ?, ?, ?, ?)';
+                        array_push($newQParams, $qId, $id, $qText, $qHindiText, $marks_per_q, $qIdx);
+
+                        if (isset($q['options']) && is_array($q['options'])) {
+                            foreach ($q['options'] as $oIdx => $opt) {
+                                $optId = guidv4();
+                                $optText = is_array($opt) ? ($opt['text'] ?? '') : $opt;
+                                $optHindiText = is_array($opt) ? (!empty($opt['hindiText']) ? $opt['hindiText'] : null) : null;
+                                
+                                $newOptPlaceholders[] = '(?, ?, ?, ?, ?)';
+                                array_push($newOptParams, $optId, $qId, $optText, $optHindiText, (string)$oIdx);
+                            }
+                        }
+
+                        $newCaPlaceholders[] = '(?, ?, ?)';
+                        array_push($newCaParams, guidv4(), $qId, $correctOptionIndex);
+                    }
                 }
 
-                if (!empty($qPlaceholders)) {
-                    foreach(array_chunk($qPlaceholders, 100) as $chunkIdx => $chunk) {
-                        $chunkParams = array_slice($qParams, $chunkIdx * 600, count($chunk) * 6);
+                // Delete questions that were removed in the edit
+                if (!empty($deletedQIds)) {
+                    $placeholders = implode(',', array_fill(0, count($deletedQIds), '?'));
+                    DB::query("DELETE FROM questions WHERE id IN ($placeholders)", array_values($deletedQIds));
+                }
+
+                // Batch insert new questions
+                if (!empty($newQPlaceholders)) {
+                    foreach(array_chunk($newQPlaceholders, 100) as $chunkIdx => $chunk) {
+                        $chunkParams = array_slice($newQParams, $chunkIdx * 600, count($chunk) * 6);
                         DB::query("INSERT INTO questions (id, quiz_id, question_text, hindi_question_text, marks, sort_order) VALUES " . implode(',', $chunk), $chunkParams);
                     }
                 }
-                if (!empty($optPlaceholders)) {
-                    foreach(array_chunk($optPlaceholders, 100) as $chunkIdx => $chunk) {
-                        $chunkParams = array_slice($optParams, $chunkIdx * 500, count($chunk) * 5);
+
+                // Batch insert new options
+                if (!empty($newOptPlaceholders)) {
+                    foreach(array_chunk($newOptPlaceholders, 100) as $chunkIdx => $chunk) {
+                        $chunkParams = array_slice($newOptParams, $chunkIdx * 500, count($chunk) * 5);
                         DB::query("INSERT INTO question_options (id, question_id, option_text, hindi_option_text, option_value) VALUES " . implode(',', $chunk), $chunkParams);
                     }
                 }
-                if (!empty($caPlaceholders)) {
-                    foreach(array_chunk($caPlaceholders, 100) as $chunkIdx => $chunk) {
-                        $chunkParams = array_slice($caParams, $chunkIdx * 300, count($chunk) * 3);
+
+                // Batch insert new correct answers
+                if (!empty($newCaPlaceholders)) {
+                    foreach(array_chunk($newCaPlaceholders, 100) as $chunkIdx => $chunk) {
+                        $chunkParams = array_slice($newCaParams, $chunkIdx * 300, count($chunk) * 3);
                         DB::query("INSERT INTO correct_answers (id, question_id, answer_value) VALUES " . implode(',', $chunk), $chunkParams);
                     }
                 }
@@ -673,9 +746,10 @@ class AdminController {
 
             foreach ($answers as &$ans) {
                 $optStmt = DB::query("
-                    SELECT option_text as text, option_value as value 
+                    SELECT id, option_text as text, option_value as value 
                     FROM question_options 
                     WHERE question_id = ?
+                    ORDER BY option_value ASC
                 ", [$ans['question_id']]);
                 $ans['options'] = $optStmt->fetchAll();
                 $ans['is_correct'] = (bool)$ans['is_correct'];

@@ -654,11 +654,19 @@ const AdminDashboard = () => {
       });
       const data = await res.json();
       if (data.success) {
+        const normalizeIndex = (val) => {
+          if (val === null || val === undefined) return 0;
+          const v = String(val).toUpperCase();
+          const mapping = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, '0': 0, '1': 1, '2': 2, '3': 3 };
+          return mapping[v] ?? 0;
+        };
+
         const questions = data.questions.map(q => ({
+          id: q.id,
           text: q.question_text,
           hindiText: q.hindi_question_text || '',
-          options: q.options.map(o => ({ text: o.text, hindiText: o.hindiText || '' })),
-          correctOptionIndex: parseInt(q.correct_answer) || 0
+          options: q.options.map(o => ({ id: o.id, text: o.text, hindiText: o.hindiText || '', value: o.value })),
+          correctOptionIndex: normalizeIndex(q.correct_answer)
         }));
 
         setNewQuiz({
