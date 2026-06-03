@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
+const parseUtcDate = (dateStr) => {
+  if (!dateStr) return new Date();
+  if (typeof dateStr === 'object') return dateStr;
+  const tStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+  const hasTz = tStr.includes('Z') || tStr.includes('+') || (tStr.includes('-') && tStr.indexOf('-', 11) !== -1);
+  const zStr = hasTz ? tStr : tStr + '+05:30';
+  return new Date(zStr);
+};
+
 const StudyResultPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -41,7 +50,7 @@ const StudyResultPage = () => {
                 score: data.result.total_score,
                 total: data.quiz.total_questions,
                 rank: data.result.rank,
-                time: data.result.submitted_at ? new Date(data.result.submitted_at).toLocaleTimeString() : 'Completed'
+                time: data.result.time_taken || (data.result.submitted_at ? parseUtcDate(data.result.submitted_at).toLocaleTimeString() : 'Completed')
               });
               setQuizTitle(data.quiz.title);
             }
@@ -140,13 +149,26 @@ const StudyResultPage = () => {
           }}>
             {quizTitle}
           </h2>
-          <p style={{
-            fontSize: '0.9rem',
-            color: '#64748b',
-            marginBottom: '2rem'
+          <div style={{
+            background: '#dcfce7',
+            border: '1px solid #bbf7d0',
+            borderRadius: '1.25rem',
+            padding: '1.25rem 1.5rem',
+            color: '#15803d',
+            fontWeight: 800,
+            fontSize: '0.95rem',
+            textAlign: 'center',
+            margin: '1rem auto 2rem auto',
+            maxWidth: '480px',
+            boxShadow: '0 4px 12px rgba(22, 163, 74, 0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.3rem'
           }}>
-            You have successfully completed the study quiz battle!
-          </p>
+            <span style={{ fontSize: '1.3rem' }}>✅</span>
+            <span>आपने सफलतापूर्वक क्विज़ सबमिट कर दिया है।</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, opacity: 0.9 }}>You have successfully submitted the quiz.</span>
+          </div>
 
           {/* Stats row - 4 Columns like in the image */}
           <div style={{
@@ -157,8 +179,6 @@ const StudyResultPage = () => {
             marginBottom: '2.5rem'
           }}>
             {[
-              { label: 'FINAL SCORE', value: `${resultData.score}/${resultData.total}` },
-              { label: 'YOUR RANK', value: `#${resultData.rank}` },
               { label: 'TIME TAKEN', value: resultData.time },
             ].map((stat, i) => (
                 <div key={i} style={{

@@ -4,6 +4,15 @@ import { Sparkles, ArrowRight, BookOpen, Trophy, Clapperboard, Newspaper } from 
 import UpcomingQuizzes from '../components/UpcomingQuizzes';
 import { quizService, settingsService } from '../services/api';
 
+const parseUtcDate = (dateStr) => {
+  if (!dateStr) return new Date();
+  if (typeof dateStr === 'object') return dateStr;
+  const tStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+  const hasTz = tStr.includes('Z') || tStr.includes('+') || (tStr.includes('-') && tStr.indexOf('-', 11) !== -1);
+  const zStr = hasTz ? tStr : tStr + '+05:30';
+  return new Date(zStr);
+};
+
 const HomeChoicePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -70,10 +79,19 @@ const HomeChoicePage = () => {
 
   const tabs = ['All Rooms', 'Upcoming', 'Live', 'Completed'];
   const [selectedTab, setSelectedTab] = React.useState(location.state?.tab || 'All Rooms');
+
+  React.useEffect(() => {
+    if (location.state?.tab) {
+      setSelectedTab(location.state.tab);
+    }
+  }, [location.state]);
   const [allQuizzes, setAllQuizzes] = React.useState([]);
   const [joinedQuizzes, setJoinedQuizzes] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
-  const [globalBanner, setGlobalBanner] = React.useState(localStorage.getItem('play11_home_banner') || '');
+  const [globalBanner, setGlobalBanner] = React.useState(() => {
+    const cached = localStorage.getItem('play11_home_banner');
+    return cached && cached !== '0' ? cached : '';
+  });
 
   React.useEffect(() => {
     const fetchQuizzes = async (isInitial = false) => {
@@ -115,7 +133,7 @@ const HomeChoicePage = () => {
 
         if (isInitial) {
           const bannerData = results[2];
-          if (bannerData && bannerData.success && bannerData.value) {
+          if (bannerData && bannerData.success && bannerData.value && bannerData.value !== '0') {
             setGlobalBanner(bannerData.value);
             localStorage.setItem('play11_home_banner', bannerData.value);
           } else if (bannerData) {
@@ -181,9 +199,9 @@ const HomeChoicePage = () => {
     if (!Array.isArray(allQuizzes)) return null;
     const upcoming = allQuizzes
       .filter(q => q.zone_id === zoneId && q.status_label?.toUpperCase() === 'UPCOMING')
-      .sort((a, b) => new Date(a.open_at) - new Date(b.open_at))[0];
+      .sort((a, b) => parseUtcDate(a.open_at) - parseUtcDate(b.open_at))[0];
     if (!upcoming) return null;
-    return new Date(upcoming.open_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return parseUtcDate(upcoming.open_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   const filteredQuizzes = getFilteredQuizzes();
@@ -202,7 +220,7 @@ const HomeChoicePage = () => {
           background: '#0d1f3c',
           boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
         }}>
-          {globalBanner && (
+          {globalBanner && globalBanner !== '0' && (
             <div style={{ 
               width: '100%', 
               height: 'clamp(200px, 30vh, 350px)', 
@@ -220,7 +238,7 @@ const HomeChoicePage = () => {
               />
             </div>
           )}
-          {!globalBanner && (
+          {(!globalBanner || globalBanner === '0') && (
             <div style={{ 
               padding: '3rem 5%', 
               background: 'radial-gradient(circle at top right, #1e3a8a, #0d1f3c)',

@@ -20,7 +20,13 @@ const BottomNav = () => {
       {navItems.map((item) => (
         <button
           key={item.id}
-          onClick={() => navigate(item.path)}
+          onClick={() => {
+            if (item.path === '/home-choice') {
+              navigate(item.path, { state: { tab: 'All Rooms', reset: Date.now() } });
+            } else {
+              navigate(item.path);
+            }
+          }}
           style={{
             display: 'flex',
             flexDirection: 'column',

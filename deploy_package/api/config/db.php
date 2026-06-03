@@ -156,7 +156,9 @@ function getAlterations() {
         "ALTER TABLE quizzes ADD COLUMN winner_2_id TEXT",
         "ALTER TABLE quizzes ADD COLUMN winner_3_id TEXT",
         "ALTER TABLE vouchers ADD COLUMN user_id VARCHAR(255) DEFAULT NULL",
-        "ALTER TABLE vouchers ADD COLUMN external_code TEXT DEFAULT NULL"
+        "ALTER TABLE vouchers ADD COLUMN external_code TEXT DEFAULT NULL",
+        "ALTER TABLE users ADD COLUMN referral_code VARCHAR(255)",
+        "ALTER TABLE users ADD COLUMN referred_by VARCHAR(255)"
     ];
 }
 
@@ -226,6 +228,8 @@ function initDB() {
         name VARCHAR(255),
         coins NUMERIC DEFAULT 0,
         points INTEGER DEFAULT 0,
+        referral_code VARCHAR(255),
+        referred_by VARCHAR(255),
         status VARCHAR(50) DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

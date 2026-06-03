@@ -289,7 +289,7 @@ const MatchQuizRoom = () => {
       width: '100%',
       boxSizing: 'border-box'
     }}>
-      <div className="match-quiz-room" style={{ minHeight: '100vh', background: '#0f172a', paddingBottom: '3rem' }}>
+      <div className="match-quiz-room" style={{ minHeight: '100vh', background: '#0f172a', paddingBottom: '6rem' }}>
       <Header />
       {/* Global Admin Banner */}
       {globalBanner && (
@@ -486,12 +486,13 @@ const MatchQuizRoom = () => {
                 })}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'nowrap' }}>
                 <button 
                   onClick={handlePrev}
                   style={{
                     background: 'transparent', border: '1px solid #e2e8f0', color: '#64748b',
-                    padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer'
+                    padding: '0.75rem 1rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                    flex: 1, minWidth: '0'
                   }}
                 >
                   {currentIdx === 0 ? (language === 'Hindi' ? "वापस" : "Back") : (language === 'Hindi' ? "पिछला" : "Previous")}
@@ -505,8 +506,9 @@ const MatchQuizRoom = () => {
                   disabled={currentIdx === questions.length - 1 || loading}
                   style={{
                     background: 'transparent', border: '1px solid #e2e8f0', color: '#64748b',
-                    padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
-                    opacity: currentIdx === questions.length - 1 ? 0.3 : 1
+                    padding: '0.75rem 1rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                    opacity: currentIdx === questions.length - 1 ? 0.3 : 1,
+                    flex: 1, minWidth: '0'
                   }}
                 >
                   {language === 'Hindi' ? "छोड़ें" : "Skip"}
@@ -516,9 +518,10 @@ const MatchQuizRoom = () => {
                   disabled={answers[currentIdx] === undefined || loading}
                   style={{
                     background: answers[currentIdx] === undefined ? '#cbd5e1' : '#3b82f6', border: 'none', color: '#ffffff',
-                    padding: '0.75rem 2rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.9rem', cursor: (answers[currentIdx] === undefined || loading) ? 'not-allowed' : 'pointer',
+                    padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.85rem', cursor: (answers[currentIdx] === undefined || loading) ? 'not-allowed' : 'pointer',
                     boxShadow: answers[currentIdx] === undefined ? 'none' : '0 4px 12px rgba(59, 130, 246, 0.3)',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    flex: 1.5, minWidth: '0'
                   }}
                 >
                   {loading ? '...' : (currentIdx === questions.length - 1 
@@ -535,40 +538,40 @@ const MatchQuizRoom = () => {
         ) : (
           /* Result Screen */
           <div>
-            <div style={{ background: '#ffffff', borderRadius: '1.25rem', padding: '3rem', color: '#0f172a', textAlign: 'center', marginBottom: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏆</div>
-              <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>{language === 'Hindi' ? "क्विज पूरा हुआ!" : "Quiz Completed!"}</h2>
-              <p style={{ color: '#64748b', marginBottom: '2rem' }}>{language === 'Hindi' ? "आपने सफलतापूर्वक क्विज पूरा कर लिया है।" : `You have successfully completed the ${quiz?.title}.`}</p>
-              
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '1rem', padding: '1.5rem', minWidth: '150px' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>FINAL SCORE</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a' }}>{score.toFixed(1)}</div>
-                </div>
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '1rem', padding: '1.5rem', minWidth: '150px' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>YOUR RANK</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a' }}>#{rank}</div>
-                </div>
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '1rem', padding: '1.5rem', minWidth: '150px' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>ACCURACY</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a' }}>{correct}/{questions.length}</div>
-                </div>
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '1rem', padding: '1.5rem', minWidth: '150px' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>WRONG</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 900, color: '#ef4444' }}>{wrong}</div>
-                </div>
+            <div style={{ background: '#ffffff', borderRadius: '1.25rem', padding: '3.5rem 2rem', color: '#0f172a', textAlign: 'center', marginBottom: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+              <div style={{ 
+                width: '80px', 
+                height: '80px', 
+                borderRadius: '50%', 
+                background: '#ecfdf5', 
+                color: '#10b981', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                border: '2px solid #a7f3d0',
+                boxShadow: '0 10px 20px rgba(16, 185, 129, 0.1)'
+              }}>
+                <ShieldCheck size={40} />
               </div>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#065f46', margin: '0' }}>
+                {language === 'Hindi' ? "सफलतापूर्वक सबमिट किया गया!" : "Submission Successful!"}
+              </h2>
+              <p style={{ color: '#047857', fontSize: '1.1rem', fontWeight: 600, maxWidth: '480px', lineHeight: 1.5, margin: '0' }}>
+                {language === 'Hindi' ? "आपने सफलतापूर्वक क्विज़ सबमिट कर दिया है।" : "You have successfully submitted the quiz."}
+              </p>
 
-              <div style={{ marginTop: '3rem' }}>
+              <div style={{ marginTop: '1.5rem', width: '100%', maxWidth: '300px' }}>
                 <button 
                   onClick={() => navigate('/home-choice')}
                   style={{
-                    background: '#0f172a', border: 'none', color: '#ffffff',
-                    padding: '1rem 3rem', borderRadius: '0.75rem', fontWeight: 800, fontSize: '1rem', cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.3)'
+                    background: '#10b981', border: 'none', color: '#ffffff',
+                    padding: '1.1rem 0', borderRadius: '1rem', fontWeight: 800, fontSize: '1rem', cursor: 'pointer',
+                    width: '100%',
+                    boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)',
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  Return to Quiz Arena
+                  {language === 'Hindi' ? "क्विज़ एरिना पर लौटें" : "Return to Quiz Arena"}
                 </button>
               </div>
             </div>
@@ -621,7 +624,13 @@ const MatchQuizRoom = () => {
           }
         }
         @media (max-width: 480px) {
-          button {
+          .quiz-main-card button {
+            padding: 0.6rem 0.5rem !important;
+            font-size: 0.75rem !important;
+            flex: 1;
+            min-width: 0 !important;
+          }
+          button:not(.quiz-main-card button) {
             padding: 0.6rem 1rem !important;
             font-size: 0.8rem !important;
             flex: 1;

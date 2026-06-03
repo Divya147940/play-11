@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, GraduationCap, Building2, Zap, LandPlot, Shield, Sparkles, ArrowRight } from 'lucide-react';
 import CategoryCard from '../components/CategoryCard';
 
@@ -14,7 +14,8 @@ const getIconForCategory = (name) => {
 }
 
 const StudyHomePage = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const location = useLocation();
+  const [searchTerm, setSearchTerm] = useState(location.state?.search || '');
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
 

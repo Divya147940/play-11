@@ -380,7 +380,7 @@ const StudyQuestionPage = () => {
         <div className="bottom-widgets-area" style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
           <div style={{ flex: '1 1 300px', background: '#1e293b', borderRadius: '1.25rem', padding: '1.5rem', border: '1px solid #334155' }}>
             <h3 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1.25rem' }}>
-              LIVE RANK PREVIEW
+              QUIZ PROGRESS
             </h3>
             
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>

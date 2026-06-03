@@ -22,6 +22,15 @@ const pgCache = {
   }
 };
 
+const parseUtcDate = (dateStr) => {
+  if (!dateStr) return new Date();
+  if (typeof dateStr === 'object') return dateStr;
+  const tStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+  const hasTz = tStr.includes('Z') || tStr.includes('+') || (tStr.includes('-') && tStr.indexOf('-', 11) !== -1);
+  const zStr = hasTz ? tStr : tStr + '+05:30';
+  return new Date(zStr);
+};
+
 const HistoryPage = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('All');
@@ -74,7 +83,7 @@ const HistoryPage = () => {
           const formatted = data.history
             .filter(h => h.title) // Strictly hide orphaned data
             .map(h => {
-              const subDate = h.submitted_at ? new Date(h.submitted_at) : null;
+              const subDate = h.submitted_at ? parseUtcDate(h.submitted_at) : null;
               const isValidDate = subDate && !isNaN(subDate.getTime());
               
               return {
@@ -247,7 +256,7 @@ const HistoryPage = () => {
             <p style={{ marginTop: '1.5rem', color: '#94a3b8', fontWeight: 600 }}>Analyzing history records...</p>
           </div>
         ) : filteredHistory.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem' }}>
+          <div className="history-grid">
             {filteredHistory.map((item, idx) => (
               <div 
                 key={item.id} 
@@ -315,28 +324,32 @@ const HistoryPage = () => {
                   </div>
                 )}
 
-                {/* Score and Rank stats */}
+                {/* Submission Time block (replacing Score & Rank) */}
                 <div style={{ 
-                  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', 
-                  padding: '1.5rem', borderRadius: '24px', background: '#f8fafc', border: '1px solid #f1f5f9'
+                  display: 'flex', alignItems: 'center', gap: '1rem',
+                  padding: '1.25rem 1.5rem', borderRadius: '24px', background: '#f8fafc', border: '1px solid #f1f5f9'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 8px rgba(0,0,0,0.02)' }}>
-                      <Target size={20} color="#3b82f6" />
-                    </div>
-                    <div>
-                      <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score</p>
-                      <p style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a' }}>{item.score}</p>
-                    </div>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 8px rgba(0,0,0,0.02)', color: '#10b981', flexShrink: 0 }}>
+                    <Clock size={20} />
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '1px solid #e2e8f0', paddingLeft: '1rem' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 8px rgba(0,0,0,0.02)' }}>
-                      <Trophy size={20} color="#f59e0b" />
-                    </div>
-                    <div>
-                      <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rank</p>
-                      <p style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a' }}>#{item.rank}</p>
-                    </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Submitted At</p>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                      {(() => {
+                        const dateObj = item.rawDate ? parseUtcDate(item.rawDate) : null;
+                        if (!dateObj || isNaN(dateObj.getTime())) return 'N/A';
+                        return dateObj.toLocaleDateString('en-GB', {
+                          weekday: 'long',
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: true
+                        });
+                      })()}
+                    </p>
                   </div>
                 </div>
 
@@ -414,6 +427,16 @@ const HistoryPage = () => {
       </div>
 
       <style>{`
+        .history-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 2rem;
+        }
+        @media (max-width: 900px) {
+          .history-grid {
+            grid-template-columns: 1fr;
+          }
+        }
         .history-page-root {
           font-family: 'Lexend', sans-serif;
         }

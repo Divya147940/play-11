@@ -228,21 +228,24 @@ const QuizReviewPage = () => {
         }}>
           <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.1em' }}>Question Navigator</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-            {review.map((item, i) => (
-              <a 
-                key={i} 
-                href={`#question-${i + 1}`}
-                style={{ 
-                  width: '36px', height: '36px', borderRadius: '10px', 
-                  background: item.selected_value === item.correct_value ? '#f0fdf4' : (item.selected_value ? '#fef2f2' : '#f8fafc'),
-                  border: `1px solid ${item.selected_value === item.correct_value ? '#10b981' : (item.selected_value ? '#ef4444' : '#e2e8f0')}`,
-                  color: item.selected_value === item.correct_value ? '#166534' : (item.selected_value ? '#991b1b' : '#64748b'),
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 800, textDecoration: 'none'
-                }}
-              >
-                {i + 1}
-              </a>
-            ))}
+            {review.map((item, i) => {
+              const hasSelected = item.selected_value !== null && item.selected_value !== undefined && item.selected_value !== '';
+              return (
+                <a 
+                  key={i} 
+                  href={`#question-${i + 1}`}
+                  style={{ 
+                    width: '36px', height: '36px', borderRadius: '10px', 
+                    background: item.selected_value === item.correct_value ? '#f0fdf4' : (hasSelected ? '#fef2f2' : '#f8fafc'),
+                    border: `1px solid ${item.selected_value === item.correct_value ? '#10b981' : (hasSelected ? '#ef4444' : '#e2e8f0')}`,
+                    color: item.selected_value === item.correct_value ? '#166534' : (hasSelected ? '#991b1b' : '#64748b'),
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 800, textDecoration: 'none'
+                  }}
+                >
+                  {i + 1}
+                </a>
+              );
+            })}
           </div>
         </div>
 
@@ -263,6 +266,8 @@ const QuizReviewPage = () => {
             const selectedIdx = normalizeIndex(item.selected_value);
             const optionsToDisplay = item.options || [];
             const displayQuestion = item.question_text;
+
+            const hasSelected = item.selected_value !== null && item.selected_value !== undefined && item.selected_value !== '';
 
             return (
               <div key={idx} id={`question-${idx + 1}`} style={{ 
@@ -290,10 +295,9 @@ const QuizReviewPage = () => {
 
                 <div style={{ display: 'grid', gap: '1rem' }}>
                   {optionsToDisplay.map((opt, oIdx) => {
-                    const selectedIdx = normalizeIndex(item.selected_value);
-                    
-                    const isUserSelected = selectedIdx === oIdx;
-                    const isCorrect = correctIdx === oIdx;
+                    const optIndex = normalizeIndex(opt.value);
+                    const isUserSelected = selectedIdx === optIndex;
+                    const isCorrect = correctIdx === optIndex;
                     
                     let bgColor = '#f8fafc';
                     let borderColor = '#e2e8f0';
@@ -371,7 +375,7 @@ const QuizReviewPage = () => {
                   </div>
                 )}
 
-                {!item.selected_value && (
+                {!hasSelected && (
                   <div style={{ marginTop: '2rem', padding: '1.25rem', background: '#fffbeb', borderRadius: '1.25rem', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <Info size={16} color="#d97706" />
                     <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#b45309' }}>QUESTION WAS SKIPPED</span>

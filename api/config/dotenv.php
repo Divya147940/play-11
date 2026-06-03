@@ -27,11 +27,9 @@ function loadDotenv($path) {
                 $value = substr($value, 1, -1);
             }
 
-            if (!array_key_exists($key, $_SERVER) && !array_key_exists($key, $_ENV)) {
-                putenv(sprintf('%s=%s', $key, $value));
-                $_ENV[$key] = $value;
-                $_SERVER[$key] = $value;
-            }
+            putenv(sprintf('%s=%s', $key, $value));
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
         }
     }
 }

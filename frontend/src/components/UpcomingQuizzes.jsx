@@ -1,13 +1,22 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const parseUtcDate = (dateStr) => {
+  if (!dateStr) return new Date();
+  if (typeof dateStr === 'object') return dateStr;
+  const tStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+  const hasTz = tStr.includes('Z') || tStr.includes('+') || (tStr.includes('-') && tStr.indexOf('-', 11) !== -1);
+  const zStr = hasTz ? tStr : tStr + '+05:30';
+  return new Date(zStr);
+};
+
 const QuizTimer = ({ openAt, closeAt }) => {
   const [timeLeft, setTimeLeft] = React.useState('');
 
   React.useEffect(() => {
     const calculateTime = () => {
       const now = new Date().getTime();
-      const openTime = new Date(openAt).getTime();
+      const openTime = parseUtcDate(openAt).getTime();
       const diff = openTime - now;
 
       if (diff <= 0) {
@@ -38,9 +47,9 @@ const QuizTimer = ({ openAt, closeAt }) => {
 
   return (
     <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', width: '100%' }}>
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#eff6ff', padding: '6px 14px', borderRadius: '20px', border: '1px solid #dbeafe' }}>
-        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6', animation: 'pulse 1.5s infinite ease-in-out' }} />
-        <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 950, color: '#3b82f6' }}>
+      <div className="upcoming-timer-bubble">
+        <div className="upcoming-timer-dot" />
+        <span className="upcoming-timer-text">
           Starts in: {timeLeft}
         </span>
       </div>
@@ -74,7 +83,7 @@ const UpcomingQuizzes = ({ quizzes = [], title = "Multiple quizzes scheduled by 
          gap: '8px' 
        }} className="mobile-grid-2">
           {quizzes.map((quiz) => {
-             const openTime = new Date(quiz.open_at);
+             const openTime = parseUtcDate(quiz.open_at);
              const openStr = `${openTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, ${openTime.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}`;
              const isLive = quiz.status_label === 'LIVE';
              
@@ -120,9 +129,20 @@ const UpcomingQuizzes = ({ quizzes = [], title = "Multiple quizzes scheduled by 
                      {quiz.is_submitted ? (
                        <div style={{ textAlign: 'center' }}>
                           <p style={{ fontSize: '0.6rem', fontWeight: 800, color: '#16a34a', textTransform: 'uppercase', marginBottom: '4px' }}>SUBMITTED AT</p>
-                          <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#16a34a' }}>
-                            {quiz.submitted_at ? new Date(quiz.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Completed'}
-                          </p>
+                           <div style={{ color: '#16a34a', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                             {quiz.submitted_at ? (
+                               <>
+                                 <span style={{ fontSize: '1.1rem', fontWeight: 900, lineHeight: 1.1 }}>
+                                   {parseUtcDate(quiz.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                 </span>
+                                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#15803d' }}>
+                                   {parseUtcDate(quiz.submitted_at).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
+                                 </span>
+                               </>
+                             ) : (
+                               <span style={{ fontSize: '1.1rem', fontWeight: 900 }}>Completed</span>
+                             )}
+                           </div>
                        </div>
                      ) : isLive ? (
                         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
@@ -133,7 +153,7 @@ const UpcomingQuizzes = ({ quizzes = [], title = "Multiple quizzes scheduled by 
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', flexWrap: 'wrap', fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
                             <span>ENDS:</span>
-                            <span style={{ color: '#ef4444' }}>{new Date(quiz.close_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, {new Date(quiz.close_at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            <span style={{ color: '#ef4444' }}>{parseUtcDate(quiz.close_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, {parseUtcDate(quiz.close_at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                           </div>
                         </div>
                      ) : quiz.status_label === 'UPCOMING' ? (
@@ -152,7 +172,7 @@ const UpcomingQuizzes = ({ quizzes = [], title = "Multiple quizzes scheduled by 
 
                  <div style={{ display: 'flex', gap: '4px', marginTop: '0.5rem' }}>
                     <div className="quiz-metric-pill" style={{ flex: 1, textAlign: 'center', padding: '0.4rem 0.15rem' }}>
-                       <p style={{ opacity: 0.7, fontSize: '0.45rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '1px' }}>Qs</p>
+                       <p style={{ opacity: 0.7, fontSize: '0.45rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '1px' }}>Questions</p>
                        <strong style={{ fontSize: '0.65rem' }}>{quiz.total_questions || quiz.questions || 10}</strong>
                     </div>
                     <div className="quiz-metric-pill" style={{ flex: 1, textAlign: 'center', padding: '0.4rem 0.15rem' }}>
@@ -180,6 +200,32 @@ const UpcomingQuizzes = ({ quizzes = [], title = "Multiple quizzes scheduled by 
         </div>
 
          <style>{`
+             .upcoming-timer-bubble {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: #eff6ff;
+                padding: 6px 14px;
+                border-radius: 20px;
+                border: 1px solid #dbeafe;
+                max-width: 100%;
+                box-sizing: border-box;
+             }
+             .upcoming-timer-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #3b82f6;
+                animation: pulse 1.5s infinite ease-in-out;
+                flex-shrink: 0;
+             }
+             .upcoming-timer-text {
+                font-size: 0.75rem;
+                font-family: monospace;
+                font-weight: 950;
+                color: #3b82f6;
+                white-space: nowrap;
+             }
              .mobile-grid-2 {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
@@ -190,6 +236,17 @@ const UpcomingQuizzes = ({ quizzes = [], title = "Multiple quizzes scheduled by 
                 50% { transform: scale(0.85); opacity: 0.5; }
              }
              @media (max-width: 640px) {
+                .upcoming-timer-bubble {
+                   padding: 4px 8px;
+                   gap: 4px;
+                }
+                .upcoming-timer-text {
+                   font-size: 0.62rem;
+                }
+                .upcoming-timer-dot {
+                   width: 6px;
+                   height: 6px;
+                }
                 .mobile-grid-2 {
                    grid-template-columns: 1fr 1fr !important;
                    gap: 8px !important;
@@ -212,31 +269,47 @@ const UpcomingQuizzes = ({ quizzes = [], title = "Multiple quizzes scheduled by 
                 }
              }
              @media (max-width: 480px) {
+                .upcoming-timer-text {
+                   font-size: 0.6rem;
+                }
+                .upcoming-timer-bubble {
+                   padding: 4px 8px;
+                   gap: 4px;
+                }
+                .upcoming-timer-dot {
+                   width: 6px;
+                   height: 6px;
+                }
                 .mobile-grid-2 {
-                   grid-template-columns: 1fr !important;
-                   gap: 16px !important;
+                   grid-template-columns: repeat(2, 1fr) !important;
+                   gap: 8px !important;
                    padding: 0 4px !important;
                 }
                 .game-zone-card {
-                   padding: 1.25rem !important;
+                   padding: 0.75rem 0.6rem !important;
                 }
                 .game-zone-card h3 {
-                   font-size: 1.15rem !important;
+                   font-size: 0.95rem !important;
                 }
                 .game-status-box {
-                   padding: 1rem !important;
+                   padding: 0.5rem 0.3rem !important;
                 }
                 .quiz-metric-pill {
-                   padding: 0.5rem 0.25rem !important;
+                   padding: 0.35rem 0.1rem !important;
                 }
                 .quiz-metric-pill strong {
-                   font-size: 0.8rem !important;
+                   font-size: 0.65rem !important;
                 }
                 .quiz-join-btn {
                    width: 100% !important;
-                   padding: 0.65rem !important;
-                   font-size: 0.85rem !important;
+                   padding: 0.5rem !important;
+                   font-size: 0.75rem !important;
                    border-radius: 8px !important;
+                }
+             }
+             @media (max-width: 360px) {
+                .upcoming-timer-text {
+                   font-size: 0.52rem;
                 }
              }
           `}</style>

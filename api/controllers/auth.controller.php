@@ -374,6 +374,7 @@ class AuthController {
                     SELECT question_id, option_text as text, option_value as value 
                     FROM question_options 
                     WHERE question_id IN ($placeholders)
+                    ORDER BY option_value ASC
                 ", $questionIds);
                 $allOptions = $optStmt->fetchAll();
 

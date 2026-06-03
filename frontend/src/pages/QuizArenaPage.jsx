@@ -3,6 +3,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Info, Trophy, ChevronRight, BookOpen, Film, Target } from 'lucide-react';
 import { quizService } from '../services/api';
 
+const parseUtcDate = (dateStr) => {
+  if (!dateStr) return new Date();
+  if (typeof dateStr === 'object') return dateStr;
+  const tStr = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
+  const hasTz = tStr.includes('Z') || tStr.includes('+') || (tStr.includes('-') && tStr.indexOf('-', 11) !== -1);
+  const zStr = hasTz ? tStr : tStr + '+05:30';
+  return new Date(zStr);
+};
+
 const zoneConfig = {
   'sport-zone': {
     tag: 'SPORT ARENA',
@@ -125,12 +134,12 @@ const QuizArenaPage = () => {
       .then(data => {
         if (data.success && data.quizzes && data.quizzes.length > 0) {
           const formatted = data.quizzes.map(q => {
-            const openTime = new Date(q.open_at);
+            const openTime = parseUtcDate(q.open_at);
             const openStr = `${openTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, ${openTime.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}`;
-            const subDate = q.submitted_at ? new Date(q.submitted_at) : null;
+            const subDate = q.submitted_at ? parseUtcDate(q.submitted_at) : null;
             const formattedSubTime = subDate ? subDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
 
-            const closeTime = new Date(q.close_at);
+            const closeTime = parseUtcDate(q.close_at);
             const closeStr = `${closeTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, ${closeTime.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
             let btnText = 'Join Quiz';
@@ -424,7 +433,7 @@ const QuizArenaPage = () => {
 
                 <div className="game-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem', marginBottom: '1.5rem' }}>
                    <div className="arena-metric" style={{ padding: '0.4rem' }}>
-                      <span className="label" style={{ fontSize: '0.5rem' }}>Qs</span>
+                      <span className="label" style={{ fontSize: '0.5rem' }}>Questions</span>
                       <span className="value" style={{ fontSize: '0.7rem' }}>{quiz.questions}</span>
                    </div>
                    <div className="arena-metric" style={{ padding: '0.4rem' }}>
@@ -488,7 +497,7 @@ const QuizArenaPage = () => {
                 
                 {quiz.is_submitted && (
                   <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.7rem', color: quiz.winner_id ? '#10b981' : '#16a34a', fontWeight: 800 }}>
-                    {quiz.winner_id ? 'Result has been declared!' : `Successfully submitted on ${new Date(quiz.submitted_at).toLocaleDateString()}`}
+                    {quiz.winner_id ? 'Result has been declared!' : `Successfully submitted on ${parseUtcDate(quiz.submitted_at).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}`}
                   </p>
                 )}
               </div>

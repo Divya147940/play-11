@@ -695,6 +695,15 @@ h2 {
     font-size: 14px;
     border: 1px solid #e2e8f0;
     box-shadow: 0 4px 10px rgba(15,23,42,0.04);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tag:hover {
+    background: #0369a1;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(3, 105, 161, 0.2);
 }
 
 .section-head-row {

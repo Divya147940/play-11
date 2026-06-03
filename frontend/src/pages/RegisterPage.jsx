@@ -147,7 +147,7 @@ const RegisterPage = () => {
           <nav className={`nav-links ${isMenuOpen ? "open" : ""}`}>
             <a href="#home" onClick={(e) => { e.preventDefault(); navigate("/"); setIsMenuOpen(false); }}>Home</a>
             <a href="/how-it-works" onClick={(e) => { e.preventDefault(); navigate("/how-it-works"); setIsMenuOpen(false); }}>How it works</a>
-            <a href="#contests" onClick={(e) => { e.preventDefault(); navigate("/"); setIsMenuOpen(false); }}>Contests</a>
+            <a href="/home-choice" onClick={(e) => { e.preventDefault(); navigate("/home-choice"); setIsMenuOpen(false); }}>Contests</a>
             <a href="#faq" onClick={(e) => { e.preventDefault(); navigate("/"); setIsMenuOpen(false); }}>FAQ</a>
           </nav>
 

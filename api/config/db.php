@@ -44,6 +44,7 @@ if ($dbUrl && (strpos($dbUrl, 'postgres://') === 0 || strpos($dbUrl, 'postgresql
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => true, // Must be true for Postgres to avoid masking real errors with 25P02
         ]);
+        $pdo->exec("SET TIME ZONE 'Asia/Kolkata';");
     } catch (PDOException $e) {
         error_log("PostgreSQL connection failed: " . $e->getMessage());
         http_response_code(500);
@@ -65,6 +66,7 @@ if ($dbUrl && (strpos($dbUrl, 'postgres://') === 0 || strpos($dbUrl, 'postgresql
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
         ]);
+        $pdo->exec("SET time_zone = '+05:30';");
     } catch (PDOException $e) {
         error_log("MySQL connection failed: " . $e->getMessage());
         http_response_code(500);
@@ -163,7 +165,9 @@ function getAlterations() {
         "DROP TABLE IF EXISTS admin_users",
         "CREATE TABLE IF NOT EXISTS quiz_registrations (id VARCHAR(255) PRIMARY KEY, user_id VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE, quiz_id VARCHAR(255) NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
         "CREATE INDEX idx_quiz_reg_user ON quiz_registrations(user_id)",
-        "CREATE INDEX idx_quiz_reg_quiz ON quiz_registrations(quiz_id)"
+        "CREATE INDEX idx_quiz_reg_quiz ON quiz_registrations(quiz_id)",
+        "ALTER TABLE users ADD COLUMN referral_code VARCHAR(255)",
+        "ALTER TABLE users ADD COLUMN referred_by VARCHAR(255)"
     ];
 }
 
@@ -233,6 +237,8 @@ function initDB() {
         name VARCHAR(255),
         coins NUMERIC DEFAULT 0,
         points INTEGER DEFAULT 0,
+        referral_code VARCHAR(255),
+        referred_by VARCHAR(255),
         status VARCHAR(50) DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

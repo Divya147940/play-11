@@ -56,7 +56,13 @@ const Header = () => {
           {navItems.map(item => (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                if (item.path === '/home-choice') {
+                  navigate(item.path, { state: { tab: 'All Rooms', reset: Date.now() } });
+                } else {
+                  navigate(item.path);
+                }
+              }}
               className={`nav-link-btn ${isActive(item.path) ? 'active' : ''}`}
             >
               {item.name}
@@ -81,7 +87,14 @@ const Header = () => {
             {navItems.map(item => (
               <button
                 key={item.path}
-                onClick={() => { navigate(item.path); setIsOpen(false); }}
+                onClick={() => {
+                  if (item.path === '/home-choice') {
+                    navigate(item.path, { state: { tab: 'All Rooms', reset: Date.now() } });
+                  } else {
+                    navigate(item.path);
+                  }
+                  setIsOpen(false);
+                }}
                 style={{
                   background: isActive(item.path) ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
                   border: 'none',

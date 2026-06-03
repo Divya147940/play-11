@@ -121,6 +121,8 @@ if ($uri === 'db-test' && $method === 'GET') {
 }
 
 
+
+
 // --- Auth Routes ---
 if ($uri === 'auth/send-otp' && $method === 'POST') {
     AuthController::sendOtp($inputBody);

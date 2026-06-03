@@ -56,7 +56,7 @@ export default function LandingPage() {
           <nav className={`nav-links ${isMenuOpen ? "open" : ""}`}>
             <a href="#home" onClick={(e) => { e.preventDefault(); navigate("/"); setIsMenuOpen(false); }}>Home</a>
             <a href="/how-it-works" onClick={(e) => { e.preventDefault(); navigate("/how-it-works"); setIsMenuOpen(false); }}>How it works</a>
-            <a href="#contests" onClick={() => setIsMenuOpen(false)}>Contests</a>
+            <a href="/home-choice" onClick={(e) => { e.preventDefault(); navigate("/home-choice"); setIsMenuOpen(false); }}>Contests</a>
             <a href="#faq" onClick={() => setIsMenuOpen(false)}>FAQ</a>
             {/* Removed redundant buttons */}
           </nav>
@@ -162,16 +162,16 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="tags" style={{ marginTop: "24px" }}>
-            <span className="tag">UPSC</span>
-            <span className="tag">SSC CGL</span>
-            <span className="tag">NEET</span>
-            <span className="tag">JEE</span>
-            <span className="tag">Bank PO</span>
-            <span className="tag">Railway RRB</span>
-            <span className="tag">GATE</span>
-            <span className="tag">CAT</span>
-            <span className="tag">NDA</span>
-            <span className="tag">& more</span>
+            <span className="tag" onClick={() => navigate('/home-choice')}>UPSC</span>
+            <span className="tag" onClick={() => navigate('/home-choice')}>SSC CGL</span>
+            <span className="tag" onClick={() => navigate('/home-choice')}>NEET</span>
+            <span className="tag" onClick={() => navigate('/home-choice')}>JEE</span>
+            <span className="tag" onClick={() => navigate('/home-choice')}>Bank PO</span>
+            <span className="tag" onClick={() => navigate('/home-choice')}>Railway RRB</span>
+            <span className="tag" onClick={() => navigate('/home-choice')}>GATE</span>
+            <span className="tag" onClick={() => navigate('/home-choice')}>CAT</span>
+            <span className="tag" onClick={() => navigate('/home-choice')}>NDA</span>
+            <span className="tag" onClick={() => navigate('/home-choice')}>& more</span>
           </div>
 
         </div>
