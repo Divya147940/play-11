@@ -197,46 +197,7 @@ const GameResultPage = () => {
             <span>You have successfully submitted the quiz.</span>
           </div>
 
-          {/* Stats row - 4 Columns like in the image */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            width: '100%',
-            marginBottom: '2.5rem'
-          }}>
-            {[
-              { label: 'TIME TAKEN', value: resultData.time },
-            ].map((stat, i) => (
-                <div key={i} style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '1rem',
-                  padding: '1rem 0.5rem',
-                  flex: 1,
-                  minWidth: 0,
-                  maxWidth: '240px'
-                }}>
-                  <div style={{
-                    fontSize: '0.55rem',
-                    fontWeight: 800,
-                    color: '#64748b',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    marginBottom: '0.25rem'
-                  }}>
-                    {stat.label}
-                  </div>
-                  <div style={{
-                    fontSize: '1.2rem',
-                    fontWeight: 900,
-                    color: stat.color || '#0f172a'
-                  }}>
-                    {stat.value}
-                  </div>
-                </div>
-            ))}
-          </div>
+
 
           {/* Result declared tomorrow banner */}
           <div style={{
