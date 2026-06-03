@@ -162,7 +162,7 @@ const HomeChoicePage = () => {
       return allQuizzes;
     }
     if (selectedTab === 'Live') {
-      return allQuizzes.filter(q => q.status_label?.toUpperCase() === 'LIVE');
+      return allQuizzes.filter(q => q.status_label?.toUpperCase() === 'LIVE' && q.is_registered);
     }
     if (selectedTab === 'Upcoming') {
       return allQuizzes.filter(q => q.status_label?.toUpperCase() === 'UPCOMING' && q.is_registered);
