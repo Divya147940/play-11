@@ -3081,9 +3081,10 @@ const AdminDashboard = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
                               {optionsToDisplay.map((opt, oIdx) => {
                                 const selectedIdx = normalizeIndex(ans.selected_value);
+                                const optIdx = normalizeIndex(opt.value);
 
-                                const isSelected = selectedIdx === oIdx;
-                                const isCorrect = correctIdx === oIdx;
+                                const isSelected = selectedIdx !== -1 && selectedIdx === optIdx;
+                                const isCorrect = correctIdx === optIdx;
 
                                 let bgColor = '#f8fafc';
                                 let borderColor = '#e2e8f0';
@@ -3141,7 +3142,7 @@ const AdminDashboard = () => {
                               </div>
                             )}
 
-                            {!ans.selected_value && (
+                            {(ans.selected_value === null || ans.selected_value === undefined || ans.selected_value === '') && (
                               <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#fffbeb', borderRadius: '1.5rem', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 <span style={{ fontSize: '1rem', fontWeight: 800, color: '#b45309' }}>âš ï¸ QUESTION WAS SKIPPED BY USER</span>
                               </div>
