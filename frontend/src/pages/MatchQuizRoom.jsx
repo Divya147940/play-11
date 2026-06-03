@@ -65,8 +65,7 @@ const MatchQuizRoom = () => {
         localStorage.removeItem('play11_quiz_room_banner');
       }
 
-      const entryFee = parseInt(quizObj.entry_amount || 0);
-      const userCanPlay = entryFee === 0 || quizObj.is_registered;
+      const userCanPlay = quizObj.is_registered;
 
       if (userCanPlay && quizObj.status_label === 'LIVE') {
          await fetchQuestions();
@@ -213,9 +212,7 @@ const MatchQuizRoom = () => {
   }, [answers, id, isFinished, questions]);
 
   useEffect(() => {
-    // Only run timer if they are authorized to play
-    const entryFee = parseInt(quiz?.entry_amount || 0);
-    const userCanPlay = entryFee === 0 || quiz?.is_registered;
+    const userCanPlay = quiz?.is_registered;
 
     if (isFinished || loading || !quiz || !userCanPlay || quiz.status_label !== 'LIVE') return;
     const timer = setInterval(() => {
@@ -358,8 +355,7 @@ const MatchQuizRoom = () => {
 
         {!isFinished ? (
           (() => {
-            const entryFee = parseInt(quiz?.entry_amount || 0);
-            const needsRegistration = entryFee > 0 && !quiz?.is_registered;
+            const needsRegistration = !quiz?.is_registered;
 
             if (needsRegistration) {
               if (quiz?.status_label === 'LIVE' || quiz?.status_label === 'CLOSED') {

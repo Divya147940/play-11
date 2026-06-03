@@ -154,12 +154,7 @@ const QuizArenaPage = () => {
                 btnText = q.entry_amount > 0 ? `Join (₹${q.entry_amount})` : 'Join (Free)';
               }
             } else if (q.status_label === 'LIVE') {
-              if (q.is_registered) {
-                btnText = 'Play Quiz';
-              } else {
-                const entryFee = parseInt(q.entry_amount || 0);
-                btnText = entryFee > 0 ? 'Not Registered' : 'Play Quiz';
-              }
+              btnText = q.is_registered ? 'Play Quiz' : 'Not Registered';
             }
 
             return {
@@ -382,20 +377,8 @@ const QuizArenaPage = () => {
                    {quiz.winner_id ? (
                      <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#10b981', background: '#dcfce7', padding: '4px 8px', borderRadius: '6px' }}>RESULT DECLARED</div>
                    ) : quiz.status_label === 'LIVE' ? (
-                     quiz.is_registered ? (
-                       <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#15803d', background: '#dcfce7', padding: '4px 10px', borderRadius: '6px', border: '1px solid #bbf7d0', textTransform: 'uppercase' }}>
-                         LIVE (JOINED ✓)
-                       </div>
-                     ) : (
-                       parseInt(quiz.entry_amount || 0) > 0 ? (
-                         <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#991b1b', background: '#fee2e2', padding: '4px 10px', borderRadius: '6px', border: '1px solid #fca5a5', textTransform: 'uppercase' }}>
-                           LIVE (NOT JOINED)
-                         </div>
-                       ) : (
-                         <div className={`badge-${quiz.statusColor}-mini`}>LIVE</div>
-                       )
-                     )
-                   ) : (
+                      <div className={`badge-${quiz.statusColor}-mini`}>LIVE</div>
+                    ) : (
                      <div className={`badge-${quiz.statusColor}-mini`}>{quiz.status_label || 'LIVE'}</div>
                    )}
                 </div>
@@ -403,8 +386,8 @@ const QuizArenaPage = () => {
                 <h3 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.4rem', lineHeight: 1.2 }}>{quiz.title}</h3>
 
                 <div className="game-status-box" style={{ 
-                  background: quiz.winner_id ? '#e6fffa' : (quiz.is_submitted ? '#f0fdf4' : 'rgba(15, 23, 42, 0.02)'),
-                  borderColor: quiz.winner_id ? '#b2f5ea' : (quiz.is_submitted ? '#bbf7d0' : '#f1f5f9'),
+                  background: quiz.winner_id ? '#e6fffa' : (quiz.is_submitted ? '#f0fdf4' : (quiz.status_label === 'LIVE' && !quiz.is_registered ? '#fee2e2' : 'rgba(15, 23, 42, 0.02)')),
+                  borderColor: quiz.winner_id ? '#b2f5ea' : (quiz.is_submitted ? '#bbf7d0' : (quiz.status_label === 'LIVE' && !quiz.is_registered ? '#fca5a5' : '#f1f5f9')),
                   padding: '0.5rem'
                 }}>
                   {quiz.winner_id ? (
@@ -428,16 +411,33 @@ const QuizArenaPage = () => {
                     ) : quiz.status_label === 'UPCOMING' ? (
                       <ArenaQuizTimer openAt={quiz.open_at} />
                     ) : quiz.status_label === 'LIVE' && !quiz.winner_id ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', width: '100%' }}>
-                          <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>STARTS:</span>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0f172a' }}>{quiz.startsAtFormatted}</span>
+                      !quiz.is_registered ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', width: '100%', marginBottom: '0.15rem' }}>
+                            <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STATUS:</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#ef4444', textTransform: 'uppercase' }}>Not Joined</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', width: '100%' }}>
+                            <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>STARTS:</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0f172a' }}>{quiz.startsAtFormatted}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', width: '100%' }}>
+                            <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>ENDS:</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#ef4444' }}>{quiz.endsAtFormatted}</span>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', width: '100%' }}>
-                          <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>ENDS:</span>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#ef4444' }}>{quiz.endsAtFormatted}</span>
-                        </div>
-                      </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                           <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', width: '100%' }}>
+                             <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>STARTS:</span>
+                             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0f172a' }}>{quiz.startsAtFormatted}</span>
+                           </div>
+                           <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', width: '100%' }}>
+                             <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>ENDS:</span>
+                             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#ef4444' }}>{quiz.endsAtFormatted}</span>
+                           </div>
+                         </div>
+                      )
                     ) : (
                       <>
                          <p style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem', letterSpacing: '0.05em' }}>
@@ -466,54 +466,59 @@ const QuizArenaPage = () => {
                 </div>
 
                 <button 
-                   disabled={quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered}
-                   className={`shimmer-btn ${quiz.is_submitted && !quiz.winner_id ? 'bg-slate-500' : ''}`}
-                   onClick={() => {
-                     const isLiveUnregisteredPaid = quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered;
-                     if (isLiveUnregisteredPaid) return;
+                  disabled={(quiz.status_label === 'LIVE' && !quiz.is_registered) || (quiz.is_submitted && !quiz.winner_id)}
+                  className={`shimmer-btn ${quiz.is_submitted && !quiz.winner_id ? 'bg-slate-500' : ''}`}
+                  onClick={() => {
+                    const isLiveUnregistered = quiz.status_label === 'LIVE' && !quiz.is_registered;
+                    if (isLiveUnregistered) return;
 
-                     const user = localStorage.getItem('play11_user');
-                     if (quiz.is_submitted || quiz.status_label === 'CLOSED') {
-                       navigate(zoneId === 'study-zone' ? `/study-result/${quiz.id}` : `/game-result/${quiz.id}`);
-                     } else if (quiz.status_label === 'UPCOMING') {
-                       if (quiz.is_registered) {
-                         navigate(zoneId === 'study-zone' ? `/study-quiz-detail/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
-                       } else {
-                         if (!user) {
-                           localStorage.setItem('auth_redirect', window.location.pathname);
-                           navigate('/login');
-                         } else {
-                           setBookingQuiz(quiz);
-                         }
-                       }
-                     } else {
-                       // Live quiz
-                       if (!user) {
-                         localStorage.setItem('auth_redirect', zoneId === 'study-zone' ? `/study-quiz-play/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
-                         navigate('/login');
-                       } else {
-                         navigate(zoneId === 'study-zone' ? `/study-quiz-play/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
-                       }
-                     }
-                   }}
-                   style={{ 
-                     marginTop: 'auto', 
-                     height: '44px',
-                     background: (quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered) ? '#cbd5e1' : (quiz.winner_id ? '#10b981' : (quiz.is_submitted ? '#64748b' : config.themeColor)),
-                     boxShadow: (quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered) ? 'none' : (quiz.winner_id ? '0 6px 12px -3px rgba(16, 185, 129, 0.3)' : (quiz.is_submitted ? 'none' : `0 6px 12px -3px ${config.themeColor}4D`)),
-                     fontSize: '0.8rem',
-                     padding: '0 1rem',
-                     cursor: (quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered) ? 'not-allowed' : 'pointer',
-                     color: (quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered) ? '#64748b' : '#ffffff'
-                   }}
-                 >
-                    <span>{quiz.winner_id ? 'View Results' : (quiz.is_submitted ? 'Awaiting Result' : quiz.btnText)}</span>
-                    {!(quiz.status_label === 'LIVE' && parseInt(quiz.entry_amount || 0) > 0 && !quiz.is_registered) && <ChevronRight size={16} strokeWidth={3} />}
-                 </button>
+                    const user = localStorage.getItem('play11_user');
+                    if (quiz.is_submitted || quiz.status_label === 'CLOSED') {
+                      navigate(zoneId === 'study-zone' ? `/study-result/${quiz.id}` : `/game-result/${quiz.id}`);
+                    } else if (quiz.status_label === 'UPCOMING') {
+                      if (quiz.is_registered) {
+                        navigate(zoneId === 'study-zone' ? `/study-quiz-detail/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
+                      } else {
+                        if (!user) {
+                          localStorage.setItem('auth_redirect', window.location.pathname);
+                          navigate('/login');
+                        } else {
+                          setBookingQuiz(quiz);
+                        }
+                      }
+                    } else {
+                      // Live quiz
+                      if (!user) {
+                        localStorage.setItem('auth_redirect', zoneId === 'study-zone' ? `/study-quiz-play/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
+                        navigate('/login');
+                      } else {
+                        navigate(zoneId === 'study-zone' ? `/study-quiz-play/${quiz.id}` : `/match-quiz-room/${quiz.id}`);
+                      }
+                    }
+                  }}
+                  style={{ 
+                    marginTop: 'auto', 
+                    height: '44px',
+                    background: (quiz.status_label === 'LIVE' && !quiz.is_registered) ? '#cbd5e1' : (quiz.winner_id ? '#10b981' : (quiz.is_submitted ? '#64748b' : config.themeColor)),
+                    boxShadow: (quiz.status_label === 'LIVE' && !quiz.is_registered) ? 'none' : (quiz.winner_id ? '0 6px 12px -3px rgba(16, 185, 129, 0.3)' : (quiz.is_submitted ? 'none' : `0 6px 12px -3px ${config.themeColor}4D`)),
+                    fontSize: '0.8rem',
+                    padding: '0 1rem',
+                    cursor: (quiz.status_label === 'LIVE' && !quiz.is_registered) ? 'not-allowed' : ((quiz.is_submitted && !quiz.winner_id) ? 'not-allowed' : 'pointer'),
+                    color: (quiz.status_label === 'LIVE' && !quiz.is_registered) ? '#64748b' : '#ffffff'
+                  }}
+                >
+                   <span>{quiz.winner_id ? 'View Results' : (quiz.is_submitted ? 'Awaiting Result' : quiz.btnText)}</span>
+                   {!(quiz.status_label === 'LIVE' && !quiz.is_registered) && !(quiz.is_submitted && !quiz.winner_id) && <ChevronRight size={16} strokeWidth={3} />}
+                </button>
                 
                 {quiz.is_submitted && (
                   <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.7rem', color: quiz.winner_id ? '#10b981' : '#16a34a', fontWeight: 800 }}>
-                    {quiz.winner_id ? 'Result has been declared!' : `Successfully submitted on ${parseUtcDate(quiz.submitted_at).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                    {quiz.winner_id ? 'Result has been declared!' : (() => {
+                      const sDate = parseUtcDate(quiz.submitted_at);
+                      const dateStr = sDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
+                      const timeStr = sDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+                      return `Successfully submitted on ${dateStr} at ${timeStr}`;
+                    })()}
                   </p>
                 )}
               </div>

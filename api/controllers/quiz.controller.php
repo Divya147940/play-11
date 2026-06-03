@@ -222,7 +222,7 @@ class QuizController {
 
     public static function getQuizQuestions($id, $user) {
         try {
-            // Check if user is registered for paid quizzes
+            // Check if user is registered for the quiz
             $quizStmt = DB::query("SELECT entry_amount, open_at FROM quizzes WHERE id = ?", [$id]);
             $quiz = $quizStmt->fetch();
             if (!$quiz) {
@@ -231,20 +231,17 @@ class QuizController {
                 return;
             }
 
-            $entryAmount = (int)($quiz['entry_amount'] ?? 0);
-            if ($entryAmount > 0) {
-                $userId = $user ? $user['userId'] : null;
-                if (!$userId) {
-                    http_response_code(401);
-                    echo json_encode(['success' => false, 'error' => 'Authentication required.']);
-                    return;
-                }
-                $regStmt = DB::query("SELECT id FROM quiz_registrations WHERE user_id = ? AND quiz_id = ?", [$userId, $id]);
-                if (!$regStmt->fetch()) {
-                    http_response_code(403);
-                    echo json_encode(['success' => false, 'error' => 'You must register and pay the entry fee for this quiz first.']);
-                    return;
-                }
+            $userId = $user ? $user['userId'] : null;
+            if (!$userId) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Authentication required.']);
+                return;
+            }
+            $regStmt = DB::query("SELECT id FROM quiz_registrations WHERE user_id = ? AND quiz_id = ?", [$userId, $id]);
+            if (!$regStmt->fetch()) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'You must register/join this quiz first to play.']);
+                return;
             }
 
             // Fetch questions
